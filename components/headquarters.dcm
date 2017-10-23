@@ -1,0 +1,37 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP 74HC161
+D Synchronous 4 bit programmable binary counter
+K TTL CNT CNT4
+$ENDCMP
+#
+$CMP 74HC164
+D 8-bit parallel-out gated serial-in shift register with asynchronous clear
+$ENDCMP
+#
+$CMP AS6C1008-55SIN
+D 1Mbit 128Kx8 Static RAM
+K SRAM
+$ENDCMP
+#
+$CMP LTD-6940HR
+D DISPLAY 7 SEGMENTS common K
+K 7 SEGMENTS
+$ENDCMP
+#
+$CMP Z84C20
+D Z80 Parallel I/O
+K Z80 PIO
+$ENDCMP
+#
+$CMP Z84C30
+D Z80 Counter/Timer Channels PLCC44
+K Z80 CTC timer counter
+$ENDCMP
+#
+$CMP Z84C40
+D Z80 Serial I/O
+K Z80 SIO UART
+$ENDCMP
+#
+#End Doc Library
