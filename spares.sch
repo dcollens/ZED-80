@@ -1,0 +1,208 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:Zilog
+LIBS:Oscillators
+LIBS:switches
+LIBS:headquarters
+LIBS:z80-cache
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 7 7
+Title ""
+Date "2017-10-24"
+Rev "5"
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L GND #PWR069
+U 1 1 59EFCC3B
+P 800 2350
+F 0 "#PWR069" H 800 2100 50  0001 C CNN
+F 1 "GND" H 800 2200 50  0000 C CNN
+F 2 "" H 800 2350 50  0001 C CNN
+F 3 "" H 800 2350 50  0001 C CNN
+	1    800  2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74LS08 U16
+U 2 1 59EFCC41
+P 1400 950
+F 0 "U16" H 1400 1000 50  0000 C CNN
+F 1 "74AHC08" H 1400 900 50  0000 C CNN
+F 2 "" H 1400 950 50  0001 C CNN
+F 3 "" H 1400 950 50  0001 C CNN
+	2    1400 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74LS08 U16
+U 3 1 59EFCC48
+P 1400 1400
+F 0 "U16" H 1400 1450 50  0000 C CNN
+F 1 "74AHC08" H 1400 1350 50  0000 C CNN
+F 2 "" H 1400 1400 50  0001 C CNN
+F 3 "" H 1400 1400 50  0001 C CNN
+	3    1400 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74LS08 U16
+U 4 1 59EFCC4F
+P 1400 1900
+F 0 "U16" H 1400 1950 50  0000 C CNN
+F 1 "74AHC08" H 1400 1850 50  0000 C CNN
+F 2 "" H 1400 1900 50  0001 C CNN
+F 3 "" H 1400 1900 50  0001 C CNN
+	4    1400 1900
+	1    0    0    -1  
+$EndComp
+NoConn ~ 2000 1900
+NoConn ~ 2000 1400
+NoConn ~ 2000 950 
+Connection ~ 800  1500
+Wire Wire Line
+	800  850  800  2350
+Connection ~ 800  1050
+Connection ~ 800  1300
+Connection ~ 800  2000
+Connection ~ 800  1800
+$Comp
+L 74HC14 U2
+U 3 1 59EFD88B
+P 4450 850
+F 0 "U2" H 4600 950 50  0000 C CNN
+F 1 "74AHC14" H 4650 750 50  0000 C CNN
+F 2 "" H 4450 850 50  0001 C CNN
+F 3 "" H 4450 850 50  0001 C CNN
+	3    4450 850 
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74HC14 U2
+U 4 1 59EFD892
+P 4450 1250
+F 0 "U2" H 4600 1350 50  0000 C CNN
+F 1 "74AHC14" H 4650 1150 50  0000 C CNN
+F 2 "" H 4450 1250 50  0001 C CNN
+F 3 "" H 4450 1250 50  0001 C CNN
+	4    4450 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74LS32 U4
+U 4 1 59EFD8A0
+P 3000 950
+F 0 "U4" H 3000 1000 50  0000 C CNN
+F 1 "74AHC32" H 3000 900 50  0000 C CNN
+F 2 "" H 3000 950 50  0001 C CNN
+F 3 "" H 3000 950 50  0001 C CNN
+	4    3000 950 
+	1    0    0    -1  
+$EndComp
+NoConn ~ 4900 850 
+NoConn ~ 4900 1250
+NoConn ~ 3600 950 
+$Comp
+L GND #PWR070
+U 1 1 59EFDA1E
+P 2400 1350
+F 0 "#PWR070" H 2400 1100 50  0001 C CNN
+F 1 "GND" H 2400 1200 50  0000 C CNN
+F 2 "" H 2400 1350 50  0001 C CNN
+F 3 "" H 2400 1350 50  0001 C CNN
+	1    2400 1350
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR071
+U 1 1 59EFDA40
+P 4000 1600
+F 0 "#PWR071" H 4000 1350 50  0001 C CNN
+F 1 "GND" H 4000 1450 50  0000 C CNN
+F 2 "" H 4000 1600 50  0001 C CNN
+F 3 "" H 4000 1600 50  0001 C CNN
+	1    4000 1600
+	1    0    0    -1  
+$EndComp
+Connection ~ 2400 1050
+Wire Wire Line
+	4000 850  4000 1600
+Connection ~ 4000 1250
+$Comp
+L 74HC02 U9
+U 3 1 59EFDB7C
+P 6000 950
+F 0 "U9" H 6000 1000 50  0000 C CNN
+F 1 "74AHC02" H 6050 900 50  0000 C CNN
+F 2 "" H 6000 950 50  0001 C CNN
+F 3 "" H 6000 950 50  0001 C CNN
+	3    6000 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74HC02 U9
+U 4 1 59EFDB83
+P 6000 1400
+F 0 "U9" H 6000 1450 50  0000 C CNN
+F 1 "74AHC02" H 6050 1350 50  0000 C CNN
+F 2 "" H 6000 1400 50  0001 C CNN
+F 3 "" H 6000 1400 50  0001 C CNN
+	4    6000 1400
+	1    0    0    -1  
+$EndComp
+NoConn ~ 6600 950 
+NoConn ~ 6600 1400
+$Comp
+L GND #PWR072
+U 1 1 59EFDC50
+P 5400 1800
+F 0 "#PWR072" H 5400 1550 50  0001 C CNN
+F 1 "GND" H 5400 1650 50  0000 C CNN
+F 2 "" H 5400 1800 50  0001 C CNN
+F 3 "" H 5400 1800 50  0001 C CNN
+	1    5400 1800
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5400 850  5400 1800
+Connection ~ 5400 1050
+Connection ~ 5400 1300
+Connection ~ 5400 1500
+Wire Wire Line
+	2400 850  2400 1350
+$EndSCHEMATC
