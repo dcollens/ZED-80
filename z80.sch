@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 7
 Title "Z80 Prototype"
-Date "2017-10-24"
-Rev "5"
+Date "2018-03-28"
+Rev "6"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1476,4 +1476,187 @@ Text Label 9600 950  2    60   ~ 0
 A14
 Wire Wire Line
 	9450 950  9600 950 
+$Comp
+L Conn_02x20_Top_Bottom J3
+U 1 1 5ABBD7C9
+P 9750 2450
+F 0 "J3" H 9800 3450 50  0000 C CNN
+F 1 "Conn_02x20_Top_Bottom" H 9800 1350 50  0000 C CNN
+F 2 "" H 9750 2450 50  0001 C CNN
+F 3 "" H 9750 2450 50  0001 C CNN
+	1    9750 2450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9550 1550 9300 1550
+Wire Wire Line
+	9550 1650 9300 1650
+Wire Wire Line
+	9550 1750 9300 1750
+Wire Wire Line
+	9550 1850 9300 1850
+Wire Wire Line
+	9550 1950 9300 1950
+Wire Wire Line
+	9550 2050 9300 2050
+Wire Wire Line
+	9550 2150 9300 2150
+Wire Wire Line
+	9550 2250 9300 2250
+Wire Wire Line
+	9550 2350 9300 2350
+Wire Wire Line
+	9550 2450 9300 2450
+Wire Wire Line
+	9550 2550 9300 2550
+Wire Wire Line
+	9550 2650 9300 2650
+Wire Wire Line
+	9550 2750 9300 2750
+Wire Wire Line
+	9550 2850 9300 2850
+Wire Wire Line
+	9550 2950 9300 2950
+Wire Wire Line
+	9550 3050 9300 3050
+Wire Wire Line
+	9550 3150 9300 3150
+Wire Wire Line
+	9550 3250 9300 3250
+Wire Wire Line
+	9550 3350 9300 3350
+Wire Wire Line
+	9550 3450 9300 3450
+Wire Wire Line
+	10050 1550 10300 1550
+Wire Wire Line
+	10050 1650 10300 1650
+Wire Wire Line
+	10050 1750 10300 1750
+Wire Wire Line
+	10050 1850 10300 1850
+Wire Wire Line
+	10050 1950 10300 1950
+Wire Wire Line
+	10050 2050 10300 2050
+Wire Wire Line
+	10050 2150 10300 2150
+Wire Wire Line
+	10050 2250 10300 2250
+Wire Wire Line
+	10050 2350 10300 2350
+Wire Wire Line
+	10050 2450 10300 2450
+Wire Wire Line
+	10050 2550 10300 2550
+Wire Wire Line
+	10050 2650 10300 2650
+Wire Wire Line
+	10050 2750 10300 2750
+Wire Wire Line
+	10050 2850 10300 2850
+Wire Wire Line
+	10050 2950 10300 2950
+Wire Wire Line
+	10050 3050 10300 3050
+Wire Wire Line
+	10050 3150 10300 3150
+Wire Wire Line
+	10050 3250 10300 3250
+Wire Wire Line
+	10050 3350 10300 3350
+Wire Wire Line
+	10050 3450 10300 3450
+$Comp
+L VCC #PWR022
+U 1 1 5ABBE8C3
+P 9300 1550
+F 0 "#PWR022" H 9300 1400 50  0001 C CNN
+F 1 "VCC" H 9300 1700 50  0000 C CNN
+F 2 "" H 9300 1550 50  0001 C CNN
+F 3 "" H 9300 1550 50  0001 C CNN
+	1    9300 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR023
+U 1 1 5ABBEB83
+P 10300 3450
+F 0 "#PWR023" H 10300 3200 50  0001 C CNN
+F 1 "GND" H 10300 3300 50  0000 C CNN
+F 2 "" H 10300 3450 50  0001 C CNN
+F 3 "" H 10300 3450 50  0001 C CNN
+	1    10300 3450
+	1    0    0    -1  
+$EndComp
+Text Label 9300 1650 0    60   ~ 0
+A0
+Text Label 9300 1750 0    60   ~ 0
+A1
+Text Label 9300 1850 0    60   ~ 0
+A2
+Text Label 9300 1950 0    60   ~ 0
+A3
+Text Label 9300 2050 0    60   ~ 0
+A4
+Text Label 9300 2150 0    60   ~ 0
+A5
+Text Label 9300 2250 0    60   ~ 0
+A6
+Text Label 9300 2350 0    60   ~ 0
+A7
+Text Label 9300 2450 0    60   ~ 0
+A8
+Text Label 9300 2550 0    60   ~ 0
+A9
+Text Label 9300 2650 0    60   ~ 0
+A10
+Text Label 9300 2750 0    60   ~ 0
+A11
+Text Label 9300 2850 0    60   ~ 0
+A12
+Text Label 9300 2950 0    60   ~ 0
+A13
+Text Label 9300 3050 0    60   ~ 0
+A14
+Text Label 9300 3150 0    60   ~ 0
+A15
+Text Label 10300 1550 2    60   ~ 0
+D0
+Text Label 10300 1650 2    60   ~ 0
+D1
+Text Label 10300 1750 2    60   ~ 0
+D2
+Text Label 10300 1850 2    60   ~ 0
+D3
+Text Label 10300 1950 2    60   ~ 0
+D4
+Text Label 10300 2050 2    60   ~ 0
+D5
+Text Label 10300 2150 2    60   ~ 0
+D6
+Text Label 10300 2250 2    60   ~ 0
+D7
+Text Label 9300 3350 0    60   ~ 0
+~RESET
+Text Label 9300 3450 0    60   ~ 0
+~INT
+Text Label 10300 3350 2    60   ~ 0
+CLK
+Text Label 10300 3250 2    60   ~ 0
+~M1
+Text Label 10300 2350 2    60   ~ 0
+~RD
+Text Label 10300 2450 2    60   ~ 0
+~WR
+Text Label 10300 2550 2    60   ~ 0
+~MREQ
+Text Label 10300 2650 2    60   ~ 0
+~IORQ
+NoConn ~ 9300 3250
+NoConn ~ 10300 2750
+NoConn ~ 10300 2850
+NoConn ~ 10300 2950
+NoConn ~ 10300 3050
+NoConn ~ 10300 3150
 $EndSCHEMATC
