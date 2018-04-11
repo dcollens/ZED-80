@@ -5,6 +5,10 @@ D Synchronous 4 bit programmable binary counter
 K TTL CNT CNT4
 $ENDCMP
 #
+$CMP 74HC164
+D 8-bit parallel-out gated serial-in shift register with asynchronous clear
+$ENDCMP
+#
 $CMP AS6C1008-55SIN
 D 1Mbit 128Kx8 Static RAM
 K SRAM
