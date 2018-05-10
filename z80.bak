@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 7
 Title "Z80 Prototype"
-Date "2018-03-28"
-Rev "6"
+Date "2018-04-11"
+Rev "7"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1659,4 +1659,6 @@ F 3 "" H 9750 2450 50  0001 C CNN
 	1    9750 2450
 	1    0    0    -1  
 $EndComp
+Text Label 5200 4300 0    60   ~ 0
+D[0..7]
 $EndSCHEMATC

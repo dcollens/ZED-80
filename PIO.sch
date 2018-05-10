@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 5 7
 Title "PIO, PS/2 Keyboard Port"
-Date "2018-04-11"
-Rev "7"
+Date "2018-05-09"
+Rev "8"
 Comp ""
 Comment1 ""
 Comment2 ""
