@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 7
 Title "Z80 Prototype"
-Date "2018-05-09"
-Rev "8"
+Date "2018-05-23"
+Rev "9"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1003,9 +1003,6 @@ Wire Wire Line
 	9000 1250 9000 2650
 Wire Wire Line
 	7050 950  6900 950 
-NoConn ~ 4150 5550
-NoConn ~ 4150 5650
-NoConn ~ 4150 5750
 $Comp
 L LED_Small_ALT D1
 U 1 1 59CD3900
@@ -1643,9 +1640,6 @@ Text Label 10300 2550 2    60   ~ 0
 Text Label 10300 2650 2    60   ~ 0
 ~IORQ
 NoConn ~ 9300 3250
-NoConn ~ 10300 2850
-NoConn ~ 10300 2950
-NoConn ~ 10300 3050
 NoConn ~ 10300 3150
 $Comp
 L Conn_02x20_Odd_Even J3
@@ -1661,4 +1655,22 @@ $EndComp
 Text Label 5200 4300 0    60   ~ 0
 D[0..7]
 NoConn ~ 9300 3450
+Wire Wire Line
+	4150 5550 4450 5550
+Wire Wire Line
+	4150 5650 4450 5650
+Wire Wire Line
+	4150 5750 4450 5750
+Text Label 4450 5550 2    60   ~ 0
+~IORQ5
+Text Label 4450 5650 2    60   ~ 0
+~IORQ6
+Text Label 4450 5750 2    60   ~ 0
+~IORQ7
+Text Label 10300 2850 2    60   ~ 0
+~IORQ7
+Text Label 10300 2950 2    60   ~ 0
+~IORQ5
+Text Label 10300 3050 2    60   ~ 0
+~IORQ6
 $EndSCHEMATC

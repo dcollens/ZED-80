@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 7
 Title "Z80 Prototype"
-Date "2018-04-11"
-Rev "7"
+Date "2018-05-09"
+Rev "8"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1628,7 +1628,7 @@ Text Label 10300 2250 2    60   ~ 0
 D7
 Text Label 9300 3350 0    60   ~ 0
 ~RESET
-Text Label 9300 3450 0    60   ~ 0
+Text Label 10300 2750 2    60   ~ 0
 ~INT
 Text Label 10300 3350 2    60   ~ 0
 CLK
@@ -1643,7 +1643,6 @@ Text Label 10300 2550 2    60   ~ 0
 Text Label 10300 2650 2    60   ~ 0
 ~IORQ
 NoConn ~ 9300 3250
-NoConn ~ 10300 2750
 NoConn ~ 10300 2850
 NoConn ~ 10300 2950
 NoConn ~ 10300 3050
@@ -1661,4 +1660,5 @@ F 3 "" H 9750 2450 50  0001 C CNN
 $EndComp
 Text Label 5200 4300 0    60   ~ 0
 D[0..7]
+NoConn ~ 9300 3450
 $EndSCHEMATC
