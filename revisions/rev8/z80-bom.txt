@@ -1,0 +1,98 @@
+Source:	/Users/dcollens/Documents/depot/main/z80/z80.sch
+Date:	Tuesday, June 05, 2018 'amt' 10:21:38 am
+Tool:	Eeschema 4.0.7
+Component Count:	93
+Ref	Value	Part	Footprint	Description	Vendor
+AFF1	LTD-6940HR	headquarters:LTD-6940HR	z80_footprints:LTD-6940HR	DISPLAY 7 SEGMENTS common K	
+C1	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C2	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C3	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C4	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C5	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C6	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C7	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C8	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C9	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C10	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C11	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C12	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C13	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C14	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C15	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C16	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C17	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C18	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C19	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C20	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C21	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C22	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C23	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C24	10uF	device:CP1_Small	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Polarised capacitor	
+C25	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C26	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C27	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C28	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+C29	0.1uF	device:C	Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm	Unpolarized capacitor	
+D1	Green	device:LED_Small_ALT	LEDs:LED_D5.0mm	LED, small symbol, alternativ symbol	
+J1	Conn_02x08_Odd_Even	conn:Conn_02x08_Odd_Even	Pin_Headers:Pin_Header_Straight_2x08_Pitch2.54mm	Generic connector, double row, 02x08, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers)	
+J2	KMDGX-6S-BS	headquarters:KMDGX-6S-BS	z80_footprints:KMDGX-6S-BS	6-pin Mini-DIN connector	
+J3	Conn_02x20_Odd_Even	conn:Conn_02x20_Odd_Even	Pin_Headers:Pin_Header_Straight_2x20_Pitch2.54mm	Generic connector, double row, 02x20, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers)	
+J5	USB_B	conn:USB_B	z80_footprints:USB_B_E8144-B02022-L	USB Type B connector	
+J6	PWR	conn:Conn_01x02	Pin_Headers:Pin_Header_Straight_2x01_Pitch2.54mm	Generic connector, single row, 01x02	
+JOY1	DB9-M	conn:DB9_Male_MountingHoles	z80_footprints:L717SDE09P1ACH	9-pin male D-SUB connector, Mounting Hole	
+JOY2	DB9-M	conn:DB9_Male_MountingHoles	z80_footprints:L717SDE09P1ACH	9-pin male D-SUB connector, Mounting Hole	
+R1	1M	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R2	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R3	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R4	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R5	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R6	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R7	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R8	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R9	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R10	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R11	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R12	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R13	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R14	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R15	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R16	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R17	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R18	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R19	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R20	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R21	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R22	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R23	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R24	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R25	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R26	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R27	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R28	220R	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R29	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R30	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+R31	10K	device:R	Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal	Resistor	
+SER1	DB9-M	conn:DB9_Male_MountingHoles	z80_footprints:L717SDE09P1ACH	9-pin male D-SUB connector, Mounting Hole	
+SER2	DB9-M	conn:DB9_Male_MountingHoles	z80_footprints:L717SDE09P1ACH	9-pin male D-SUB connector, Mounting Hole	
+SW1	KS01Q	switches:SW_Push	z80_footprints:KS-01Q-02	Push button switch, generic, two pins	
+U1	Z80CPU	Zilog:Z80CPU	Housings_DIP:DIP-40_W15.24mm_Socket_LongPads	8-bit General Purpose Microprocessor, DIP-40	
+U2	74AHC14	74xx:74HC14	Housings_DIP:DIP-14_W7.62mm_LongPads	Hex Inverseur	
+U3	SST39SF010	memory:SST39SF010	Housings_DIP:DIP-32_W15.24mm_Socket_LongPads	Silicon Storage Technology (SSF) 128k x 8 Flash ROM	
+U4	74AHC32	74xx:74LS32	Housings_DIP:DIP-14_W7.62mm_LongPads	Quad Or 2 inputs	
+U5	AS6C1008-55PCN	headquarters:AS6C1008-55SIN	Housings_DIP:DIP-32_W15.24mm_Socket_LongPads	1Mbit 128Kx8 Static RAM	
+U6	74AHC138	74xx:74LS138	Housings_DIP:DIP-16_W7.62mm_LongPads	Decoder 3 to 8 (active low outputs)	
+U7	74AC574	74xx:74LS574	Housings_DIP:DIP-20_W7.62mm_LongPads	8 bits Register, 3 state Out	
+U8	74AC574	74xx:74LS574	Housings_DIP:DIP-20_W7.62mm_LongPads	8 bits Register, 3 state Out	
+U9	74AHC02	74xx:74HC02	Housings_DIP:DIP-14_W7.62mm_LongPads	Quad Nor2	
+U10	Z84C40	headquarters:Z84C40	Housings_DIP:DIP-40_W15.24mm_Socket_LongPads	Z80 Serial I/O	
+U11	SP232E	interface:MAX232	Housings_DIP:DIP-16_W7.62mm_LongPads	Dual RS232 driver/receiver, 5V supply, 120kb/s, 0C-70C	
+U12	SP232E	interface:MAX232	Housings_DIP:DIP-16_W7.62mm_LongPads	Dual RS232 driver/receiver, 5V supply, 120kb/s, 0C-70C	
+U13	74AHC541	74xx:74LS541	Housings_DIP:DIP-20_W7.62mm_LongPads	8bits Buffer/Line Driver 3 state Out	
+U14	74AHC541	74xx:74LS541	Housings_DIP:DIP-20_W7.62mm_LongPads	8bits Buffer/Line Driver 3 state Out	
+U15	Z84C20	headquarters:Z84C20	Housings_DIP:DIP-40_W15.24mm_Socket_LongPads	Z80 Parallel I/O	
+U16	74AHC08	74xx:74LS08	Housings_DIP:DIP-14_W7.62mm_LongPads	Quad And2	
+U17	Z84C30	headquarters:Z84C30	z80_footprints:8444-11B1-RK-TP	Z80 Counter/Timer Channels PLCC44	
+U18	74HC164	headquarters:74HC164	Housings_DIP:DIP-14_W7.62mm_LongPads	8-bit parallel-out gated serial-in shift register with asynchronous clear	
+U19	74HC164	headquarters:74HC164	Housings_DIP:DIP-14_W7.62mm_LongPads	8-bit parallel-out gated serial-in shift register with asynchronous clear	
+X1	ACH10MHZ	Oscillators:CXO_DIP8	Oscillators:Oscillator_DIP-8	Crystal Clock Oscillator, DIP8-style metal package	
+X2	1.8432MHz	Oscillators:CXO_DIP8	Oscillators:Oscillator_DIP-8	Crystal Clock Oscillator, DIP8-style metal package	
