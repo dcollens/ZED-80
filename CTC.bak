@@ -39,8 +39,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 6 7
 Title "CTC, Baud Rate Generation"
-Date "2018-05-09"
-Rev "8"
+Date "2018-05-23"
+Rev "9"
 Comp ""
 Comment1 ""
 Comment2 ""
