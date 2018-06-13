@@ -2,6 +2,8 @@
 
 #target rom
 
+#include "7segdisp.inc"
+
 ;#data VARIABLES, 0x5B00
 ; define some variables here
 
@@ -49,9 +51,9 @@ init:
 	ld	e, 0x5A
 loop:
 	ld	a, d
-	out	(0x00),a
+	out	(PORT_SEG0),a
 	ld	a, e
-	out	(0x10),a
+	out	(PORT_SEG1),a
 	inc	d
 	inc	e
 	ld	a, 0xFF

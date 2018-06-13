@@ -1,94 +1,131 @@
-; same as 'bin', except that the default fill byte for 'defs' etc. is 0xff
-
-#target rom
-
-;#data VARIABLES, 0x5B00
-; define some variables here
-
-; 128KB Flash ROM - SST39SF010A
-#code EPROM, 0, 0x10000
-
-; reset vector
-RST0::	di
-;	ld	sp,_ram_end
-	jp	init
-	defs	0x08-$
-
-RST1::	reti
-	defs	0x10-$
-
-RST2::	reti
-	defs	0x18-$
-
-RST3::	reti
-	defs	0x20-$
-
-RST4::	reti
-	defs	0x28-$
-
-RST5::	reti
-	defs	0x30-$
-
-RST6::	reti
-	defs	0x38-$
-
-; maskable interrupt handler in interrupt mode 1:
-RST7::	reti
+                        ; --------------------------------------
+                        ; zasm: assemble "rom_only_test.asm"
+                        ; date: 2018-06-12 11:57:14
+                        ; --------------------------------------
 
 
-; non maskable interrupt:
-; e.g. call debugger and on exit resume.
+                        ; same as 'bin', except that the default fill byte for 'defs' etc. is 0xff
+                        
+                        #target rom
+                        
+                        #include "7segdisp.inc"
+0000:                   PORT_SEG0	equ 0x00	    ; port address for first 7-segment display element
+0010:                   PORT_SEG1	equ 0x10	    ; port address for second 7-segment display element
+                        
+                        ; 7-segment display map
+                        ;      A
+                        ;  +-------+
+                        ;  |       |
+                        ; F|       |B
+                        ;  |   G   |
+                        ;  +-------+
+                        ;  |       |
+                        ; E|       |C
+                        ;  |   D   |
+                        ;  +-------+  .DP
+0001:                   SEG_A		equ 0x01	; segment A
+0002:                   SEG_B		equ 0x02	; segment B
+0004:                   SEG_C		equ 0x04	; segment C
+0008:                   SEG_D		equ 0x08	; segment D
+0010:                   SEG_E		equ 0x10	; segment E
+0020:                   SEG_F		equ 0x20	; segment F
+0040:                   SEG_G		equ 0x40	; segment G
+0080:                   SEG_DP		equ 0x80	; decimal point
+                        
+                        ;#data VARIABLES, 0x5B00
+                        ; define some variables here
+                        
+                        ; 128KB Flash ROM - SST39SF010A
+0000:                   #code EPROM, 0, 0x10000
+                        
+                        ; reset vector
+0000: F3       [ 4]     RST0::	di
+                        ;	ld	sp,_ram_end
+0001: C36800   [14]     	jp	init
+0004: FFFFFFFF          	defs	0x08-$
+                        
+0008: ED4D     [14]     RST1::	reti
+000A: FFFFFFFF          	defs	0x10-$
+000E: FFFF              
+                        
+0010: ED4D     [14]     RST2::	reti
+0012: FFFFFFFF          	defs	0x18-$
+0016: FFFF              
+                        
+0018: ED4D     [14]     RST3::	reti
+001A: FFFFFFFF          	defs	0x20-$
+001E: FFFF              
+                        
+0020: ED4D     [14]     RST4::	reti
+0022: FFFFFFFF          	defs	0x28-$
+0026: FFFF              
+                        
+0028: ED4D     [14]     RST5::	reti
+002A: FFFFFFFF          	defs	0x30-$
+002E: FFFF              
+                        
+0030: ED4D     [14]     RST6::	reti
+0032: FFFFFFFF          	defs	0x38-$
+0036: FFFF              
+                        
+                        ; maskable interrupt handler in interrupt mode 1:
+0038: ED4D     [14]     RST7::	reti
+                        
+                        
+                        ; non maskable interrupt:
+                        ; e.g. call debugger and on exit resume.
+                        
+003A: FFFFFFFF          	defs   	0x66-$
+003E: FF...             
+0066: ED45     [14]     NMI::	retn
+                        
+                        
+                        ; init:
+0068:                   init:
+0068: 16A5     [ 7]     	ld	d, 0xA5
+006A: 1E5A     [14]     	ld	e, 0x5A
+006C:                   loop:
+006C: 7A       [ 4]     	ld	a, d
+006D: D300     [15]     	out	(PORT_SEG0),a
+006F: 7B       [19]     	ld	a, e
+0070: D310     [30]     	out	(PORT_SEG1),a
+0072: 14       [34]     	inc	d
+0073: 1C       [38]     	inc	e
+0074: 3EFF     [45]     	ld	a, 0xFF
+0076:                   delay_outer:
+0076: 06FF     [ 7]     	ld	b, 0xFF
+0078:                   delay_inner:
+0078: 00       [ 4]     	nop
+0079: 00       [ 8]     	nop
+007A: 00       [12]     	nop
+007B: 00       [16]     	nop
+007C: 00       [20]     	nop
+007D: 00       [24]     	nop
+007E: 00       [28]     	nop
+007F: 00       [32]     	nop
+0080: 00       [36]     	nop
+0081: 00       [40]     	nop
+0082: 00       [44]     	nop
+0083: 00       [48]     	nop
+0084: 00       [52]     	nop
+0085: 00       [56]     	nop
+0086: 00       [60]     	nop
+0087: 00       [64]     	nop
+0088: 00       [68]     	nop
+0089: 00       [72]     	nop
+008A: 00       [76]     	nop
+008B: 00       [80]     	nop
+008C: 00       [84]     	nop
+008D: 00       [88]     	nop
+008E: 10E8     [96|101] 	djnz	delay_inner
+0090: 3D       [100]    	dec	a
+0091: 20E3     [107|112]	jr	nz, delay_outer
+0093: C36C00   [117]    	jp	loop
+0096: 18FE     [129]    	jr	$
+                        
+                        ; Second 64KB segment to fill up ROM image
+0000:                   #code FILLER, 0, 0x10000
 
-	defs   	0x66-$
-NMI::	retn
 
-
-; init:
-init:
-	ld	d, 0xA5
-	ld	e, 0x5A
-loop:
-	ld	a, d
-	out	(0x00),a
-	ld	a, e
-	out	(0x20),a
-	inc	d
-	inc	e
-	ld	a, 0xFF
-delay_outer:
-	ld	b, 0xFF
-delay_inner:
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	djnz	delay_inner
-	dec	a
-	jr	nz, delay_outer
-	jp	loop
-	jr	$
-
-; Second 64KB segment to fill up ROM image
-#code FILLER, 0, 0x10000
-
-
-total time: 0.0063 sec.
+total time: 0.0039 sec.
 no errors

@@ -17,20 +17,21 @@
 #target rom
 
 #include "7segdisp.inc"
+#include "joystick.inc"
 #include "z84c20.inc"
 
 ; 128KB Static RAM - AS6C1008-55PCN
-; The first 16KB is shadowed by the EPROM.
-; The next 48KB is mapped from 0x4000-0xFFFF.
+; The first 8KB is shadowed by the EPROM.
+; The next 56KB is mapped from 0x2000-0xFFFF.
 ; The top 64KB is not addressable (A16 tied low).
-#data RAM, 0x4000, 0xC000
+#data RAM, 0x2000, 0xE000
 ; define static variables here
 Seg0_data:: defs 1	; current value of first 7-segment display byte
 Seg1_data:: defs 1	; current value of second 7-segment display byte
 
 ; 128KB Flash ROM - SST39SF010A
-; The first 16KB is mapped from 0-0x3FFF.
-#code ROM, 0, 0x4000
+; The first 8KB is mapped from 0-0x1FFF.
+#code ROM, 0, 0x2000
 
 ; reset vector
 RST0::
@@ -78,7 +79,10 @@ init::
     ld	    l, 0
     call    seg0_write
     call    seg1_write
-    call    pio_test
+;    call    figure8
+;    call    countup
+;    call    pio_test
+    call    joy_test
     jr	    $		; loop forever
 
 ; void countup()
@@ -180,6 +184,73 @@ pio_srclr::
     out	    (PORT_PIOADAT), a
     ld	    a, 0x08	; bit 3
     out	    (PORT_PIOADAT), a
+    ret
+#endlocal
+
+; void joy_test()
+#local
+joy_test::
+    push    hl
+forever:
+    in	    a, (PORT_JOY0)	; read joystick 0
+    ld	    l, a
+    call    joy_map2seg
+    call    seg0_write
+    in	    a, (PORT_JOY1)	; read joystick 1
+    ld	    l, a
+    call    joy_map2seg
+    call    seg1_write
+    jr	    forever
+    pop	    hl
+    ret
+#endlocal
+
+; uint8_t joy_map2seg(uint8_t joy)
+; - map the joystick status bits in "joy" to a value suitable for writing to the 7-segment display
+#local
+joy_map2seg::
+    xor	    a			; start with no bits on 7-segment display
+    bit	    JOY_IDX_UP, l	; test for UP
+    jr	    nz, done_up
+    set	    SEG_IDX_A, a	; turn on top segment
+done_up:
+    bit	    JOY_IDX_DOWN, l	; test for DOWN
+    jr	    nz, done_down
+    set	    SEG_IDX_D, a	; turn on bottom segment
+done_down:
+    ; if neither UP nor DOWN are active, activate (clear) both to get both top & bottom side segments
+    bit	    JOY_IDX_UP, l
+    jr	    z, sides
+    bit	    JOY_IDX_DOWN, l
+    jr	    z, sides
+    res	    JOY_IDX_UP, l
+    res	    JOY_IDX_DOWN, l
+sides:
+    bit	    JOY_IDX_LEFT, l	; test for LEFT
+    jr	    nz, done_left
+    bit	    JOY_IDX_UP, l	; if UP, set top-left segment
+    jr	    nz, no_top_left
+    set	    SEG_IDX_F, a
+no_top_left:
+    bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
+    jr	    nz, done_left
+    set	    SEG_IDX_E, a
+done_left:
+    bit	    JOY_IDX_RIGHT, l	; test for RIGHT
+    jr	    nz, done_right
+    bit	    JOY_IDX_UP, l	; if UP, set top-right segment
+    jr	    nz, no_top_right
+    set	    SEG_IDX_B, a
+no_top_right:
+    bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
+    jr	    nz, done_right
+    set	    SEG_IDX_C, a
+done_right:
+    bit	    JOY_IDX_FIRE, l	; test for FIRE
+    jr	    nz, done_fire
+    set	    SEG_IDX_DP, a
+done_fire:
+    ld	    l, a		; return segment mask
     ret
 #endlocal
 
@@ -371,6 +442,6 @@ loop:
 ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
 #endlocal
 
-; Remaining 48KB and 64KB segments to fill up ROM image
-#code FILLER1, 0, 0xC000
+; Remaining 56KB and 64KB segments to fill up ROM image
+#code FILLER1, 0, 0xE000
 #code FILLER2, 0, 0x10000
