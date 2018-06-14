@@ -19,6 +19,7 @@
 #include "7segdisp.inc"
 #include "joystick.inc"
 #include "z84c20.inc"
+#include "z84c30.inc"
 
 ; 128KB Static RAM - AS6C1008-55PCN
 ; The first 8KB is shadowed by the EPROM.
@@ -74,11 +75,34 @@ RST7::
 NMI::
     retn
 
+; Empty ISR for interrupts we want to ignore
+ISR_nop::
+    ei
+    reti
+
+    defs    0x80-$
+; Interrupt Vector Table
+IVT::
+; Table starts at 0x0080
+; CTC has first 4 slots, so CTC Interrupt Vector register should be 0x80
+    .word   ISR_nop	    ; CTC channel 0
+    .word   ISR_nop	    ; CTC channel 1
+    .word   ISR_nop	    ; CTC channel 2
+    .word   ISR_ctc3	    ; CTC channel 3
+; TODO: ISRs for PIO & SIO
+
 ; void init()
 init::
+    ; set up interrupts
+    ld	    a, hi(IVT)
+    ld	    i, a	    ; I gets high byte of IVT address
+    im	    2		    ; select interrupt mode 2
+    ei
+    ; clear 7-segment display
     ld	    l, 0
     call    seg0_write
     call    seg1_write
+    call    ctc_test
 ;    call    figure8
 ;    call    countup
 ;    call    pio_test
@@ -187,6 +211,46 @@ pio_srclr::
     ret
 #endlocal
 
+; void ctc_test()
+#local
+ctc_test::
+    ; load CTC Interrupt Vector Register
+    ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
+    out	    (PORT_CTCIVEC), a
+    ; channel 0 is the baud rate generator for serial 0
+    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+    out	    (PORT_CTC0), a
+    ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+    out	    (PORT_CTC0), a
+    ; channel 1 is the baud rate generator for serial 1
+    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+    out	    (PORT_CTC1), a
+    ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+    out	    (PORT_CTC1), a
+    ; channel 2 is used as a timer to divide down the system clock for channel 3
+    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
+    out	    (PORT_CTC2), a
+    ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
+    out	    (PORT_CTC2), a
+    ; channel 3 is used as a counter on the 2.5kHz signal from channel 2
+    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
+    out	    (PORT_CTC3), a
+    ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
+    out	    (PORT_CTC3), a
+    ret
+#endlocal
+
+; CTC channel 3 ISR
+ISR_ctc3::
+    ex	    af, af'
+    exx
+    ld	    l, SEG_DP
+    call    seg1_toggle
+    exx
+    ex	    af, af'
+    ei
+    reti
+
 ; void joy_test()
 #local
 joy_test::
@@ -196,10 +260,10 @@ forever:
     ld	    l, a
     call    joy_map2seg
     call    seg0_write
-    in	    a, (PORT_JOY1)	; read joystick 1
-    ld	    l, a
-    call    joy_map2seg
-    call    seg1_write
+;    in	    a, (PORT_JOY1)	; read joystick 1
+;    ld	    l, a
+;    call    joy_map2seg
+;    call    seg1_write
     jr	    forever
     pop	    hl
     ret
