@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_ram_test.asm"
-                        ; date: 2018-06-13 21:46:08
+                        ; date: 2018-06-16 17:54:46
                         ; --------------------------------------
 
 
@@ -132,6 +132,124 @@
 0004:                   CTC_TIMENXT	equ 0x04		; next control byte written is the time constant
 0002:                   CTC_RESET	equ 0x02		; software reset
 0001:                   CTC_CONTROL	equ 0x01		; always set to indicate this is a control word, not IVEC 
+                        #include "z84c40.inc"
+                        ; The Z84C40 is the Z80's SIO peripheral. See um0081.pdf for documentation.
+                        
+0020:                   PORT_SIOBASE	    equ 0x20		    ; base port address for SIO chip
+0020:                   PORT_SIOADAT	    equ PORT_SIOBASE	    ; port address for SIO port A, data register
+0021:                   PORT_SIOBDAT	    equ PORT_SIOBASE + 1    ; port address for SIO port B, data register
+0022:                   PORT_SIOACTL	    equ PORT_SIOBASE + 2    ; port address for SIO port A, control register
+0023:                   PORT_SIOBCTL	    equ PORT_SIOBASE + 3    ; port address for SIO port B, control register
+                        
+                        ; WR0 "CRC Reset Code" values (bits 7-6)
+0000:                   SIOWR0_CRC_NOP		equ 0x00	    ; no CRC reset code
+0040:                   SIOWR0_CRC_RST_RX_CHK	equ 1 << 6	    ; reset RX CRC checker
+0080:                   SIOWR0_CRC_RST_TX_GEN	equ 2 << 6	    ; reset TX CRC generator
+00C0:                   SIOWR0_CRC_RST_TX_UNDR  equ 3 << 6	    ; reset TX underrun/EOM latch
+                        
+                        ; WR0 "Command" values (bits 5-3)
+0000:                   SIOWR0_CMD_NOP		equ 0x00	    ; no command
+0008:                   SIOWR0_CMD_SND_ABRT	equ 1 << 3	    ; send abort (SDLC only)
+0010:                   SIOWR0_CMD_RST_EXTINT	equ 2 << 3	    ; reset external/status interrupts
+0018:                   SIOWR0_CMD_RST_CHAN	equ 3 << 3	    ; reset channel
+0020:                   SIOWR0_CMD_INTENA_NXTRX	equ 4 << 3	    ; enable interrupt on next receive character
+0028:                   SIOWR0_CMD_RST_TXINTPND equ 5 << 3	    ; reset TX interrupt pending
+0030:                   SIOWR0_CMD_RST_ERR	equ 6 << 3	    ; reset error latches
+0038:                   SIOWR0_CMD_INTRETN	equ 7 << 3	    ; return from interrupt (not needed with Z80)
+                        
+                        ; WR0 "Pointer" values (bits 2-0)
+0000:                   SIOWR0_PTR_R0		equ 0x00	    ; set pointer to register 0
+0001:                   SIOWR0_PTR_R1		equ 0x01	    ; set pointer to register 1
+0002:                   SIOWR0_PTR_R2		equ 0x02	    ; set pointer to register 2
+0003:                   SIOWR0_PTR_R3		equ 0x03	    ; set pointer to register 3
+0004:                   SIOWR0_PTR_R4		equ 0x04	    ; set pointer to register 4
+0005:                   SIOWR0_PTR_R5		equ 0x05	    ; set pointer to register 5
+0006:                   SIOWR0_PTR_R6		equ 0x06	    ; set pointer to register 6
+0007:                   SIOWR0_PTR_R7		equ 0x07	    ; set pointer to register 7
+                        
+                        ; WR1 interrupt & wait/ready control bits
+0001:                   SIOWR1_EXTINTENA	equ 0x01	    ; external/status interrupt enable
+0002:                   SIOWR1_TXINTENA		equ 0x02	    ; TX interrupt enable
+0004:                   SIOWR1_STATIVEC		equ 0x04	    ; status affects interrupt vector (set in ch. B only)
+0000:                   SIOWR1_RXINT_DISABLE	equ 0 << 3	    ; RX interrupts disabled
+0008:                   SIOWR1_RXINT_FIRST	equ 1 << 3	    ; RX interrupt on first character
+0010:                   SIOWR1_RXINT_ALLPRTY	equ 2 << 3	    ; RX interrupt on all characters, parity err is SR cond
+0018:                   SIOWR1_RXINT_ALLNPRTY	equ 3 << 3	    ; RX interrupt on all characters, parity err no intr
+                        ; bits 7-5 are for WAIT/READY functions, which we don't use (always write as 0)
+                        
+                        ; WR2 is the interrupt vector register (set in channel B only)
+                        
+                        ; WR3 receiver logic control bits
+0001:                   SIOWR3_RXENA		equ 0x01	    ; receiver enable
+0002:                   SIOWR3_SYNC_INHIBIT	equ 0x02	    ; sync character load inhibit
+0004:                   SIOWR3_ADDR_SRCHMODE	equ 0x04	    ; address search mode
+0008:                   SIOWR3_RXCRCENA		equ 0x08	    ; receiver CRC enable
+0010:                   SIOWR3_ENTER_HUNT	equ 0x10	    ; enter hunt phase
+0020:                   SIOWR3_AUTO_ENABLES	equ 0x20	    ; auto enables (DCD/CTS are RX/TX enables)
+0000:                   SIOWR3_RX_5_BITS	equ 0 << 6	    ; receive 5 bits/character
+0040:                   SIOWR3_RX_7_BITS	equ 1 << 6	    ; receive 7 bits/character
+0080:                   SIOWR3_RX_6_BITS	equ 2 << 6	    ; receive 6 bits/character
+00C0:                   SIOWR3_RX_8_BITS	equ 3 << 6	    ; receive 8 bits/character
+                        
+                        ; WR4 RX/TX configuration (set first before WR1, WR3, WR5, WR6, and WR7)
+0001:                   SIOWR4_PARITY		equ 0x01	    ; parity on/off
+0002:                   SIOWR4_PRTY_EVEN	equ 0x02	    ; even parity
+0000:                   SIOWR4_PRTY_ODD		equ 0x00	    ; odd parity
+0000:                   SIOWR4_TXSTOP_SYNC	equ 0 << 2	    ; synchronous mode (no TX stop bits)
+0004:                   SIOWR4_TXSTOP_1		equ 1 << 2	    ; 1 TX stop bit
+0008:                   SIOWR4_TXSTOP_1_5	equ 2 << 2	    ; 1.5 TX stop bits
+000C:                   SIOWR4_TXSTOP_2		equ 3 << 2	    ; 2 TX stop bits
+                        ; bits 5-4 set the sync modes, which we don't use (always write as 0)
+0000:                   SIOWR4_CLK_x1		equ 0 << 6	    ; data rate x1 = clock rate
+0040:                   SIOWR4_CLK_x16		equ 1 << 6	    ; data rate x16 = clock rate
+0080:                   SIOWR4_CLK_x32		equ 2 << 6	    ; data rate x32 = clock rate
+00C0:                   SIOWR4_CLK_x64		equ 3 << 6	    ; data rate x64 = clock rate
+                        
+                        ; WR5 transmitter logic control bits
+0001:                   SIOWR5_TXCRCENA		equ 0x01	    ; transmitter CRC enable
+0002:                   SIOWR5_RTS		equ 0x02	    ; request to send
+0004:                   SIOWR5_CRC16_SDLC	equ 0x04	    ; CRC-16 vs. SDLC polynomial
+0008:                   SIOWR5_TXENA		equ 0x08	    ; transmitter enable
+0010:                   SIOWR5_SND_BRK		equ 0x10	    ; send break
+0000:                   SIOWR5_TX_5_BITS	equ 0 << 5	    ; transmit 5 bits/character
+0020:                   SIOWR5_TX_7_BITS	equ 1 << 5	    ; transmit 7 bits/character
+0040:                   SIOWR5_TX_6_BITS	equ 2 << 5	    ; transmit 6 bits/character
+0060:                   SIOWR5_TX_8_BITS	equ 3 << 5	    ; transmit 8 bits/character
+0080:                   SIOWR5_DTR		equ 0x80	    ; data terminal ready
+                        
+                        ; WR6 transmitter sync register for use in synchronous modes, which we don't use
+                        ; WR7 receiver sync register for use in synchronous modes, which we don't use
+                        
+                        ; RR0 status bits (mostly normal operation)
+0001:                   SIORR0_RCA		equ 0x01	    ; RX character available
+0002:                   SIORR0_INTPND		equ 0x02	    ; interrupt pending (channel A only)
+0004:                   SIORR0_TBE		equ 0x04	    ; TX buffer empty
+0008:                   SIORR0_DCD		equ 0x08	    ; latched DCD input bit
+0010:                   SIORR0_SYNC		equ 0x10	    ; latched SYNC input bit (hunt in SDLC)
+0020:                   SIORR0_CTS		equ 0x20	    ; latched CTS input bit
+0040:                   SIORR0_TX_UNDR		equ 0x40	    ; TX underrun / end of message
+0080:                   SIORR0_BRK_ABRT		equ 0x80	    ; break/abort detected
+                        ; As bit numbers, useful for the "bit" instruction, to test individual bit flags
+0000:                   SIORR0_IDX_RCA		equ 0
+0001:                   SIORR0_IDX_INTPND	equ 1
+0002:                   SIORR0_IDX_TBE		equ 2
+0003:                   SIORR0_IDX_DCD		equ 3
+0004:                   SIORR0_IDX_SYNC		equ 4
+0005:                   SIORR0_IDX_CTS		equ 5
+0006:                   SIORR0_IDX_TX_UNDR	equ 6
+0007:                   SIORR0_IDX_BRK_ABRT	equ 7
+                        
+                        ; RR1 status bits (mostly errors)
+0001:                   SIORR1_ALLSENT		equ 0x01	    ; all characters fully sent
+                        ; bits 3-1 are SDLC-only
+0010:                   SIORR1_PRTYERR		equ 0x10	    ; parity error
+0020:                   SIORR1_ROE		equ 0x20	    ; RX overrun error
+0040:                   SIORR1_CRCFRMERR	equ 0x40	    ; CRC/framing error
+                        ; bit 7 is SDLC-only
+                        
+                        ; RR2 is the interrupt vector register (read from channel B only)
+                        ; - if "Status Affects Vector" bit is set, this will be the current vector value,
+                        ;   modified by whatever interrupt conditions are pending
                         
                         ; 128KB Static RAM - AS6C1008-55PCN
                         ; The first 8KB is shadowed by the EPROM.
@@ -208,7 +326,7 @@
 0080: 6800                  .word   ISR_nop	    ; CTC channel 0
 0082: 6800                  .word   ISR_nop	    ; CTC channel 1
 0084: 6800                  .word   ISR_nop	    ; CTC channel 2
-0086: 3D01                  .word   ISR_ctc3	    ; CTC channel 3
+0086: 7401                  .word   ISR_ctc3	    ; CTC channel 3
                         ; TODO: ISRs for PIO & SIO
                         
                         ; void init()
@@ -220,14 +338,15 @@
 008E: FB       [28]         ei
                             ; clear 7-segment display
 008F: 2E00     [35]         ld	    l, 0
-0091: CD1C02   [52]         call    seg0_write
-0094: CD2302   [69]         call    seg1_write
-0097: CD1801   [86]         call    ctc_test
+0091: CD5302   [52]         call    seg0_write
+0094: CD5A02   [69]         call    seg1_write
+0097: CD4F01   [86]         call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
+009A: CD1801   [103]        call    sio_test
                         ;    call    figure8
                         ;    call    countup
                         ;    call    pio_test
-009A: CD4901   [103]        call    joy_test
-009D: 18FE     [115]        jr	    $		; loop forever
+                        ;    call    joy_test
+009D: 18FE     [115]        jr	    $		    ; loop forever
                         
                         ; void countup()
                         #local
@@ -237,12 +356,12 @@
                         ; increment count every 500ms and toggle DP
 00A2:                   forever:
 00A2: 6C       [ 4]         ld	    l, h
-00A3: CD9801   [21]         call    seg_writehex    ; display counter
+00A3: CDCF01   [21]         call    seg_writehex    ; display counter
 00A6: 2E80     [28]         ld	    l, SEG_DP
-00A8: CD0602   [45]         call    seg0_toggle	    ; toggle DP
+00A8: CD3D02   [45]         call    seg0_toggle	    ; toggle DP
 00AB: 2EFA     [52]         ld	    l, 250
-00AD: CD2A02   [69]         call    delay_ms	    ; delay 250ms
-00B0: CD2A02   [86]         call    delay_ms	    ; delay 250ms
+00AD: CD6102   [69]         call    delay_ms	    ; delay 250ms
+00B0: CD6102   [86]         call    delay_ms	    ; delay 250ms
 00B3: 24       [90]         inc	    h
 00B4: 18EC     [102]        jr	    forever
 00B6: E1       [112]        pop	    hl
@@ -259,13 +378,13 @@
 00BA: 0607     [ 7]         ld	    b, 7
 00BC:                   fig8_loop:
 00BC: 68       [ 4]         ld	    l, b
-00BD: CDE901   [21]         call    seg0_fig8
+00BD: CD2002   [21]         call    seg0_fig8
 00C0: 2E7D     [28]         ld	    l, 125
-00C2: CD2A02   [45]         call    delay_ms
+00C2: CD6102   [45]         call    delay_ms
 00C5: 05       [49]         dec	    b
 00C6: F2BC00   [59|59]      jp	    p, fig8_loop
 00C9: 2E80     [66]         ld	    l, SEG_DP
-00CB: CD0602   [83]         call    seg0_toggle
+00CB: CD3D02   [83]         call    seg0_toggle
 00CE: 18EA     [95]         jr	    forever
 00D0: C1       [105]        pop	    bc
 00D1: E1       [115]        pop	    hl
@@ -279,15 +398,15 @@
 00D4: C5       [22]         push    bc
                             ; configure PIO ports A and B
 00D5: 013204   [32]         ld	    bc, 0x0400 | PORT_PIOACTL
-00D8: 210901   [42]         ld	    hl, portA_cfg
+00D8: 210901   [42]         ld	    hl, pioA_cfg
 00DB: EDB3     [58|21]      otir
 00DD: 013303   [68]         ld	    bc, 0x0300 | PORT_PIOBCTL
-                            ; HL already points to portB_cfg
+                            ; HL already points to pioB_cfg
 00E0: EDB3     [84|21]      otir
 00E2: CD1001   [101]        call    pio_srclr		; clear shift register at startup
 00E5:                   forever:
 00E5: 2E80     [ 7]         ld	    l, SEG_DP
-00E7: CD1102   [24]         call    seg1_toggle
+00E7: CD4802   [24]         call    seg1_toggle
 00EA: DB30     [35]         in	    a, (PORT_PIOADAT)	; read PIO port A
 00EC: 2F       [39]         cpl				; invert SRPRTY and SRSTRT signals
 00ED: CB6F     [47]         bit	    5, a		; if SRSTRT is high, keep polling
@@ -298,23 +417,23 @@
 00F4: 87       [69]         add	    a, a
 00F5: 87       [73]         add	    a, a		; shift SRPRTY left 3 bits to bit 7 (SEG_DP)
 00F6: 6F       [77]         ld	    l, a
-00F7: CD1C02   [94]         call    seg0_write
+00F7: CD5302   [94]         call    seg0_write
                             ; read port B, displaying hex value after inverting
 00FA: DB31     [105]        in	    a, (PORT_PIOBDAT)
 00FC: 2F       [109]        cpl
 00FD: 6F       [113]        ld	    l, a
 00FE: CD1001   [130]        call    pio_srclr		; clear shift register to prepare for next byte
-0101: CD9801   [147]        call    seg_writehex
+0101: CDCF01   [147]        call    seg_writehex
 0104: 18DF     [159]        jr	    forever
 0106: C1       [169]        pop	    bc
 0107: E1       [179]        pop	    hl
 0108: C9       [189]        ret
-0109:                   portA_cfg:
+0109:                   pioA_cfg:
 0109: CF                    .byte PIOC_MODE | PIOMODE_CONTROL
 010A: F7                    .byte 0xF7	    ; A3 is an output (~SRCLR), everything else is an input
 010B: 37                    .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH | PIOICTL_MASKNXT
 010C: DF                    .byte 0xDF	    ; interrupt on A5 only (SRSTRT)
-010D:                   portB_cfg:
+010D:                   pioB_cfg:
 010D: CF                    .byte PIOC_MODE | PIOMODE_CONTROL
 010E: FF                    .byte 0xFF	    ; everything is an input
 010F: 27                    .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH
@@ -331,111 +450,154 @@
 0117: C9       [43]         ret
                         #endlocal
                         
+                        ; void sio_test()
+                        #local
+0118:                   sio_test::
+0118: E5       [11]         push    hl
+0119: C5       [22]         push    bc
+                            ; configure SIO port A
+011A: 012207   [32]         ld	    bc, 0x0700 | PORT_SIOACTL
+011D: 213D01   [42]         ld	    hl, sioA_cfg
+0120: EDB3     [58|21]      otir
+0122:                   forever:
+                            ; wait until transmitter is idle
+0122: 014401   [10]         ld	    bc, message
+0125:                   waitTX:
+0125: DB22     [11]         in	    a, (PORT_SIOACTL)
+0127: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0129: 28FA     [26|31]      jr	    z, waitTX
+012B: 0A       [33]         ld	    a, (bc)		; load next byte of message
+012C: FE00     [40]         cp	    0			; test for terminating NUL
+012E: 28F2     [47|52]      jr	    z, forever		; at end? restart loop
+0130: 03       [53]         inc	    bc			; advance HL to next message byte
+0131: D320     [64]         out	    (PORT_SIOADAT), a	; send byte out serial port
+0133: 2E80     [71]         ld	    l, SEG_DP		; toggle DP on segment 0
+0135: CD3D02   [88]         call    seg0_toggle
+0138: 18EB     [100]        jr	    waitTX
+013A: C1       [110]        pop	    bc
+013B: E1       [120]        pop	    hl
+013C: C9       [130]        ret
+013D:                   sioA_cfg:
+013D: 18                    .byte SIOWR0_CMD_RST_CHAN
+013E: 04                    .byte SIOWR0_PTR_R4
+013F: C4                    .byte SIOWR4_TXSTOP_1 | SIOWR4_CLK_x64
+                            ; No need to set up WR1/WR2, as they are only used for interrupts
+0140: 03                    .byte SIOWR0_PTR_R3
+0141: C1                    .byte SIOWR3_RXENA | SIOWR3_RX_8_BITS
+0142: 05                    .byte SIOWR0_PTR_R5
+0143: EA                    .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+                            ; No need to set up WR6/WR7, as they are only used for synchronous modes
+0144:                   message:
+0144: 5A383020              .asciz "Z80 lives!"
+0148: 6C697665          
+014C: 732100            
+                        #endlocal
+                        
                         ; void ctc_test()
                         #local
-0118:                   ctc_test::
+014F:                   ctc_test::
                             ; load CTC Interrupt Vector Register
-0118: 3E80     [ 7]         ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
-011A: D340     [18]         out	    (PORT_CTCIVEC), a
+014F: 3E80     [ 7]         ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
+0151: D340     [18]         out	    (PORT_CTCIVEC), a
                             ; channel 0 is the baud rate generator for serial 0
-011C: 3E57     [25]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
-011E: D340     [36]         out	    (PORT_CTC0), a
-0120: 3E03     [43]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
-0122: D340     [54]         out	    (PORT_CTC0), a
+0153: 3E57     [25]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+0155: D340     [36]         out	    (PORT_CTC0), a
+0157: 3E03     [43]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+0159: D340     [54]         out	    (PORT_CTC0), a
                             ; channel 1 is the baud rate generator for serial 1
-0124: 3E57     [61]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
-0126: D341     [72]         out	    (PORT_CTC1), a
-0128: 3E03     [79]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
-012A: D341     [90]         out	    (PORT_CTC1), a
+015B: 3E57     [61]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+015D: D341     [72]         out	    (PORT_CTC1), a
+015F: 3E03     [79]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+0161: D341     [90]         out	    (PORT_CTC1), a
                             ; channel 2 is used as a timer to divide down the system clock for channel 3
-012C: 3E17     [97]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
-012E: D342     [108]        out	    (PORT_CTC2), a
-0130: 3EFA     [115]        ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
-0132: D342     [126]        out	    (PORT_CTC2), a
+0163: 3E17     [97]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
+0165: D342     [108]        out	    (PORT_CTC2), a
+0167: 3EFA     [115]        ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
+0169: D342     [126]        out	    (PORT_CTC2), a
                             ; channel 3 is used as a counter on the 2.5kHz signal from channel 2
-0134: 3ED7     [133]        ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
-0136: D343     [144]        out	    (PORT_CTC3), a
-0138: 3EFA     [151]        ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
-013A: D343     [162]        out	    (PORT_CTC3), a
-013C: C9       [172]        ret
+016B: 3ED7     [133]        ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
+016D: D343     [144]        out	    (PORT_CTC3), a
+016F: 3EFA     [151]        ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
+0171: D343     [162]        out	    (PORT_CTC3), a
+0173: C9       [172]        ret
                         #endlocal
                         
                         ; CTC channel 3 ISR
-013D:                   ISR_ctc3::
-013D: 08       [ 4]         ex	    af, af'
-013E: D9       [ 8]         exx
-013F: 2E80     [15]         ld	    l, SEG_DP
-0141: CD1102   [32]         call    seg1_toggle
-0144: D9       [36]         exx
-0145: 08       [40]         ex	    af, af'
-0146: FB       [44]         ei
-0147: ED4D     [58]         reti
+0174:                   ISR_ctc3::
+0174: 08       [ 4]         ex	    af, af'
+0175: D9       [ 8]         exx
+0176: 2E80     [15]         ld	    l, SEG_DP
+0178: CD4802   [32]         call    seg1_toggle
+017B: D9       [36]         exx
+017C: 08       [40]         ex	    af, af'
+017D: FB       [44]         ei
+017E: ED4D     [58]         reti
                         
                         ; void joy_test()
                         #local
-0149:                   joy_test::
-0149: E5       [11]         push    hl
-014A:                   forever:
-014A: DB00     [11]         in	    a, (PORT_JOY0)	; read joystick 0
-014C: 6F       [15]         ld	    l, a
-014D: CD5701   [32]         call    joy_map2seg
-0150: CD1C02   [49]         call    seg0_write
+0180:                   joy_test::
+0180: E5       [11]         push    hl
+0181:                   forever:
+0181: DB00     [11]         in	    a, (PORT_JOY0)	; read joystick 0
+0183: 6F       [15]         ld	    l, a
+0184: CD8E01   [32]         call    joy_map2seg
+0187: CD5302   [49]         call    seg0_write
                         ;    in	    a, (PORT_JOY1)	; read joystick 1
                         ;    ld	    l, a
                         ;    call    joy_map2seg
                         ;    call    seg1_write
-0153: 18F5     [61]         jr	    forever
-0155: E1       [71]         pop	    hl
-0156: C9       [81]         ret
+018A: 18F5     [61]         jr	    forever
+018C: E1       [71]         pop	    hl
+018D: C9       [81]         ret
                         #endlocal
                         
                         ; uint8_t joy_map2seg(uint8_t joy)
                         ; - map the joystick status bits in "joy" to a value suitable for writing to the 7-segment display
                         #local
-0157:                   joy_map2seg::
-0157: AF       [ 4]         xor	    a			; start with no bits on 7-segment display
-0158: CB45     [12]         bit	    JOY_IDX_UP, l	; test for UP
-015A: 2002     [19|24]      jr	    nz, done_up
-015C: CBC7     [27]         set	    SEG_IDX_A, a	; turn on top segment
-015E:                   done_up:
-015E: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; test for DOWN
-0160: 2002     [15|20]      jr	    nz, done_down
-0162: CBDF     [23]         set	    SEG_IDX_D, a	; turn on bottom segment
-0164:                   done_down:
+018E:                   joy_map2seg::
+018E: AF       [ 4]         xor	    a			; start with no bits on 7-segment display
+018F: CB45     [12]         bit	    JOY_IDX_UP, l	; test for UP
+0191: 2002     [19|24]      jr	    nz, done_up
+0193: CBC7     [27]         set	    SEG_IDX_A, a	; turn on top segment
+0195:                   done_up:
+0195: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; test for DOWN
+0197: 2002     [15|20]      jr	    nz, done_down
+0199: CBDF     [23]         set	    SEG_IDX_D, a	; turn on bottom segment
+019B:                   done_down:
                             ; if neither UP nor DOWN are active, activate (clear) both to get both top & bottom side segments
-0164: CB45     [ 8]         bit	    JOY_IDX_UP, l
-0166: 2808     [15|20]      jr	    z, sides
-0168: CB4D     [23]         bit	    JOY_IDX_DOWN, l
-016A: 2804     [30|35]      jr	    z, sides
-016C: CB85     [38]         res	    JOY_IDX_UP, l
-016E: CB8D     [46]         res	    JOY_IDX_DOWN, l
-0170:                   sides:
-0170: CB55     [ 8]         bit	    JOY_IDX_LEFT, l	; test for LEFT
-0172: 200C     [15|20]      jr	    nz, done_left
-0174: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-left segment
-0176: 2002     [30|35]      jr	    nz, no_top_left
-0178: CBEF     [38]         set	    SEG_IDX_F, a
-017A:                   no_top_left:
-017A: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
-017C: 2002     [15|20]      jr	    nz, done_left
-017E: CBE7     [23]         set	    SEG_IDX_E, a
-0180:                   done_left:
-0180: CB5D     [ 8]         bit	    JOY_IDX_RIGHT, l	; test for RIGHT
-0182: 200C     [15|20]      jr	    nz, done_right
-0184: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-right segment
-0186: 2002     [30|35]      jr	    nz, no_top_right
-0188: CBCF     [38]         set	    SEG_IDX_B, a
-018A:                   no_top_right:
-018A: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
-018C: 2002     [15|20]      jr	    nz, done_right
-018E: CBD7     [23]         set	    SEG_IDX_C, a
-0190:                   done_right:
-0190: CB65     [ 8]         bit	    JOY_IDX_FIRE, l	; test for FIRE
-0192: 2002     [15|20]      jr	    nz, done_fire
-0194: CBFF     [23]         set	    SEG_IDX_DP, a
-0196:                   done_fire:
-0196: 6F       [ 4]         ld	    l, a		; return segment mask
-0197: C9       [14]         ret
+019B: CB45     [ 8]         bit	    JOY_IDX_UP, l
+019D: 2808     [15|20]      jr	    z, sides
+019F: CB4D     [23]         bit	    JOY_IDX_DOWN, l
+01A1: 2804     [30|35]      jr	    z, sides
+01A3: CB85     [38]         res	    JOY_IDX_UP, l
+01A5: CB8D     [46]         res	    JOY_IDX_DOWN, l
+01A7:                   sides:
+01A7: CB55     [ 8]         bit	    JOY_IDX_LEFT, l	; test for LEFT
+01A9: 200C     [15|20]      jr	    nz, done_left
+01AB: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-left segment
+01AD: 2002     [30|35]      jr	    nz, no_top_left
+01AF: CBEF     [38]         set	    SEG_IDX_F, a
+01B1:                   no_top_left:
+01B1: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
+01B3: 2002     [15|20]      jr	    nz, done_left
+01B5: CBE7     [23]         set	    SEG_IDX_E, a
+01B7:                   done_left:
+01B7: CB5D     [ 8]         bit	    JOY_IDX_RIGHT, l	; test for RIGHT
+01B9: 200C     [15|20]      jr	    nz, done_right
+01BB: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-right segment
+01BD: 2002     [30|35]      jr	    nz, no_top_right
+01BF: CBCF     [38]         set	    SEG_IDX_B, a
+01C1:                   no_top_right:
+01C1: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
+01C3: 2002     [15|20]      jr	    nz, done_right
+01C5: CBD7     [23]         set	    SEG_IDX_C, a
+01C7:                   done_right:
+01C7: CB65     [ 8]         bit	    JOY_IDX_FIRE, l	; test for FIRE
+01C9: 2002     [15|20]      jr	    nz, done_fire
+01CB: CBFF     [23]         set	    SEG_IDX_DP, a
+01CD:                   done_fire:
+01CD: 6F       [ 4]         ld	    l, a		; return segment mask
+01CE: C9       [14]         ret
                         #endlocal
                         
                         ; Library routines
@@ -443,185 +605,185 @@
                         
                         ; void seg_writehex(uint8_t val)
                         ; - write the two hex digits of "val" to the 7-segment displays
-0198:                   seg_writehex::
-0198: E5       [11]         push    hl
-0199: CDC001   [28]         call    seg1_writehex
-019C: 7D       [32]         ld	    a, l
-019D: 07       [36]         rlca
-019E: 07       [40]         rlca
-019F: 07       [44]         rlca
-01A0: 07       [48]         rlca
-01A1: 6F       [52]         ld	    l, a
-01A2: CDA701   [69]         call    seg0_writehex
-01A5: E1       [79]         pop	    hl
-01A6: C9       [89]         ret
+01CF:                   seg_writehex::
+01CF: E5       [11]         push    hl
+01D0: CDF701   [28]         call    seg1_writehex
+01D3: 7D       [32]         ld	    a, l
+01D4: 07       [36]         rlca
+01D5: 07       [40]         rlca
+01D6: 07       [44]         rlca
+01D7: 07       [48]         rlca
+01D8: 6F       [52]         ld	    l, a
+01D9: CDDE01   [69]         call    seg0_writehex
+01DC: E1       [79]         pop	    hl
+01DD: C9       [89]         ret
                         
                         ; void seg0_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-01A7:                   seg0_writehex::
-01A7: E5       [11]         push    hl
-01A8: C5       [22]         push    bc
-01A9: 01D901   [32]         ld	    bc, HEX_table
-01AC: 7D       [36]         ld	    a, l
-01AD: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-01AF: 6F       [47]         ld	    l, a
-01B0: 2600     [54]         ld	    h, 0
-01B2: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
-01B3: 3A0020   [78]         ld	    a, (Seg0_data)
-01B6: E680     [85]         and	    SEG_DP
-01B8: B6       [92]         or	    (hl)
-01B9: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | HEX_table[val & 0xF]
-01BA: CD1C02   [113]        call    seg0_write
-01BD: C1       [123]        pop	    bc
-01BE: E1       [133]        pop	    hl
-01BF: C9       [143]        ret
+01DE:                   seg0_writehex::
+01DE: E5       [11]         push    hl
+01DF: C5       [22]         push    bc
+01E0: 011002   [32]         ld	    bc, HEX_table
+01E3: 7D       [36]         ld	    a, l
+01E4: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+01E6: 6F       [47]         ld	    l, a
+01E7: 2600     [54]         ld	    h, 0
+01E9: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
+01EA: 3A0020   [78]         ld	    a, (Seg0_data)
+01ED: E680     [85]         and	    SEG_DP
+01EF: B6       [92]         or	    (hl)
+01F0: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | HEX_table[val & 0xF]
+01F1: CD5302   [113]        call    seg0_write
+01F4: C1       [123]        pop	    bc
+01F5: E1       [133]        pop	    hl
+01F6: C9       [143]        ret
                         
                         ; void seg1_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-01C0:                   seg1_writehex::
-01C0: E5       [11]         push    hl
-01C1: C5       [22]         push    bc
-01C2: 01D901   [32]         ld	    bc, HEX_table
-01C5: 7D       [36]         ld	    a, l
-01C6: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-01C8: 6F       [47]         ld	    l, a
-01C9: 2600     [54]         ld	    h, 0
-01CB: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
-01CC: 3A0120   [78]         ld	    a, (Seg1_data)
-01CF: E680     [85]         and	    SEG_DP
-01D1: B6       [92]         or	    (hl)
-01D2: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | HEX_table[val & 0xF]
-01D3: CD2302   [113]        call    seg1_write
-01D6: C1       [123]        pop	    bc
-01D7: E1       [133]        pop	    hl
-01D8: C9       [143]        ret
+01F7:                   seg1_writehex::
+01F7: E5       [11]         push    hl
+01F8: C5       [22]         push    bc
+01F9: 011002   [32]         ld	    bc, HEX_table
+01FC: 7D       [36]         ld	    a, l
+01FD: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+01FF: 6F       [47]         ld	    l, a
+0200: 2600     [54]         ld	    h, 0
+0202: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
+0203: 3A0120   [78]         ld	    a, (Seg1_data)
+0206: E680     [85]         and	    SEG_DP
+0208: B6       [92]         or	    (hl)
+0209: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | HEX_table[val & 0xF]
+020A: CD5A02   [113]        call    seg1_write
+020D: C1       [123]        pop	    bc
+020E: E1       [133]        pop	    hl
+020F: C9       [143]        ret
                         
-01D9:                   HEX_table::
+0210:                   HEX_table::
                             ; 0
-01D9: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
+0210: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
                             ; 1
-01DA: 06                    .byte SEG_B | SEG_C
+0211: 06                    .byte SEG_B | SEG_C
                             ; 2
-01DB: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
+0212: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
                             ; 3
-01DC: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
+0213: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
                             ; 4
-01DD: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
+0214: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
                             ; 5
-01DE: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
+0215: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
                             ; 6
-01DF: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+0216: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; 7
-01E0: 07                    .byte SEG_A | SEG_B | SEG_C
+0217: 07                    .byte SEG_A | SEG_B | SEG_C
                             ; 8
-01E1: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
+0218: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
                             ; 9
-01E2: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
+0219: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
                             ; A
-01E3: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
+021A: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
                             ; b
-01E4: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+021B: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; C
-01E5: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
+021C: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
                             ; d
-01E6: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
+021D: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
                             ; E
-01E7: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
+021E: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
                             ; F
-01E8: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
+021F: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
                         
                         ; void seg0_fig8(uint8_t step)
                         ; - advance first 7-segment display to specified figure-8 step (0-7)
-01E9:                   seg0_fig8::
-01E9: E5       [11]         push    hl
-01EA: C5       [22]         push    bc
-01EB: 01FE01   [32]         ld	    bc, FIG8_table
-01EE: 2600     [39]         ld	    h, 0
-01F0: 09       [50]         add	    hl, bc	; hl = FIG8_table + step
-01F1: 3A0020   [63]         ld	    a, (Seg0_data)
-01F4: E680     [70]         and	    SEG_DP
-01F6: B6       [77]         or	    (hl)
-01F7: 6F       [81]         ld	    l, a	; l = (*Seg0_data & SEG_DP) | FIG8_table[step]
-01F8: CD1C02   [98]         call    seg0_write
-01FB: C1       [108]        pop	    bc
-01FC: E1       [118]        pop	    hl
-01FD: C9       [128]        ret
+0220:                   seg0_fig8::
+0220: E5       [11]         push    hl
+0221: C5       [22]         push    bc
+0222: 013502   [32]         ld	    bc, FIG8_table
+0225: 2600     [39]         ld	    h, 0
+0227: 09       [50]         add	    hl, bc	; hl = FIG8_table + step
+0228: 3A0020   [63]         ld	    a, (Seg0_data)
+022B: E680     [70]         and	    SEG_DP
+022D: B6       [77]         or	    (hl)
+022E: 6F       [81]         ld	    l, a	; l = (*Seg0_data & SEG_DP) | FIG8_table[step]
+022F: CD5302   [98]         call    seg0_write
+0232: C1       [108]        pop	    bc
+0233: E1       [118]        pop	    hl
+0234: C9       [128]        ret
                         
-01FE:                   FIG8_table::
-01FE: 01024010              .byte SEG_A, SEG_B, SEG_G, SEG_E, SEG_D, SEG_C, SEG_G, SEG_F
-0202: 08044020          
+0235:                   FIG8_table::
+0235: 01024010              .byte SEG_A, SEG_B, SEG_G, SEG_E, SEG_D, SEG_C, SEG_G, SEG_F
+0239: 08044020          
                         
                         ; void seg0_toggle(uint8_t bits)
                         ; - toggle specified bits of first 7-segment display register
-0206:                   seg0_toggle::
-0206: E5       [11]         push    hl
-0207: 3A0020   [24]         ld	    a, (Seg0_data)
-020A: AD       [28]         xor	    l
-020B: 6F       [32]         ld	    l, a
-020C: CD1C02   [49]         call    seg0_write
-020F: E1       [59]         pop	    hl
-0210: C9       [69]         ret
+023D:                   seg0_toggle::
+023D: E5       [11]         push    hl
+023E: 3A0020   [24]         ld	    a, (Seg0_data)
+0241: AD       [28]         xor	    l
+0242: 6F       [32]         ld	    l, a
+0243: CD5302   [49]         call    seg0_write
+0246: E1       [59]         pop	    hl
+0247: C9       [69]         ret
                         
                         ; void seg1_toggle(uint8_t bits)
                         ; - toggle specified bits of second 7-segment display register
-0211:                   seg1_toggle::
-0211: E5       [11]         push    hl
-0212: 3A0120   [24]         ld	    a, (Seg1_data)
-0215: AD       [28]         xor	    l
-0216: 6F       [32]         ld	    l, a
-0217: CD2302   [49]         call    seg1_write
-021A: E1       [59]         pop	    hl
-021B: C9       [69]         ret
+0248:                   seg1_toggle::
+0248: E5       [11]         push    hl
+0249: 3A0120   [24]         ld	    a, (Seg1_data)
+024C: AD       [28]         xor	    l
+024D: 6F       [32]         ld	    l, a
+024E: CD5A02   [49]         call    seg1_write
+0251: E1       [59]         pop	    hl
+0252: C9       [69]         ret
                         
                         ; void seg0_write(uint8_t bits)
                         ; - write raw bits to first 7-segment display register
-021C:                   seg0_write::
-021C: 7D       [ 4]         ld	    a, l
-021D: 320020   [17]         ld	    (Seg0_data), a
-0220: D300     [28]         out	    (PORT_SEG0), a
-0222: C9       [38]         ret
+0253:                   seg0_write::
+0253: 7D       [ 4]         ld	    a, l
+0254: 320020   [17]         ld	    (Seg0_data), a
+0257: D300     [28]         out	    (PORT_SEG0), a
+0259: C9       [38]         ret
                         
                         ; void seg1_write(uint8_t bits)
                         ; - write raw bits to second 7-segment display register
-0223:                   seg1_write::
-0223: 7D       [ 4]         ld	    a, l
-0224: 320120   [17]         ld	    (Seg1_data), a
-0227: D310     [28]         out	    (PORT_SEG1), a
-0229: C9       [38]         ret
+025A:                   seg1_write::
+025A: 7D       [ 4]         ld	    a, l
+025B: 320120   [17]         ld	    (Seg1_data), a
+025E: D310     [28]         out	    (PORT_SEG1), a
+0260: C9       [38]         ret
                         
                         ; void delay_ms(uint8_t ms)
                         ; - delay for at least the specified number of milliseconds
                         #local
-022A:                   delay_ms::
-022A: 2C       [ 4]         inc	    l
-022B: 2D       [ 8]         dec	    l
-022C: C8       [13|19]      ret	    z		; delay of 0 returns immediately
-022D: C5       [24]         push    bc
-022E: 45       [28]         ld	    b, l
-022F:                   loop:
-022F: CD3602   [17]         call    delay_1ms
-0232: 10FB     [25|30]      djnz    loop
-0234: C1       [35]         pop	    bc
-0235: C9       [45]         ret
+0261:                   delay_ms::
+0261: 2C       [ 4]         inc	    l
+0262: 2D       [ 8]         dec	    l
+0263: C8       [13|19]      ret	    z		; delay of 0 returns immediately
+0264: C5       [24]         push    bc
+0265: 45       [28]         ld	    b, l
+0266:                   loop:
+0266: CD6D02   [17]         call    delay_1ms
+0269: 10FB     [25|30]      djnz    loop
+026B: C1       [35]         pop	    bc
+026C: C9       [45]         ret
                         #endlocal
                         
                         ; void delay_1ms()
                         ; - delay for 1ms (technically, 0.9999ms)
                         #local
-0236:                   delay_1ms::
-0236: C5       [11]         push    bc		; 11 T-states
+026D:                   delay_1ms::
+026D: C5       [11]         push    bc		; 11 T-states
                         ; To delay 1ms, we want to wait 10,000 T-states (@10MHz)
                         ; The loop is (38*b + 13*(b-1) + 8) T-states long
                         ; Rearranging: 51*b - 5
                         ; Solve for b: b = (10000 + 5 / 51) = 196.17
-0237: 06C3     [18]         ld	    b, 195	; 7 T-states
-0239:                   loop:
-0239: E3       [19]         ex	    (sp), hl	; 19 T-states
-023A: E3       [38]         ex	    (sp), hl	; 19 T-states
-023B: 10FC     [46|51]      djnz    loop	; (b-1)*13+8 T-states
-023D: C1       [56]         pop	    bc		; 10 T-states
-023E: 00       [60]         nop			; 4 T-states
-023F: C9       [70]         ret			; 10 T-states
+026E: 06C3     [18]         ld	    b, 195	; 7 T-states
+0270:                   loop:
+0270: E3       [19]         ex	    (sp), hl	; 19 T-states
+0271: E3       [38]         ex	    (sp), hl	; 19 T-states
+0272: 10FC     [46|51]      djnz    loop	; (b-1)*13+8 T-states
+0274: C1       [56]         pop	    bc		; 10 T-states
+0275: 00       [60]         nop			; 4 T-states
+0276: C9       [70]         ret			; 10 T-states
                         ; We also assume the routine is CALLed, for 17 T-states.
                         ; Total delay is therefore:
                         ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
@@ -632,5 +794,5 @@
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0130 sec.
+total time: 0.0142 sec.
 no errors

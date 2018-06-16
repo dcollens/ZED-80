@@ -20,6 +20,7 @@
 #include "joystick.inc"
 #include "z84c20.inc"
 #include "z84c30.inc"
+#include "z84c40.inc"
 
 ; 128KB Static RAM - AS6C1008-55PCN
 ; The first 8KB is shadowed by the EPROM.
@@ -102,12 +103,13 @@ init::
     ld	    l, 0
     call    seg0_write
     call    seg1_write
-    call    ctc_test
+    call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
+    call    sio_test
 ;    call    figure8
 ;    call    countup
 ;    call    pio_test
-    call    joy_test
-    jr	    $		; loop forever
+;    call    joy_test
+    jr	    $		    ; loop forever
 
 ; void countup()
 #local
@@ -159,10 +161,10 @@ pio_test::
     push    bc
     ; configure PIO ports A and B
     ld	    bc, 0x0400 | PORT_PIOACTL
-    ld	    hl, portA_cfg
+    ld	    hl, pioA_cfg
     otir
     ld	    bc, 0x0300 | PORT_PIOBCTL
-    ; HL already points to portB_cfg
+    ; HL already points to pioB_cfg
     otir
     call    pio_srclr		; clear shift register at startup
 forever:
@@ -189,12 +191,12 @@ forever:
     pop	    bc
     pop	    hl
     ret
-portA_cfg:
+pioA_cfg:
     .byte PIOC_MODE | PIOMODE_CONTROL
     .byte 0xF7	    ; A3 is an output (~SRCLR), everything else is an input
     .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH | PIOICTL_MASKNXT
     .byte 0xDF	    ; interrupt on A5 only (SRSTRT)
-portB_cfg:
+pioB_cfg:
     .byte PIOC_MODE | PIOMODE_CONTROL
     .byte 0xFF	    ; everything is an input
     .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH
@@ -209,6 +211,47 @@ pio_srclr::
     ld	    a, 0x08	; bit 3
     out	    (PORT_PIOADAT), a
     ret
+#endlocal
+
+; void sio_test()
+#local
+sio_test::
+    push    hl
+    push    bc
+    ; configure SIO port A
+    ld	    bc, 0x0700 | PORT_SIOACTL
+    ld	    hl, sioA_cfg
+    otir
+forever:
+    ; wait until transmitter is idle
+    ld	    bc, message
+waitTX:
+    in	    a, (PORT_SIOACTL)
+    bit	    SIORR0_IDX_TBE, a
+    jr	    z, waitTX
+    ld	    a, (bc)		; load next byte of message
+    cp	    0			; test for terminating NUL
+    jr	    z, forever		; at end? restart loop
+    inc	    bc			; advance HL to next message byte
+    out	    (PORT_SIOADAT), a	; send byte out serial port
+    ld	    l, SEG_DP		; toggle DP on segment 0
+    call    seg0_toggle
+    jr	    waitTX
+    pop	    bc
+    pop	    hl
+    ret
+sioA_cfg:
+    .byte SIOWR0_CMD_RST_CHAN
+    .byte SIOWR0_PTR_R4
+    .byte SIOWR4_TXSTOP_1 | SIOWR4_CLK_x64
+    ; No need to set up WR1/WR2, as they are only used for interrupts
+    .byte SIOWR0_PTR_R3
+    .byte SIOWR3_RXENA | SIOWR3_RX_8_BITS
+    .byte SIOWR0_PTR_R5
+    .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+    ; No need to set up WR6/WR7, as they are only used for synchronous modes
+message:
+    .asciz "Z80 lives!"
 #endlocal
 
 ; void ctc_test()
