@@ -223,20 +223,26 @@ sio_test::
     ld	    hl, sioA_cfg
     otir
 forever:
+    ; wait for an input character
+waitRX:
+    in	    a, (PORT_SIOACTL)
+    bit	    SIORR0_IDX_RCA, a
+    jr	    z, waitRX
+    ; read input character
+    in	    a, (PORT_SIOADAT)
+    ld	    l, a
     ; wait until transmitter is idle
-    ld	    bc, message
 waitTX:
     in	    a, (PORT_SIOACTL)
     bit	    SIORR0_IDX_TBE, a
     jr	    z, waitTX
-    ld	    a, (bc)		; load next byte of message
-    cp	    0			; test for terminating NUL
-    jr	    z, forever		; at end? restart loop
-    inc	    bc			; advance HL to next message byte
+    ; write output character
+    ld	    a, l
     out	    (PORT_SIOADAT), a	; send byte out serial port
     ld	    l, SEG_DP		; toggle DP on segment 0
     call    seg0_toggle
-    jr	    waitTX
+    ; repeat
+    jr	    forever
     pop	    bc
     pop	    hl
     ret
@@ -250,8 +256,6 @@ sioA_cfg:
     .byte SIOWR0_PTR_R5
     .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
     ; No need to set up WR6/WR7, as they are only used for synchronous modes
-message:
-    .asciz "Z80 lives!"
 #endlocal
 
 ; void ctc_test()
