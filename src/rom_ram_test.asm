@@ -222,23 +222,47 @@ sio_test::
     ld	    bc, 0x0700 | PORT_SIOACTL
     ld	    hl, sioA_cfg
     otir
+    ; configure SIO port B
+    ld	    bc, 0x0700 | PORT_SIOBCTL
+    ld	    hl, sioA_cfg
+    otir
 forever:
     ; wait for an input character
 waitRX:
     in	    a, (PORT_SIOACTL)
     bit	    SIORR0_IDX_RCA, a
+    jr	    nz, doRXA
+    in	    a, (PORT_SIOBCTL)
+    bit	    SIORR0_IDX_RCA, a
     jr	    z, waitRX
+doRXB:
+    ; read input character
+    in	    a, (PORT_SIOBDAT)
+    ld	    l, a
+waitTXB:
+    ; wait until transmitter is idle
+    in	    a, (PORT_SIOBCTL)
+    bit	    SIORR0_IDX_TBE, a
+    jr	    z, waitTXB
+    ; write output character
+    ld	    a, l
+    out	    (PORT_SIOBDAT), a	; send byte out serial port
+    jr	    writeSeg
+doRXA:
     ; read input character
     in	    a, (PORT_SIOADAT)
     ld	    l, a
+waitTXA:
     ; wait until transmitter is idle
-waitTX:
     in	    a, (PORT_SIOACTL)
     bit	    SIORR0_IDX_TBE, a
-    jr	    z, waitTX
+    jr	    z, waitTXA
     ; write output character
     ld	    a, l
     out	    (PORT_SIOADAT), a	; send byte out serial port
+writeSeg:
+    ; write it to the 7-segment display
+    call    seg_writehex
     ld	    l, SEG_DP		; toggle DP on segment 0
     call    seg0_toggle
     ; repeat
