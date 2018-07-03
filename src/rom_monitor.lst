@@ -1,0 +1,1035 @@
+                        ; --------------------------------------
+                        ; zasm: assemble "rom_monitor.asm"
+                        ; date: 2018-07-02 22:53:33
+                        ; --------------------------------------
+
+
+                        ; Calling convention used in this program
+                        ; ---------------------------------------
+                        ;
+                        ; Unless otherwise noted, the first parameter, and the return value are stored as follows:
+                        ; 8 bits: L
+                        ; 16 bits: HL
+                        ; 32 bits: DEHL
+                        ;
+                        ; Additional parameters are passed on the stack, left-to-right.
+                        ; Parameters and return values larger than 32 bits are passed on the stack (return value
+                        ; space set up by caller as a hidden first argument).
+                        ; Callee saves/restores any modified registers.
+                        ; Caller pops arguments after call returns.
+                        ; AF registers are scratch (caller preserves, if needed).
+                        
+                        ; same as 'bin', except that the default fill byte for 'defs' etc. is 0xff
+                        #target rom
+                        
+                        #include "z80.inc"
+                        ; Macros and definitions related to the Z80 and its instruction set
+                        
+                        M_deref_hl	macro
+                            ; hl = (hl)
+                            ; destroys a
+                            ld	    a, (hl)
+                            inc	    hl
+                            ld	    h, (hl)
+                            ld	    l, a
+                            endm
+                        #include "7segdisp.inc"
+0000:                   PORT_SEG0	equ 0x00	    ; port address for first 7-segment display element
+0010:                   PORT_SEG1	equ 0x10	    ; port address for second 7-segment display element
+                        
+                        ; 7-segment display map
+                        ;      A
+                        ;  +-------+
+                        ;  |       |
+                        ; F|       |B
+                        ;  |   G   |
+                        ;  +-------+
+                        ;  |       |
+                        ; E|       |C
+                        ;  |   D   |
+                        ;  +-------+  .DP
+                        
+                        ; These values are the bit masks.
+0001:                   SEG_A		equ 0x01	; segment A
+0002:                   SEG_B		equ 0x02	; segment B
+0004:                   SEG_C		equ 0x04	; segment C
+0008:                   SEG_D		equ 0x08	; segment D
+0010:                   SEG_E		equ 0x10	; segment E
+0020:                   SEG_F		equ 0x20	; segment F
+0040:                   SEG_G		equ 0x40	; segment G
+0080:                   SEG_DP		equ 0x80	; decimal point
+                        
+                        ; These are the bit numbers (useful for bit, set, and res instructions).
+0000:                   SEG_IDX_A	equ 0
+0001:                   SEG_IDX_B	equ 1
+0002:                   SEG_IDX_C	equ 2
+0003:                   SEG_IDX_D	equ 3
+0004:                   SEG_IDX_E	equ 4
+0005:                   SEG_IDX_F	equ 5
+0006:                   SEG_IDX_G	equ 6
+0007:                   SEG_IDX_DP	equ 7
+                        #include "joystick.inc"
+0000:                   PORT_JOY0	equ 0x00	    ; port address for first joystick (read-only)
+0010:                   PORT_JOY1	equ 0x10	    ; port address for second joystick (read-only)
+                        
+                        ; Bit masks for the values in the joystick status register.
+                        ; These bits are active-low (normally high).
+0001:                   JOY_UP		equ 0x01
+0002:                   JOY_DOWN	equ 0x02
+0004:                   JOY_LEFT	equ 0x04
+0008:                   JOY_RIGHT	equ 0x08
+0010:                   JOY_FIRE	equ 0x10
+0020:                   JOY_RESERVED1	equ 0x20
+0040:                   JOY_RESERVED2	equ 0x40
+0080:                   JOY_RESERVED3	equ 0x80
+                        
+                        ; The bit numbers (useful for bit, set, and res instructions).
+0000:                   JOY_IDX_UP	equ 0
+0001:                   JOY_IDX_DOWN	equ 1
+0002:                   JOY_IDX_LEFT	equ 2
+0003:                   JOY_IDX_RIGHT	equ 3
+0004:                   JOY_IDX_FIRE	equ 4
+                        #include "z84c20.inc"
+                        ; The Z84C20 is the Z80's PIO peripheral. See um0081.pdf for documentation.
+                        
+0030:                   PORT_PIOBASE	equ 0x30		; base port address for PIO chip
+0030:                   PORT_PIOADAT	equ PORT_PIOBASE	; port address for PIO port A, data register
+0031:                   PORT_PIOBDAT	equ PORT_PIOBASE + 1    ; port address for PIO port B, data register
+0032:                   PORT_PIOACTL	equ PORT_PIOBASE + 2    ; port address for PIO port A, control register
+0033:                   PORT_PIOBCTL	equ PORT_PIOBASE + 3    ; port address for PIO port B, control register
+                        
+                        ; PIO Control Register commands
+0000:                   PIOC_IVEC	equ 0x00	; OR in the high 7 bits of the interrupt vector
+000F:                   PIOC_MODE	equ 0x0F	; OR in the desired PIOMODE_xxx setting
+0007:                   PIOC_ICTL	equ 0x07	; OR in the desired PIOICTL_xxx settings
+                        
+                        ; PIOC_MODE values
+0000:                   PIOMODE_OUTPUT	equ 0x00
+0040:                   PIOMODE_INPUT	equ 0x40
+0080:                   PIOMODE_BIDIREC	equ 0x80
+00C0:                   PIOMODE_CONTROL	equ 0xC0	; next control byte written must be the IO direction byte
+                        				; 1 = input, 0 = output
+                        
+                        ; PIOC_ICTL values
+0080:                   PIOICTL_INTENA	equ 0x80	; enable interrupts
+0000:                   PIOICTL_INTDIS	equ 0x00	; disable interrupts
+0040:                   PIOICTL_AND	equ 0x40	; AND inputs together for port monitoring interrupt
+0000:                   PIOICTL_OR	equ 0x00	; OR inputs together for port monitoring interrupt
+0020:                   PIOICTL_HIGH	equ 0x20	; interrupt on high (1) inputs
+0000:                   PIOICTL_LOW	equ 0x00	; interrupt on low (0) inputs
+0010:                   PIOICTL_MASKNXT equ 0x10	; next control byte written must be the input interrupt mask
+                        				; 1 = input masked, 0 = input enabled
+                        
+                        M_pio_reset	macro
+                            ld	    a, PIOC_MODE | PIOMODE_INPUT
+                            out	    (PORT_PIOACTL), a
+                            out	    (PORT_PIOBCTL), a
+                            ld	    a, PIOC_ICTL | PIOICTL_INTDIS
+                            out	    (PORT_PIOACTL), a
+                            out	    (PORT_PIOBCTL), a
+                            endm
+                        #include "z84c30.inc"
+                        ; The Z84C30 is the Z80's CTC peripheral. See um0081.pdf for documentation.
+                        
+0040:                   PORT_CTCBASE	equ 0x40		; base port address for CTC chip
+0040:                   PORT_CTCIVEC	equ PORT_CTCBASE	; port address for Interrupt Vector Register
+0040:                   PORT_CTC0	equ PORT_CTCBASE	; port address for CTC channel 0
+0041:                   PORT_CTC1	equ PORT_CTCBASE + 1	; port address for CTC channel 1
+0042:                   PORT_CTC2	equ PORT_CTCBASE + 2	; port address for CTC channel 2
+0043:                   PORT_CTC3	equ PORT_CTCBASE + 3	; port address for CTC channel 3
+                        
+                        ; CTC Channel Control Word bits
+0080:                   CTC_INTENA	equ 0x80		; enable interrupts
+0000:                   CTC_INTDIS	equ 0x00		; disable interrupts
+0040:                   CTC_MODECTR	equ 0x40		; COUNTER mode
+0000:                   CTC_MODETMR	equ 0x00		; TIMER mode
+0020:                   CTC_SCALE256	equ 0x20		; prescale by 256
+0000:                   CTC_SCALE16	equ 0x00		; prescale by 16
+0010:                   CTC_RISING	equ 0x10		; CLK/TRG on rising edges
+0000:                   CTC_FALLING	equ 0x00		; CLK/TRG on falling edges
+0008:                   CTC_CLKTRG	equ 0x08		; CLK/TRG pulse starts timer
+0000:                   CTC_AUTO	equ 0x00		; automatic timer start after loading time constant
+0004:                   CTC_TIMENXT	equ 0x04		; next control byte written is the time constant
+0002:                   CTC_RESET	equ 0x02		; software reset
+0001:                   CTC_CONTROL	equ 0x01		; always set to indicate this is a control word, not IVEC 
+                        
+                        M_ctc_reset	macro
+                            ld	    a, CTC_CONTROL | CTC_RESET | CTC_INTDIS
+                            out	    (PORT_CTC0), a
+                            out	    (PORT_CTC1), a
+                            out	    (PORT_CTC2), a
+                            out	    (PORT_CTC3), a
+                            endm
+                        #include "z84c40.inc"
+                        ; The Z84C40 is the Z80's SIO peripheral. See um0081.pdf for documentation.
+                        
+0020:                   PORT_SIOBASE	    equ 0x20		    ; base port address for SIO chip
+0020:                   PORT_SIOADAT	    equ PORT_SIOBASE	    ; port address for SIO port A, data register
+0021:                   PORT_SIOBDAT	    equ PORT_SIOBASE + 1    ; port address for SIO port B, data register
+0022:                   PORT_SIOACTL	    equ PORT_SIOBASE + 2    ; port address for SIO port A, control register
+0023:                   PORT_SIOBCTL	    equ PORT_SIOBASE + 3    ; port address for SIO port B, control register
+                        
+                        ; WR0 "CRC Reset Code" values (bits 7-6)
+0000:                   SIOWR0_CRC_NOP		equ 0x00	    ; no CRC reset code
+0040:                   SIOWR0_CRC_RST_RX_CHK	equ 1 << 6	    ; reset RX CRC checker
+0080:                   SIOWR0_CRC_RST_TX_GEN	equ 2 << 6	    ; reset TX CRC generator
+00C0:                   SIOWR0_CRC_RST_TX_UNDR  equ 3 << 6	    ; reset TX underrun/EOM latch
+                        
+                        ; WR0 "Command" values (bits 5-3)
+0000:                   SIOWR0_CMD_NOP		equ 0x00	    ; no command
+0008:                   SIOWR0_CMD_SND_ABRT	equ 1 << 3	    ; send abort (SDLC only)
+0010:                   SIOWR0_CMD_RST_EXTINT	equ 2 << 3	    ; reset external/status interrupts
+0018:                   SIOWR0_CMD_RST_CHAN	equ 3 << 3	    ; reset channel
+0020:                   SIOWR0_CMD_INTENA_NXTRX	equ 4 << 3	    ; enable interrupt on next receive character
+0028:                   SIOWR0_CMD_RST_TXINTPND equ 5 << 3	    ; reset TX interrupt pending
+0030:                   SIOWR0_CMD_RST_ERR	equ 6 << 3	    ; reset error latches
+0038:                   SIOWR0_CMD_INTRETN	equ 7 << 3	    ; return from interrupt (not needed with Z80)
+                        
+                        ; WR0 "Pointer" values (bits 2-0)
+0000:                   SIOWR0_PTR_R0		equ 0x00	    ; set pointer to register 0
+0001:                   SIOWR0_PTR_R1		equ 0x01	    ; set pointer to register 1
+0002:                   SIOWR0_PTR_R2		equ 0x02	    ; set pointer to register 2
+0003:                   SIOWR0_PTR_R3		equ 0x03	    ; set pointer to register 3
+0004:                   SIOWR0_PTR_R4		equ 0x04	    ; set pointer to register 4
+0005:                   SIOWR0_PTR_R5		equ 0x05	    ; set pointer to register 5
+0006:                   SIOWR0_PTR_R6		equ 0x06	    ; set pointer to register 6
+0007:                   SIOWR0_PTR_R7		equ 0x07	    ; set pointer to register 7
+                        
+                        ; WR1 interrupt & wait/ready control bits
+0001:                   SIOWR1_EXTINTENA	equ 0x01	    ; external/status interrupt enable
+0002:                   SIOWR1_TXINTENA		equ 0x02	    ; TX interrupt enable
+0004:                   SIOWR1_STATIVEC		equ 0x04	    ; status affects interrupt vector (set in ch. B only)
+0000:                   SIOWR1_RXINT_DISABLE	equ 0 << 3	    ; RX interrupts disabled
+0008:                   SIOWR1_RXINT_FIRST	equ 1 << 3	    ; RX interrupt on first character
+0010:                   SIOWR1_RXINT_ALLPRTY	equ 2 << 3	    ; RX interrupt on all characters, parity err is SR cond
+0018:                   SIOWR1_RXINT_ALLNPRTY	equ 3 << 3	    ; RX interrupt on all characters, parity err no intr
+                        ; bits 7-5 are for WAIT/READY functions, which we don't use (always write as 0)
+                        
+                        ; WR2 is the interrupt vector register (set in channel B only)
+                        
+                        ; WR3 receiver logic control bits
+0001:                   SIOWR3_RXENA		equ 0x01	    ; receiver enable
+0002:                   SIOWR3_SYNC_INHIBIT	equ 0x02	    ; sync character load inhibit
+0004:                   SIOWR3_ADDR_SRCHMODE	equ 0x04	    ; address search mode
+0008:                   SIOWR3_RXCRCENA		equ 0x08	    ; receiver CRC enable
+0010:                   SIOWR3_ENTER_HUNT	equ 0x10	    ; enter hunt phase
+0020:                   SIOWR3_AUTO_ENABLES	equ 0x20	    ; auto enables (DCD/CTS are RX/TX enables)
+0000:                   SIOWR3_RX_5_BITS	equ 0 << 6	    ; receive 5 bits/character
+0040:                   SIOWR3_RX_7_BITS	equ 1 << 6	    ; receive 7 bits/character
+0080:                   SIOWR3_RX_6_BITS	equ 2 << 6	    ; receive 6 bits/character
+00C0:                   SIOWR3_RX_8_BITS	equ 3 << 6	    ; receive 8 bits/character
+                        
+                        ; WR4 RX/TX configuration (set first before WR1, WR3, WR5, WR6, and WR7)
+0001:                   SIOWR4_PARITY		equ 0x01	    ; parity on/off
+0002:                   SIOWR4_PRTY_EVEN	equ 0x02	    ; even parity
+0000:                   SIOWR4_PRTY_ODD		equ 0x00	    ; odd parity
+0000:                   SIOWR4_TXSTOP_SYNC	equ 0 << 2	    ; synchronous mode (no TX stop bits)
+0004:                   SIOWR4_TXSTOP_1		equ 1 << 2	    ; 1 TX stop bit
+0008:                   SIOWR4_TXSTOP_1_5	equ 2 << 2	    ; 1.5 TX stop bits
+000C:                   SIOWR4_TXSTOP_2		equ 3 << 2	    ; 2 TX stop bits
+                        ; bits 5-4 set the sync modes, which we don't use (always write as 0)
+0000:                   SIOWR4_CLK_x1		equ 0 << 6	    ; data rate x1 = clock rate
+0040:                   SIOWR4_CLK_x16		equ 1 << 6	    ; data rate x16 = clock rate
+0080:                   SIOWR4_CLK_x32		equ 2 << 6	    ; data rate x32 = clock rate
+00C0:                   SIOWR4_CLK_x64		equ 3 << 6	    ; data rate x64 = clock rate
+                        
+                        ; WR5 transmitter logic control bits
+0001:                   SIOWR5_TXCRCENA		equ 0x01	    ; transmitter CRC enable
+0002:                   SIOWR5_RTS		equ 0x02	    ; request to send
+0004:                   SIOWR5_CRC16_SDLC	equ 0x04	    ; CRC-16 vs. SDLC polynomial
+0008:                   SIOWR5_TXENA		equ 0x08	    ; transmitter enable
+0010:                   SIOWR5_SND_BRK		equ 0x10	    ; send break
+0000:                   SIOWR5_TX_5_BITS	equ 0 << 5	    ; transmit 5 bits/character
+0020:                   SIOWR5_TX_7_BITS	equ 1 << 5	    ; transmit 7 bits/character
+0040:                   SIOWR5_TX_6_BITS	equ 2 << 5	    ; transmit 6 bits/character
+0060:                   SIOWR5_TX_8_BITS	equ 3 << 5	    ; transmit 8 bits/character
+0080:                   SIOWR5_DTR		equ 0x80	    ; data terminal ready
+                        
+                        ; WR6 transmitter sync register for use in synchronous modes, which we don't use
+                        ; WR7 receiver sync register for use in synchronous modes, which we don't use
+                        
+                        ; RR0 status bits (mostly normal operation)
+0001:                   SIORR0_RCA		equ 0x01	    ; RX character available
+0002:                   SIORR0_INTPND		equ 0x02	    ; interrupt pending (channel A only)
+0004:                   SIORR0_TBE		equ 0x04	    ; TX buffer empty
+0008:                   SIORR0_DCD		equ 0x08	    ; latched DCD input bit
+0010:                   SIORR0_SYNC		equ 0x10	    ; latched SYNC input bit (hunt in SDLC)
+0020:                   SIORR0_CTS		equ 0x20	    ; latched CTS input bit
+0040:                   SIORR0_TX_UNDR		equ 0x40	    ; TX underrun / end of message
+0080:                   SIORR0_BRK_ABRT		equ 0x80	    ; break/abort detected
+                        ; As bit numbers, useful for the "bit" instruction, to test individual bit flags
+0000:                   SIORR0_IDX_RCA		equ 0
+0001:                   SIORR0_IDX_INTPND	equ 1
+0002:                   SIORR0_IDX_TBE		equ 2
+0003:                   SIORR0_IDX_DCD		equ 3
+0004:                   SIORR0_IDX_SYNC		equ 4
+0005:                   SIORR0_IDX_CTS		equ 5
+0006:                   SIORR0_IDX_TX_UNDR	equ 6
+0007:                   SIORR0_IDX_BRK_ABRT	equ 7
+                        
+                        ; RR1 status bits (mostly errors)
+0001:                   SIORR1_ALLSENT		equ 0x01	    ; all characters fully sent
+                        ; bits 3-1 are SDLC-only
+0010:                   SIORR1_PRTYERR		equ 0x10	    ; parity error
+0020:                   SIORR1_ROE		equ 0x20	    ; RX overrun error
+0040:                   SIORR1_CRCFRMERR	equ 0x40	    ; CRC/framing error
+                        ; bit 7 is SDLC-only
+                        
+                        ; RR2 is the interrupt vector register (read from channel B only)
+                        ; - if "Status Affects Vector" bit is set, this will be the current vector value,
+                        ;   modified by whatever interrupt conditions are pending
+                        
+                        M_sio_reset	macro
+                            ld	    a, SIOWR0_CMD_RST_CHAN
+                            out	    (PORT_SIOACTL), a
+                            out	    (PORT_SIOBCTL), a
+                            endm
+                        #include "ascii.inc"
+0000:                   NUL	equ 0x00
+0001:                   SOH	equ 0x01
+0004:                   EOT	equ 0x04
+0006:                   ACK	equ 0x06
+0007:                   BEL	equ 0x07
+0008:                   BS	equ 0x08
+0009:                   HT	equ 0x09
+000A:                   LF	equ 0x0A
+000D:                   CR	equ 0x0D
+0015:                   NAK	equ 0x15
+001B:                   ESC	equ 0x1B
+                        
+                        ; some macros that we have to declare before use
+                        M_sio_puts  macro str
+                            ld	    hl, &str
+                            call    sio_puts
+                            endm
+                        
+                        ; 128KB Static RAM - AS6C1008-55PCN
+                        ; The first 8KB is shadowed by the EPROM.
+                        ; The next 56KB is mapped from 0x2000-0xFFFF.
+                        ; The top 64KB is not addressable (A16 tied low).
+2000:                   #data RAM, 0x2000, 0xE000
+                        ; define static variables here
+2000: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
+2001: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
+                        
+                        ; 128KB Flash ROM - SST39SF010A
+                        ; The first 8KB is mapped from 0-0x1FFF.
+0000:                   #code ROM, 0, 0x2000
+                        
+                        ; reset vector
+0000:                   RST0::
+0000: F3       [ 4]         di
+0001: 31FFFF   [14]         ld	    sp, RAM_end-1
+0004: C3A100   [24]         jp	    init
+0007: FF                    defs    0x08-$
+                        
+0008:                   RST1::
+0008: ED4D     [14]         reti
+000A: FFFFFFFF              defs    0x10-$
+000E: FFFF              
+                        
+0010:                   RST2::
+0010: ED4D     [14]         reti
+0012: FFFFFFFF              defs    0x18-$
+0016: FFFF              
+                        
+0018:                   RST3::
+0018: ED4D     [14]         reti
+001A: FFFFFFFF              defs    0x20-$
+001E: FFFF              
+                        
+0020:                   RST4::
+0020: ED4D     [14]         reti
+0022: FFFFFFFF              defs    0x28-$
+0026: FFFF              
+                        
+0028:                   RST5::
+0028: ED4D     [14]         reti
+002A: FFFFFFFF              defs    0x30-$
+002E: FFFF              
+                        
+0030:                   RST6::
+0030: ED4D     [14]         reti
+0032: FFFFFFFF              defs    0x38-$
+0036: FFFF              
+                        
+                        ; maskable interrupt handler in interrupt mode 1:
+0038:                   RST7::
+0038: ED4D     [14]         reti
+                        
+                        ; non maskable interrupt:
+                        ; e.g. call debugger and on exit resume.
+003A: FFFFFFFF              defs    0x66-$
+003E: FF...             
+0066:                   NMI::
+0066: ED45     [14]         retn
+                        
+                        ; Empty ISR for interrupts we want to ignore
+0068:                   ISR_nop::
+0068: FB       [ 4]         ei
+0069: ED4D     [18]         reti
+                        
+006B: FFFFFFFF              defs    0x80-$
+006F: FF...             
+                        ; Interrupt Vector Table
+0080:                   IVT::
+                        ; Table starts at 0x0080
+                        ; CTC has first 4 slots, so CTC Interrupt Vector register should be 0x80
+0080: 6800                  .word   ISR_nop	    ; CTC channel 0
+0082: 6800                  .word   ISR_nop	    ; CTC channel 1
+0084: 6800                  .word   ISR_nop	    ; CTC channel 2
+0086: 0201                  .word   ISR_ctc3	    ; CTC channel 3
+                        ; TODO: ISRs for PIO & SIO
+                        
+0088:                   startup_msg::
+0088: 0D0A5A38              .text   CR, LF, "Z80MON v1 ", __date__
+008C: 304D4F4E          
+0090: 20763120          
+0094: 32303138          
+0098: 2D30372D          
+009C: 3032              
+                            ; Falling through...
+009E:                   crlf::
+009E: 0D0A00                .text   CR, LF, NUL
+                        
+                        ; void init()
+00A1:                   init::
+                            ; reset peripherals
+                            M_pio_reset
+00A1: 3E4F     [ 7]         ld	    a, PIOC_MODE | PIOMODE_INPUT
+00A3: D332     [18]         out	    (PORT_PIOACTL), a
+00A5: D333     [29]         out	    (PORT_PIOBCTL), a
+00A7: 3E07     [36]         ld	    a, PIOC_ICTL | PIOICTL_INTDIS
+00A9: D332     [47]         out	    (PORT_PIOACTL), a
+00AB: D333     [58]         out	    (PORT_PIOBCTL), a
+                            M_sio_reset
+00AD: 3E18     [65]         ld	    a, SIOWR0_CMD_RST_CHAN
+00AF: D322     [76]         out	    (PORT_SIOACTL), a
+00B1: D323     [87]         out	    (PORT_SIOBCTL), a
+                            M_ctc_reset
+00B3: 3E03     [94]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_INTDIS
+00B5: D340     [105]        out	    (PORT_CTC0), a
+00B7: D341     [116]        out	    (PORT_CTC1), a
+00B9: D342     [127]        out	    (PORT_CTC2), a
+00BB: D343     [138]        out	    (PORT_CTC3), a
+                            ; set up interrupts
+00BD: 3E00     [145]        ld	    a, hi(IVT)
+00BF: ED47     [154]        ld	    i, a	    ; I gets high byte of IVT address
+00C1: ED5E     [162]        im	    2		    ; select interrupt mode 2
+00C3: FB       [166]        ei
+                            ; clear 7-segment display
+00C4: 2E00     [173]        ld	    l, 0
+00C6: CD0B03   [190]        call    seg0_write
+00C9: CD1203   [207]        call    seg1_write
+                            ; initialize peripherals
+00CC: CDDD00   [224]        call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
+00CF: CD0E01   [241]        call    sio_init
+                            ; print startup banner
+                            M_sio_puts startup_msg
+00D2: 218800   [251]        ld	    hl, startup_msg
+00D5: CD7402   [268]        call    sio_puts
+00D8: CD2A01   [285]        call    cmd_loop
+00DB: 18FE     [297]        jr	    $		    ; loop forever
+                        
+                        ; void ctc_init()
+                        #local
+00DD:                   ctc_init::
+                            ; load CTC Interrupt Vector Register
+00DD: 3E80     [ 7]         ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
+00DF: D340     [18]         out	    (PORT_CTCIVEC), a
+                            ; channel 0 is the baud rate generator for serial 0
+00E1: 3E57     [25]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+00E3: D340     [36]         out	    (PORT_CTC0), a
+00E5: 3E03     [43]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x16 gives 38400 baud)
+00E7: D340     [54]         out	    (PORT_CTC0), a
+                            ; channel 1 is the baud rate generator for serial 1
+00E9: 3E57     [61]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+00EB: D341     [72]         out	    (PORT_CTC1), a
+00ED: 3E03     [79]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x16 gives 38400 baud)
+00EF: D341     [90]         out	    (PORT_CTC1), a
+                            ; channel 2 is used as a timer to divide down the system clock for channel 3
+00F1: 3E17     [97]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
+00F3: D342     [108]        out	    (PORT_CTC2), a
+00F5: 3EFA     [115]        ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
+00F7: D342     [126]        out	    (PORT_CTC2), a
+                            ; channel 3 is used as a counter on the 2.5kHz signal from channel 2
+00F9: 3ED7     [133]        ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
+00FB: D343     [144]        out	    (PORT_CTC3), a
+00FD: 3EFA     [151]        ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
+00FF: D343     [162]        out	    (PORT_CTC3), a
+0101: C9       [172]        ret
+                        #endlocal
+                        
+                        ; CTC channel 3 ISR
+0102:                   ISR_ctc3::
+0102: 08       [ 4]         ex	    af, af'
+0103: D9       [ 8]         exx
+0104: 2E80     [15]         ld	    l, SEG_DP
+0106: CD0003   [32]         call    seg1_toggle
+0109: D9       [36]         exx
+010A: 08       [40]         ex	    af, af'
+010B: FB       [44]         ei
+010C: ED4D     [58]         reti
+                        
+                        ; void sio_init()
+                        #local
+010E:                   sio_init::
+010E: E5       [11]         push    hl
+010F: C5       [22]         push    bc
+                            ; configure SIO port A
+0110: 012207   [32]         ld	    bc, 0x0700 | PORT_SIOACTL
+0113: 212301   [42]         ld	    hl, sioA_cfg
+0116: EDB3     [58|21]      otir
+                            ; configure SIO port B
+0118: 012307   [68]         ld	    bc, 0x0700 | PORT_SIOBCTL
+011B: 212301   [78]         ld	    hl, sioB_cfg
+011E: EDB3     [94|21]      otir
+0120: C1       [104]        pop	    bc
+0121: E1       [114]        pop	    hl
+0122: C9       [124]        ret
+0123:                   sioA_cfg:
+0123:                   sioB_cfg:
+0123: 18                    .byte SIOWR0_CMD_RST_CHAN
+0124: 04                    .byte SIOWR0_PTR_R4
+0125: 44                    .byte SIOWR4_TXSTOP_1 | SIOWR4_CLK_x16
+                            ; No need to set up WR1/WR2, as they are only used for interrupts
+0126: 03                    .byte SIOWR0_PTR_R3
+0127: C1                    .byte SIOWR3_RXENA | SIOWR3_RX_8_BITS
+0128: 05                    .byte SIOWR0_PTR_R5
+0129: EA                    .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+                            ; No need to set up WR6/WR7, as they are only used for synchronous modes
+                        #endlocal
+                        
+                        ; void cmd_loop()
+                        #local
+012A:                   cmd_loop::
+012A: E5       [11]         push    hl
+012B: C5       [22]         push    bc
+012C:                   prompt:
+012C: 2E3E     [ 7]         ld	    l, '>'
+012E: CD6A02   [24]         call    sio_putc
+0131:                   nextByte:
+0131: CD0002   [17]         call    sio_getc
+                            ; map input byte to upper case
+0134: CDC301   [34]         call    toupper
+                            ; switch on input byte, and dispatch to appropriate subroutine
+0137: 7D       [38]         ld	    a, l
+0138: 215701   [48]         ld	    hl, cmd_chars
+013B: 010800   [58]         ld	    bc, num_cmds
+013E: EDB1     [74|21]      cpir
+0140: 20EF     [81|86]      jr	    nz, nextByte
+0142: 215F01   [91]         ld	    hl, cmd_procs
+                            ; add 2 * (num_cmds - 1 - c) to hl
+0145: 3E07     [98]         ld	    a, num_cmds-1
+0147: 91       [102]        sub	    c
+0148: 87       [106]        add	    a
+0149: 4F       [110]        ld	    c, a
+014A: 09       [121]        add	    hl, bc
+                            M_deref_hl
+                            ; hl = (hl)
+                            ; destroys a
+014B: 7E       [128]        ld	    a, (hl)
+014C: 23       [134]        inc	    hl
+014D: 66       [141]        ld	    h, (hl)
+014E: 6F       [145]        ld	    l, a
+                            ; call hl
+014F: CDC201   [162]        call    jp_hl
+0152: 18D8     [174]        jr	    prompt
+0154: C1       [184]        pop	    bc
+0155: E1       [194]        pop	    hl
+0156: C9       [204]        ret
+                        
+0157:                   cmd_chars:
+0157: 01425743              .byte SOH,'B','W','C','R','I','O',CR
+015B: 52494F0D          
+0008:                   num_cmds	equ $-cmd_chars
+015F:                   cmd_procs:
+015F: 6F01                  .word cmd_do_packet
+0161: 7201                  .word cmd_do_disp_bytes
+0163: 7501                  .word cmd_do_disp_words
+0165: 7801                  .word cmd_do_call
+0167: 7B01                  .word cmd_do_reset
+0169: 8601                  .word cmd_do_input
+016B: B101                  .word cmd_do_output
+016D: B401                  .word cmd_do_cr
+                        #endlocal
+                        
+016F:                   cmd_do_packet::
+016F: E5       [11]         push    hl
+                            ; TODO: NYI
+0170: E1       [21]         pop	    hl
+0171: C9       [31]         ret
+                        
+0172:                   cmd_do_disp_bytes::
+0172: E5       [11]         push    hl
+                            ; TODO: NYI
+0173: E1       [21]         pop	    hl
+0174: C9       [31]         ret
+                        
+0175:                   cmd_do_disp_words::
+0175: E5       [11]         push    hl
+                            ; TODO: NYI
+0176: E1       [21]         pop	    hl
+0177: C9       [31]         ret
+                        
+0178:                   cmd_do_call::
+0178: E5       [11]         push    hl
+                            ; TODO: NYI
+0179: E1       [21]         pop	    hl
+017A: C9       [31]         ret
+                        
+017B:                   cmd_do_reset::
+017B: E5       [11]         push    hl
+017C: 2E52     [18]         ld	    l, 'R'
+017E: CD6A02   [35]         call    sio_putc
+0181: CD2503   [52]         call    delay_1ms
+0184: F3       [56]         di
+0185: C7       [67]         rst	    0x00	; reset
+                        
+                        #local
+0186:                   cmd_do_input::
+0186: E5       [11]         push    hl
+0187: C5       [22]         push    bc
+                            M_sio_puts prompt_str
+0188: 21AB01   [32]         ld	    hl, prompt_str
+018B: CD7402   [49]         call    sio_puts
+018E: CD0A02   [66]         call    sio_gethex8
+0191: 7C       [70]         ld	    a, h
+0192: FE00     [77]         cp	    0
+0194: 200C     [84|89]      jr	    nz, done
+                            ; I/O address is in l
+0196: 4D       [88]         ld	    c, l
+                            M_sio_puts equals_str
+0197: 21AE01   [98]         ld	    hl, equals_str
+019A: CD7402   [115]        call    sio_puts
+019D: ED68     [127]        in	    l, (c)
+019F: CD8B02   [144]        call    sio_puthex8
+01A2:                   done:
+                            M_sio_puts crlf
+01A2: 219E00   [10]         ld	    hl, crlf
+01A5: CD7402   [27]         call    sio_puts
+01A8: C1       [37]         pop	    bc
+01A9: E1       [47]         pop	    hl
+01AA: C9       [57]         ret
+                        
+01AB:                   prompt_str:
+01AB: 492400                .asciz  "I$"
+01AE:                   equals_str:
+01AE: 3D2400                .asciz  "=$"
+                        #endlocal
+                        
+01B1:                   cmd_do_output::
+01B1: E5       [11]         push    hl
+                            ; TODO: NYI
+01B2: E1       [21]         pop	    hl
+01B3: C9       [31]         ret
+                        
+01B4:                   cmd_do_cr::
+01B4: E5       [11]         push    hl
+                            M_sio_puts crlf
+01B5: 219E00   [21]         ld	    hl, crlf
+01B8: CD7402   [38]         call    sio_puts
+01BB: E1       [48]         pop	    hl
+01BC: C9       [58]         ret
+                        
+                        ; VT100 escape sequences
+                        ; ----------------------
+                        
+01BD:                   vt100_clrln::
+01BD: 1B5B324B              .text   ESC, "[2K", NUL
+01C1: 00                
+                        
+                        ; Library routines
+                        ; ----------------
+                        
+                        ; Call jp_hl to make a call to the address in hl. What actually happens is the call to jp_hl loads
+                        ; the return address on the stack, then control transfers to jp_hl, which jumps to the address
+                        ; in hl, thus giving the effect of "call hl", which isn't a Z80 instruction.
+01C2:                   jp_hl::
+01C2: E9       [ 4]         jp	    hl
+                        
+                        ; uint8_t toupper(uint8_t ch)
+                        ; - map character "ch" to upper-case, if it is a lower-case letter
+                        #local
+01C3:                   toupper::
+01C3: 7D       [ 4]         ld	    a, l
+01C4: FE61     [11]         cp	    'a'
+01C6: D8       [16|22]      ret	    c
+01C7: FE7B     [23]         cp	    'z'+1
+01C9: D0       [28|34]      ret	    nc
+01CA: E6DF     [35]         and	    ~0x20
+01CC: 6F       [39]         ld	    l, a
+01CD: C9       [49]         ret
+                        #endlocal
+                        
+                        ; Z_flag isxdigit(uint8_t ch)
+                        ; - set Z flag iff "ch" is a digit 0-9 or A-F
+                        #local
+01CE:                   isxdigit::
+01CE: 7D       [ 4]         ld	    a, l
+01CF: FE30     [11]         cp	    '0'
+01D1: 380C     [18|23]      jr	    c, no
+01D3: FE3A     [25]         cp	    '9'+1
+01D5: 380B     [32|37]      jr	    c, yes
+01D7: FE41     [39]         cp	    'A'
+01D9: 3804     [46|51]      jr	    c, no
+01DB: FE47     [53]         cp	    'F'+1
+01DD: 3803     [60|65]      jr	    c, yes
+                            ; otherwise, no
+01DF:                   no:
+01DF: FE30     [ 7]         cp	    '0'		; reset Z flag (a != '0', so Z is reset)
+01E1: C9       [17]         ret
+01E2:                   yes:
+01E2: AF       [ 4]         xor	    a		; set Z flag
+01E3: C9       [14]         ret
+                        #endlocal
+                        
+                        ; uint8_t hex2bin(uint8_t ch)
+                        ; - converts the single hex digit "ch" (must be 0-9 or A-F) into a binary value between 0-15
+                        #local
+01E4:                   hex2bin::
+01E4: 7D       [ 4]         ld	    a, l
+01E5: FE41     [11]         cp	    'A'
+01E7: 3004     [18|23]      jr	    nc, hex
+01E9: D630     [25]         sub	    '0'
+01EB: 6F       [29]         ld	    l, a
+01EC: C9       [39]         ret
+01ED:                   hex:
+01ED: D637     [ 7]         sub	    'A'-10
+01EF: 6F       [11]         ld	    l, a
+01F0: C9       [21]         ret
+                        #endlocal
+                        
+                        ; uint8_t bin2hex(uint8_t val)
+                        ; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
+                        #local
+01F1:                   bin2hex::
+01F1: 7D       [ 4]         ld	    a, l
+01F2: E60F     [11]         and	    0xF
+01F4: FE0A     [18]         cp	    0xA
+01F6: 3804     [25|30]      jr	    c, decimal
+01F8: C637     [32]         add	    'A'-10
+01FA: 6F       [36]         ld	    l, a
+01FB: C9       [46]         ret
+01FC:                   decimal:
+01FC: C630     [ 7]         add	    '0'
+01FE: 6F       [11]         ld	    l, a
+01FF: C9       [21]         ret
+                        #endlocal
+                        
+                        ; uint8_t sio_getc()
+                        ; - wait synchronously until a byte is available from port A, and return it
+                        #local
+0200:                   sio_getc::
+0200:                   waitRX:
+                            ; wait for an input character
+0200: DB22     [11]         in	    a, (PORT_SIOACTL)
+0202: CB47     [19]         bit	    SIORR0_IDX_RCA, a
+0204: 28FA     [26|31]      jr	    z, waitRX
+                            ; read input character
+0206: DB20     [37]         in	    a, (PORT_SIOADAT)
+0208: 6F       [41]         ld	    l, a
+0209: C9       [51]         ret
+                        #endlocal
+                        
+                        ; int16_t sio_gethex8()
+                        ; - read a two-char 8-bit hex value from port A
+                        ; - echoes chars as entered, erases as backspaced
+                        ; - BS erases last entered char
+                        ; - ESC aborts entry at any point
+                        ; - CR accepts entry
+                        ; - returns unsigned 8-bit value entered, or -1 if aborted
+                        #local
+020A:                   sio_gethex8::
+020A: C5       [11]         push    bc
+020B:                   getFirst:
+020B: CD0002   [17]         call    sio_getc
+020E: 7D       [21]         ld	    a, l
+020F: FE1B     [28]         cp	    ESC
+0211: 2852     [35|40]      jr	    z, abort
+0213: CDC301   [52]         call    toupper
+0216: CDCE01   [69]         call    isxdigit	; Z set iff is hex digit
+0219: 20F0     [76|81]      jr	    nz, getFirst
+021B: CD6A02   [93]         call    sio_putc	; echo digit
+021E: 45       [97]         ld	    b, l	; store high digit in b
+021F:                   getSecond:
+021F: CD0002   [17]         call    sio_getc
+0222: 7D       [21]         ld	    a, l
+0223: FE1B     [28]         cp	    ESC
+0225: 283E     [35|40]      jr	    z, abort
+0227: FE08     [42]         cp	    BS
+0229: 2005     [49|54]      jr	    nz, notBS1
+022B: CD6A02   [66]         call    sio_putc	; echo BS
+022E: 18DB     [78]         jr	    getFirst
+0230:                   notBS1:
+0230: CDC301   [17]         call    toupper
+0233: CDCE01   [34]         call    isxdigit	; Z set iff is hex digit
+0236: 20E7     [41|46]      jr	    nz, getSecond
+0238: CD6A02   [58]         call    sio_putc	; echo digit
+023B: 4D       [62]         ld	    c, l	; store low digit in c
+023C:                   getThird:
+023C: CD0002   [17]         call    sio_getc
+023F: 7D       [21]         ld	    a, l
+0240: FE1B     [28]         cp	    ESC
+0242: 2821     [35|40]      jr	    z, abort
+0244: FE0D     [42]         cp	    CR
+0246: 2809     [49|54]      jr	    z, convert
+0248: FE08     [56]         cp	    BS
+024A: 20F0     [63|68]      jr	    nz, getThird
+                            ; handle backspace
+024C: CD6A02   [80]         call    sio_putc	; echo BS
+024F: 18CE     [92]         jr	    getSecond
+0251:                   convert:
+0251: 68       [ 4]         ld	    l, b
+0252: CDE401   [21]         call    hex2bin
+0255: 45       [25]         ld	    b, l
+0256: 69       [29]         ld	    l, c
+0257: CDE401   [46]         call    hex2bin
+                            ; compute a = (b << 4) | l
+025A: 78       [50]         ld	    a, b
+025B: 87       [54]         add	    a
+025C: 87       [58]         add	    a
+025D: 87       [62]         add	    a
+025E: 87       [66]         add	    a
+025F: B5       [70]         or	    l
+0260: 6F       [74]         ld	    l, a
+0261: 2600     [81]         ld	    h, 0
+0263: C1       [91]         pop	    bc
+0264: C9       [101]        ret
+0265:                   abort:
+0265: 21FFFF   [10]         ld	    hl, -1
+0268: C1       [20]         pop	    bc
+0269: C9       [30]         ret	    
+                        #endlocal
+                        
+                        ; void sio_putc(uint8_t ch)
+                        ; - write the specified character "ch" to port A
+                        #local
+026A:                   sio_putc::
+026A:                   waitTX:
+                            ; wait until transmitter is idle
+026A: DB22     [11]         in	    a, (PORT_SIOACTL)
+026C: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+026E: 28FA     [26|31]      jr	    z, waitTX
+                            ; write output character
+0270: 7D       [30]         ld	    a, l
+0271: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+0273: C9       [51]         ret
+                        #endlocal
+                        
+                        ; void sio_puts(uint8_t *text)
+                        ; - write the NUL-terminated string at "text" to port A
+                        #local
+0274:                   sio_puts::
+0274: E5       [11]         push    hl
+0275: C5       [22]         push    bc
+0276:                   nextByte:
+0276: 7E       [ 7]         ld	    a, (hl)
+0277: 23       [13]         inc	    hl
+0278: FE00     [20]         cp	    0
+027A: 280C     [27|32]      jr	    z, done
+027C: 47       [31]         ld	    b, a
+027D:                   waitTX:
+                            ; wait until transmitter is idle
+027D: DB22     [11]         in	    a, (PORT_SIOACTL)
+027F: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0281: 28FA     [26|31]      jr	    z, waitTX
+                            ; write output character
+0283: 78       [30]         ld	    a, b
+0284: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+0286: 18EE     [53]         jr	    nextByte
+0288:                   done:
+0288: C1       [10]         pop	    bc
+0289: E1       [20]         pop	    hl
+028A: C9       [30]         ret
+                        #endlocal
+                        
+                        ; void sio_puthex8(uint8_t val)
+                        ; - writes the specified 8-bit value "val" as a pair of hex digits to port A
+028B:                   sio_puthex8::
+028B: E5       [11]         push    hl
+028C: 65       [15]         ld	    h, l
+028D: CB3D     [23]         srl	    l
+028F: CB3D     [31]         srl	    l
+0291: CB3D     [39]         srl	    l
+0293: CB3D     [47]         srl	    l
+0295: CDF101   [64]         call    bin2hex
+0298: CD6A02   [81]         call    sio_putc
+029B: 6C       [85]         ld	    l, h
+029C: CDF101   [102]        call    bin2hex
+029F: CD6A02   [119]        call    sio_putc
+02A2: E1       [129]        pop	    hl
+02A3: C9       [139]        ret
+                        
+                        ; void seg_writehex(uint8_t val)
+                        ; - write the two hex digits of "val" to the 7-segment displays
+02A4:                   seg_writehex::
+02A4: E5       [11]         push    hl
+02A5: CDCC02   [28]         call    seg1_writehex
+02A8: 7D       [32]         ld	    a, l
+02A9: 07       [36]         rlca
+02AA: 07       [40]         rlca
+02AB: 07       [44]         rlca
+02AC: 07       [48]         rlca
+02AD: 6F       [52]         ld	    l, a
+02AE: CDB302   [69]         call    seg0_writehex
+02B1: E1       [79]         pop	    hl
+02B2: C9       [89]         ret
+                        
+                        ; void seg0_writehex(uint8_t val)
+                        ; - write hex digit in lower nybble of "val" to 7-segment display
+02B3:                   seg0_writehex::
+02B3: E5       [11]         push    hl
+02B4: C5       [22]         push    bc
+02B5: 01E502   [32]         ld	    bc, hex2seg_table
+02B8: 7D       [36]         ld	    a, l
+02B9: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+02BB: 6F       [47]         ld	    l, a
+02BC: 2600     [54]         ld	    h, 0
+02BE: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+02BF: 3A0020   [78]         ld	    a, (Seg0_data)
+02C2: E680     [85]         and	    SEG_DP
+02C4: B6       [92]         or	    (hl)
+02C5: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
+02C6: CD0B03   [113]        call    seg0_write
+02C9: C1       [123]        pop	    bc
+02CA: E1       [133]        pop	    hl
+02CB: C9       [143]        ret
+                        
+                        ; void seg1_writehex(uint8_t val)
+                        ; - write hex digit in lower nybble of "val" to 7-segment display
+02CC:                   seg1_writehex::
+02CC: E5       [11]         push    hl
+02CD: C5       [22]         push    bc
+02CE: 01E502   [32]         ld	    bc, hex2seg_table
+02D1: 7D       [36]         ld	    a, l
+02D2: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+02D4: 6F       [47]         ld	    l, a
+02D5: 2600     [54]         ld	    h, 0
+02D7: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+02D8: 3A0120   [78]         ld	    a, (Seg1_data)
+02DB: E680     [85]         and	    SEG_DP
+02DD: B6       [92]         or	    (hl)
+02DE: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
+02DF: CD1203   [113]        call    seg1_write
+02E2: C1       [123]        pop	    bc
+02E3: E1       [133]        pop	    hl
+02E4: C9       [143]        ret
+                        
+02E5:                   hex2seg_table::
+                            ; 0
+02E5: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
+                            ; 1
+02E6: 06                    .byte SEG_B | SEG_C
+                            ; 2
+02E7: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
+                            ; 3
+02E8: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
+                            ; 4
+02E9: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
+                            ; 5
+02EA: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
+                            ; 6
+02EB: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+                            ; 7
+02EC: 07                    .byte SEG_A | SEG_B | SEG_C
+                            ; 8
+02ED: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
+                            ; 9
+02EE: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
+                            ; A
+02EF: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
+                            ; b
+02F0: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+                            ; C
+02F1: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
+                            ; d
+02F2: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
+                            ; E
+02F3: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
+                            ; F
+02F4: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
+                        
+                        ; void seg0_toggle(uint8_t bits)
+                        ; - toggle specified bits of first 7-segment display register
+02F5:                   seg0_toggle::
+02F5: E5       [11]         push    hl
+02F6: 3A0020   [24]         ld	    a, (Seg0_data)
+02F9: AD       [28]         xor	    l
+02FA: 6F       [32]         ld	    l, a
+02FB: CD0B03   [49]         call    seg0_write
+02FE: E1       [59]         pop	    hl
+02FF: C9       [69]         ret
+                        
+                        ; void seg1_toggle(uint8_t bits)
+                        ; - toggle specified bits of second 7-segment display register
+0300:                   seg1_toggle::
+0300: E5       [11]         push    hl
+0301: 3A0120   [24]         ld	    a, (Seg1_data)
+0304: AD       [28]         xor	    l
+0305: 6F       [32]         ld	    l, a
+0306: CD1203   [49]         call    seg1_write
+0309: E1       [59]         pop	    hl
+030A: C9       [69]         ret
+                        
+                        ; void seg0_write(uint8_t bits)
+                        ; - write raw bits to first 7-segment display register
+030B:                   seg0_write::
+030B: 7D       [ 4]         ld	    a, l
+030C: 320020   [17]         ld	    (Seg0_data), a
+030F: D300     [28]         out	    (PORT_SEG0), a
+0311: C9       [38]         ret
+                        
+                        ; void seg1_write(uint8_t bits)
+                        ; - write raw bits to second 7-segment display register
+0312:                   seg1_write::
+0312: 7D       [ 4]         ld	    a, l
+0313: 320120   [17]         ld	    (Seg1_data), a
+0316: D310     [28]         out	    (PORT_SEG1), a
+0318: C9       [38]         ret
+                        
+                        ; void delay_ms(uint8_t ms)
+                        ; - delay for at least the specified number of milliseconds
+                        #local
+0319:                   delay_ms::
+0319: 2C       [ 4]         inc	    l
+031A: 2D       [ 8]         dec	    l
+031B: C8       [13|19]      ret	    z		; delay of 0 returns immediately
+031C: C5       [24]         push    bc
+031D: 45       [28]         ld	    b, l
+031E:                   loop:
+031E: CD2503   [17]         call    delay_1ms
+0321: 10FB     [25|30]      djnz    loop
+0323: C1       [35]         pop	    bc
+0324: C9       [45]         ret
+                        #endlocal
+                        
+                        ; void delay_1ms()
+                        ; - delay for 1ms (technically, 0.9999ms)
+                        #local
+0325:                   delay_1ms::
+0325: C5       [11]         push    bc		; 11 T-states
+                        ; To delay 1ms, we want to wait 10,000 T-states (@10MHz)
+                        ; The loop is (38*b + 13*(b-1) + 8) T-states long
+                        ; Rearranging: 51*b - 5
+                        ; Solve for b: b = (10000 + 5 / 51) = 196.17
+0326: 06C3     [18]         ld	    b, 195	; 7 T-states
+0328:                   loop:
+0328: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
+032B: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
+032E: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
+0330: C1       [56]         pop	    bc		; 10 T-states
+0331: 00       [60]         nop			; 4 T-states
+0332: C9       [70]         ret			; 10 T-states
+                        ; We also assume the routine is CALLed, for 17 T-states.
+                        ; Total delay is therefore:
+                        ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
+                        #endlocal
+                        
+                        ; Remaining 56KB and 64KB segments to fill up ROM image
+0000:                   #code FILLER1, 0, 0xE000
+0000:                   #code FILLER2, 0, 0x10000
+
+
+total time: 0.0191 sec.
+no errors

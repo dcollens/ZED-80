@@ -27,3 +27,12 @@ PIOICTL_HIGH	equ 0x20	; interrupt on high (1) inputs
 PIOICTL_LOW	equ 0x00	; interrupt on low (0) inputs
 PIOICTL_MASKNXT equ 0x10	; next control byte written must be the input interrupt mask
 				; 1 = input masked, 0 = input enabled
+
+M_pio_reset	macro
+    ld	    a, PIOC_MODE | PIOMODE_INPUT
+    out	    (PORT_PIOACTL), a
+    out	    (PORT_PIOBCTL), a
+    ld	    a, PIOC_ICTL | PIOICTL_INTDIS
+    out	    (PORT_PIOACTL), a
+    out	    (PORT_PIOBCTL), a
+    endm

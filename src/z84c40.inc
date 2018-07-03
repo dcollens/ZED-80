@@ -115,3 +115,9 @@ SIORR1_CRCFRMERR	equ 0x40	    ; CRC/framing error
 ; RR2 is the interrupt vector register (read from channel B only)
 ; - if "Status Affects Vector" bit is set, this will be the current vector value,
 ;   modified by whatever interrupt conditions are pending
+
+M_sio_reset	macro
+    ld	    a, SIOWR0_CMD_RST_CHAN
+    out	    (PORT_SIOACTL), a
+    out	    (PORT_SIOBCTL), a
+    endm

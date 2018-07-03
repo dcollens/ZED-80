@@ -21,3 +21,11 @@ CTC_AUTO	equ 0x00		; automatic timer start after loading time constant
 CTC_TIMENXT	equ 0x04		; next control byte written is the time constant
 CTC_RESET	equ 0x02		; software reset
 CTC_CONTROL	equ 0x01		; always set to indicate this is a control word, not IVEC 
+
+M_ctc_reset	macro
+    ld	    a, CTC_CONTROL | CTC_RESET | CTC_INTDIS
+    out	    (PORT_CTC0), a
+    out	    (PORT_CTC1), a
+    out	    (PORT_CTC2), a
+    out	    (PORT_CTC3), a
+    endm

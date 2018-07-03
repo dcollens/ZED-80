@@ -566,8 +566,8 @@ delay_1ms::
 ; Solve for b: b = (10000 + 5 / 51) = 196.17
     ld	    b, 195	; 7 T-states
 loop:
-    ex	    (sp), hl	; 19 T-states
-    ex	    (sp), hl	; 19 T-states
+    ld	    a, (ix+1)	; 19 T-states
+    ld	    a, (ix+1)	; 19 T-states
     djnz    loop	; (b-1)*13+8 T-states
     pop	    bc		; 10 T-states
     nop			; 4 T-states
