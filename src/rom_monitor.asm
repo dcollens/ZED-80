@@ -159,6 +159,7 @@ ctc_init::
 #endlocal
 
 ; CTC channel 3 ISR
+; - do not to modify ix or iy, or call any routine that does, as they aren't saved/restored!
 ISR_ctc3::
     ex	    af, af'
     exx
@@ -245,11 +246,126 @@ cmd_procs:
     .word cmd_do_cr
 #endlocal
 
+#local
 cmd_do_packet::
     push    hl
-    ; TODO: NYI
+    push    bc
+    push    de
+    ; await SOH byte, but abort on ESC
+waitSOH:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jr	    z, done
+    cp	    SOH
+    jr	    nz, waitSOH
+    ; get packet type
+    call    sio_getc
+    ld	    a, l
+    cp	    'W'
+    jr	    z, doWrite
+    cp	    'C'
+    jr	    z, doCall
+    ; unrecognized packet type!
+    ; might be nice to consume everything up to EOT, but how long should we wait?
+failure:
+    ld	    l, NAK
+    jr	    putcAndDone
+success:
+    ld	    l, ACK
+putcAndDone:
+    call    sio_putc
+done:
+    pop	    de
+    pop	    bc
     pop	    hl
     ret
+doWrite:
+    ; Write packet consists of:
+    ;	'W'
+    ;	2-byte address
+    ;	2-byte length
+    ;	data bytes
+    ;	checksum byte
+    ;	EOT
+    ; place address in de and ix
+    call    sio_getc
+    ld	    e, l
+    call    sio_getc
+    ld	    d, l
+    push    de
+    pop	    ix
+    ; place length in bc
+    call    sio_getc
+    ld	    c, l
+    call    sio_getc
+    ld	    b, l
+    ; get a checksum started
+    ld	    a, 'W'
+    add	    e
+    add	    d
+    add	    c
+    add	    b
+    ; keep running checksum in d
+    ld	    d, a
+    ; read data bytes
+writeLoop:
+    ; test bc against 0
+    xor	    a		    ; resets carry flag, sets a=0
+    ld	    h, a
+    ld	    l, a	    ; set hl=0
+    sbc	    hl, bc	    ; test bc against 0
+    jr	    z, writeDataDone
+    dec	    bc
+    call    sio_getc	    ; l = next byte
+    ld	    (ix), l
+    inc	    ix
+    ; checksum data byte
+    ld	    a, d
+    add	    l
+    ld	    d, a
+    jr	    writeLoop
+writeDataDone:
+    call    sio_getc	    ; l = incoming checksum
+    ld	    e, l
+    call    sio_getc	    ; expecting an EOT
+    ld	    a, l
+    cp	    EOT
+    jr	    nz, failure
+    ; validate checksum
+    ld	    a, d
+    cp	    e
+    jr	    z, success
+    jr	    failure
+
+doCall:
+    ; Call packet consists of:
+    ;	'C'
+    ;	2-byte address
+    ;	checksum byte
+    ;	EOT
+    ; place address in bc
+    call    sio_getc
+    ld	    c, l
+    call    sio_getc
+    ld	    b, l
+    call    sio_getc	    ; l = incoming checksum
+    ld	    e, l
+    call    sio_getc	    ; expecting an EOT
+    ld	    a, l
+    cp	    EOT
+    jr	    nz, failure
+    ; calculate checksum
+    ld	    a, 'C'
+    add	    c
+    add	    b
+    ; validate checksum
+    cp	    e
+    jr	    nz, failure
+    ; call bc
+    call    jp_bc
+    jr	    success
+#endlocal
 
 cmd_do_disp_bytes::
     push    hl
@@ -284,11 +400,11 @@ cmd_do_input::
     M_sio_puts prompt_str
     call    sio_gethex8
     ld	    a, h
-    cp	    0
+    or	    a		; fast test a==0
     jr	    nz, done
     ; I/O address is in l
     ld	    c, l
-    M_sio_puts equals_str
+    M_sio_puts cmd_equals_str
     in	    l, (c)
     call    sio_puthex8
 done:
@@ -299,15 +415,36 @@ done:
 
 prompt_str:
     .asciz  "I$"
-equals_str:
-    .asciz  "=$"
 #endlocal
 
+#local
 cmd_do_output::
     push    hl
-    ; TODO: NYI
+    push    bc
+    M_sio_puts prompt_str
+    call    sio_gethex8
+    ld	    a, h
+    or	    a		; fast test a==0
+    jr	    nz, done
+    ; I/O address is in l -- stash it in c
+    ld	    c, l
+    M_sio_puts cmd_equals_str
+    call    sio_gethex8
+    ld	    a, h
+    or	    a		; fast test a==0
+    jr	    nz, done
+    ; output value is in l
+    out	    (c), l
+    M_sio_puts cmd_ok_str
+done:
+    M_sio_puts crlf
+    pop	    bc
     pop	    hl
     ret
+
+prompt_str:
+    .asciz  "O$"
+#endlocal
 
 cmd_do_cr::
     push    hl
@@ -315,11 +452,10 @@ cmd_do_cr::
     pop	    hl
     ret
 
-; VT100 escape sequences
-; ----------------------
-
-vt100_clrln::
-    .text   ESC, "[2K", NUL
+cmd_equals_str::
+    .asciz  "=$"
+cmd_ok_str::
+    .text   CR, LF, "OK", NUL
 
 ; Library routines
 ; ----------------
@@ -329,6 +465,13 @@ vt100_clrln::
 ; in hl, thus giving the effect of "call hl", which isn't a Z80 instruction.
 jp_hl::
     jp	    hl
+
+; Call jp_bc to make a call to the address in bc. What actually happens is the call to jp_bc loads
+; the return address on the stack, then control transfers to jp_bc, which jumps to the address
+; in bc, thus giving the effect of "call bc", which isn't a Z80 instruction.
+jp_bc::
+    push    bc
+    ret
 
 ; uint8_t toupper(uint8_t ch)
 ; - map character "ch" to upper-case, if it is a lower-case letter
@@ -508,7 +651,7 @@ sio_puts::
 nextByte:
     ld	    a, (hl)
     inc	    hl
-    cp	    0
+    or	    a		; fast test a==0
     jr	    z, done
     ld	    b, a
 waitTX:
