@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_monitor.asm"
-                        ; date: 2018-07-05 21:36:21
+                        ; date: 2018-07-11 11:04:01
                         ; --------------------------------------
 
 
@@ -303,6 +303,11 @@
                             call    sio_puts
                             endm
                         
+                        M_sio_putc  macro ch
+                            ld	    l, &ch
+                            call    sio_putc
+                            endm
+                        
                         ; 128KB Static RAM - AS6C1008-55PCN
                         ; The first 8KB is shadowed by the EPROM.
                         ; The next 56KB is mapped from 0x2000-0xFFFF.
@@ -387,7 +392,7 @@
 0090: 20763120          
 0094: 32303138          
 0098: 2D30372D          
-009C: 3035              
+009C: 3131              
                             ; Falling through...
 009E:                   crlf::
 009E: 0D0A00                .text   CR, LF, NUL
@@ -419,15 +424,15 @@
 00C3: FB       [166]        ei
                             ; clear 7-segment display
 00C4: 2E00     [173]        ld	    l, 0
-00C6: CDBF03   [190]        call    seg0_write
-00C9: CDC603   [207]        call    seg1_write
+00C6: CDC303   [190]        call    seg0_write
+00C9: CDCA03   [207]        call    seg1_write
                             ; initialize peripherals
 00CC: CDDD00   [224]        call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
 00CF: CD0E01   [241]        call    sio_init
                             ; print startup banner
                             M_sio_puts startup_msg
 00D2: 218800   [251]        ld	    hl, startup_msg
-00D5: CD2903   [268]        call    sio_puts
+00D5: CD2D03   [268]        call    sio_puts
 00D8: CD2A01   [285]        call    cmd_loop
 00DB: 18FE     [297]        jr	    $		    ; loop forever
                         
@@ -466,7 +471,7 @@
 0102: 08       [ 4]         ex	    af, af'
 0103: D9       [ 8]         exx
 0104: 2E80     [15]         ld	    l, SEG_DP
-0106: CDB403   [32]         call    seg1_toggle
+0106: CDB803   [32]         call    seg1_toggle
 0109: D9       [36]         exx
 010A: 08       [40]         ex	    af, af'
 010B: FB       [44]         ei
@@ -507,12 +512,13 @@
 012A: E5       [11]         push    hl
 012B: C5       [22]         push    bc
 012C:                   prompt:
+                            M_sio_putc '>'
 012C: 2E3E     [ 7]         ld	    l, '>'
-012E: CD1F03   [24]         call    sio_putc
+012E: CD2303   [24]         call    sio_putc
 0131:                   nextByte:
-0131: CDB502   [17]         call    sio_getc
+0131: CDB602   [17]         call    sio_getc
                             ; map input byte to upper case
-0134: CD7802   [34]         call    toupper
+0134: CD7902   [34]         call    toupper
                             ; switch on input byte, and dispatch to appropriate subroutine
 0137: 7D       [38]         ld	    a, l
 0138: 215701   [48]         ld	    hl, cmd_chars
@@ -534,7 +540,7 @@
 014D: 66       [141]        ld	    h, (hl)
 014E: 6F       [145]        ld	    l, a
                             ; call hl
-014F: CD7502   [162]        call    jp_hl
+014F: CD7602   [162]        call    jp_hl
 0152: 18D8     [174]        jr	    prompt
 0154: C1       [184]        pop	    bc
 0155: E1       [194]        pop	    hl
@@ -546,13 +552,13 @@
 0008:                   num_cmds	equ $-cmd_chars
 015F:                   cmd_procs:
 015F: 6F01                  .word cmd_do_packet
-0161: F801                  .word cmd_do_disp_bytes
-0163: FB01                  .word cmd_do_disp_words
-0165: FE01                  .word cmd_do_call
-0167: 0102                  .word cmd_do_reset
-0169: 0C02                  .word cmd_do_input
-016B: 3302                  .word cmd_do_output
-016D: 6402                  .word cmd_do_cr
+0161: F901                  .word cmd_do_disp_bytes
+0163: FC01                  .word cmd_do_disp_words
+0165: FF01                  .word cmd_do_call
+0167: 0202                  .word cmd_do_reset
+0169: 0D02                  .word cmd_do_input
+016B: 3402                  .word cmd_do_output
+016D: 6502                  .word cmd_do_cr
                         #endlocal
                         
                         #local
@@ -560,36 +566,29 @@
 016F: E5       [11]         push    hl
 0170: C5       [22]         push    bc
 0171: D5       [33]         push    de
-                            ; await SOH byte, but abort on ESC
-0172:                   waitSOH:
-0172: CDB502   [17]         call    sio_getc
-0175: 7D       [21]         ld	    a, l
-0176: FE1B     [28]         cp	    ESC
-0178: 2819     [35|40]      jr	    z, done
-017A: FE01     [42]         cp	    SOH
-017C: 20F4     [49|54]      jr	    nz, waitSOH
                             ; get packet type
-017E: CDB502   [66]         call    sio_getc
-0181: 7D       [70]         ld	    a, l
-0182: FE57     [77]         cp	    'W'
-0184: 2811     [84|89]      jr	    z, doWrite
-0186: FE43     [91]         cp	    'C'
-0188: 284E     [98|103]     jr	    z, doCall
+0172: CDB602   [50]         call    sio_getc
+0175: 7D       [54]         ld	    a, l
+0176: FE57     [61]         cp	    'W'
+0178: 2811     [68|73]      jr	    z, doWrite
+017A: FE43     [75]         cp	    'C'
+017C: 284E     [82|87]      jr	    z, doCall
                             ; unrecognized packet type!
                             ; might be nice to consume everything up to EOT, but how long should we wait?
-018A:                   failure:
-018A: 2E15     [ 7]         ld	    l, NAK
-018C: 1802     [19]         jr	    putcAndDone
-018E:                   success:
-018E: 2E06     [ 7]         ld	    l, ACK
-0190:                   putcAndDone:
-0190: CD1F03   [17]         call    sio_putc
-0193:                   done:
-0193: D1       [10]         pop	    de
-0194: C1       [20]         pop	    bc
-0195: E1       [30]         pop	    hl
-0196: C9       [40]         ret
-0197:                   doWrite:
+017E:                   failure:
+017E: 2E4E     [ 7]         ld	    l, 'N'
+0180: 1802     [19]         jr	    putcAndDone
+0182:                   success:
+0182: 2E41     [ 7]         ld	    l, 'A'
+0184:                   putcAndDone:
+0184: CD2303   [17]         call    sio_putc
+0187:                   done:
+0187: D1       [10]         pop	    de
+0188: C1       [20]         pop	    bc
+0189: E1       [30]         pop	    hl
+018A: C9       [40]         ret
+                        
+018B:                   doWrite:
                             ; Write packet consists of:
                             ;	'W'
                             ;	2-byte address
@@ -598,190 +597,200 @@
                             ;	checksum byte
                             ;	EOT
                             ; place address in de and ix
-0197: CDB502   [17]         call    sio_getc
-019A: 5D       [21]         ld	    e, l
-019B: CDB502   [38]         call    sio_getc
-019E: 55       [42]         ld	    d, l
-019F: D5       [53]         push    de
-01A0: DDE1     [67]         pop	    ix
+018B: CDB602   [17]         call    sio_getc
+018E: 5D       [21]         ld	    e, l
+018F: CDB602   [38]         call    sio_getc
+0192: 55       [42]         ld	    d, l
+0193: D5       [53]         push    de
+0194: DDE1     [67]         pop	    ix
                             ; place length in bc
-01A2: CDB502   [84]         call    sio_getc
-01A5: 4D       [88]         ld	    c, l
-01A6: CDB502   [105]        call    sio_getc
-01A9: 45       [109]        ld	    b, l
+0196: CDB602   [84]         call    sio_getc
+0199: 4D       [88]         ld	    c, l
+019A: CDB602   [105]        call    sio_getc
+019D: 45       [109]        ld	    b, l
                             ; get a checksum started
-01AA: 3E57     [116]        ld	    a, 'W'
-01AC: 83       [120]        add	    e
-01AD: 82       [124]        add	    d
-01AE: 81       [128]        add	    c
-01AF: 80       [132]        add	    b
+019E: 3E57     [116]        ld	    a, 'W'
+01A0: 83       [120]        add	    e
+01A1: 82       [124]        add	    d
+01A2: 81       [128]        add	    c
+01A3: 80       [132]        add	    b
                             ; keep running checksum in d
-01B0: 57       [136]        ld	    d, a
+01A4: 57       [136]        ld	    d, a
                             ; read data bytes
-01B1:                   writeLoop:
+01A5:                   writeLoop:
                             ; test bc against 0
-01B1: AF       [ 4]         xor	    a		    ; resets carry flag, sets a=0
-01B2: 67       [ 8]         ld	    h, a
-01B3: 6F       [12]         ld	    l, a	    ; set hl=0
-01B4: ED42     [27]         sbc	    hl, bc	    ; test bc against 0
-01B6: 280E     [34|39]      jr	    z, writeDataDone
-01B8: 0B       [40]         dec	    bc
-01B9: CDB502   [57]         call    sio_getc	    ; l = next byte
-01BC: DD7500   [76]         ld	    (ix), l
-01BF: DD23     [86]         inc	    ix
+01A5: AF       [ 4]         xor	    a		    ; resets carry flag, sets a=0
+01A6: 67       [ 8]         ld	    h, a
+01A7: 6F       [12]         ld	    l, a	    ; set hl=0
+01A8: ED42     [27]         sbc	    hl, bc	    ; test bc against 0
+01AA: 280E     [34|39]      jr	    z, writeDataDone
+01AC: 0B       [40]         dec	    bc
+01AD: CDB602   [57]         call    sio_getc	    ; l = next byte
+01B0: DD7500   [76]         ld	    (ix), l
+01B3: DD23     [86]         inc	    ix
                             ; checksum data byte
-01C1: 7A       [90]         ld	    a, d
-01C2: 85       [94]         add	    l
-01C3: 57       [98]         ld	    d, a
-01C4: 18EB     [110]        jr	    writeLoop
-01C6:                   writeDataDone:
-01C6: CDB502   [17]         call    sio_getc	    ; l = incoming checksum
-01C9: 5D       [21]         ld	    e, l
-01CA: CDB502   [38]         call    sio_getc	    ; expecting an EOT
-01CD: 7D       [42]         ld	    a, l
-01CE: FE04     [49]         cp	    EOT
-01D0: 20B8     [56|61]      jr	    nz, failure
+01B5: 7A       [90]         ld	    a, d
+01B6: 85       [94]         add	    l
+01B7: 57       [98]         ld	    d, a
+01B8: 18EB     [110]        jr	    writeLoop
+01BA:                   writeDataDone:
+01BA: CDB602   [17]         call    sio_getc	    ; l = incoming checksum
+01BD: 5D       [21]         ld	    e, l
+01BE: CDB602   [38]         call    sio_getc	    ; expecting an EOT
+01C1: 7D       [42]         ld	    a, l
+01C2: FE04     [49]         cp	    EOT
+01C4: 20B8     [56|61]      jr	    nz, failure
                             ; validate checksum
-01D2: 7A       [60]         ld	    a, d
-01D3: BB       [64]         cp	    e
-01D4: 28B8     [71|76]      jr	    z, success
-01D6: 18B2     [83]         jr	    failure
+01C6: 7A       [60]         ld	    a, d
+01C7: BB       [64]         cp	    e
+01C8: 28B8     [71|76]      jr	    z, success
+01CA: 18B2     [83]         jr	    failure
                         
-01D8:                   doCall:
+01CC:                   doCall:
                             ; Call packet consists of:
                             ;	'C'
                             ;	2-byte address
                             ;	checksum byte
                             ;	EOT
                             ; place address in bc
-01D8: CDB502   [17]         call    sio_getc
-01DB: 4D       [21]         ld	    c, l
-01DC: CDB502   [38]         call    sio_getc
-01DF: 45       [42]         ld	    b, l
-01E0: CDB502   [59]         call    sio_getc	    ; l = incoming checksum
-01E3: 5D       [63]         ld	    e, l
-01E4: CDB502   [80]         call    sio_getc	    ; expecting an EOT
-01E7: 7D       [84]         ld	    a, l
-01E8: FE04     [91]         cp	    EOT
-01EA: 209E     [98|103]     jr	    nz, failure
+01CC: CDB602   [17]         call    sio_getc
+01CF: 4D       [21]         ld	    c, l
+01D0: CDB602   [38]         call    sio_getc
+01D3: 45       [42]         ld	    b, l
+01D4: CDB602   [59]         call    sio_getc	    ; l = incoming checksum
+01D7: 5D       [63]         ld	    e, l
+01D8: CDB602   [80]         call    sio_getc	    ; expecting an EOT
+01DB: 7D       [84]         ld	    a, l
+01DC: FE04     [91]         cp	    EOT
+01DE: 209E     [98|103]     jr	    nz, failure
                             ; calculate checksum
-01EC: 3E43     [105]        ld	    a, 'C'
-01EE: 81       [109]        add	    c
-01EF: 80       [113]        add	    b
+01E0: 3E43     [105]        ld	    a, 'C'
+01E2: 81       [109]        add	    c
+01E3: 80       [113]        add	    b
                             ; validate checksum
-01F0: BB       [117]        cp	    e
-01F1: 2097     [124|129]    jr	    nz, failure
+01E4: BB       [117]        cp	    e
+01E5: 2097     [124|129]    jr	    nz, failure
+                            M_sio_putc 'A'
+01E7: 2E41     [131]        ld	    l, 'A'
+01E9: CD2303   [148]        call    sio_putc
+                            ; af is scratch & we already save/restore bc, de, hl
+                            ; save/restore ix, iy too
+01EC: DDE5     [163]        push    ix
+01EE: FDE5     [178]        push    iy
                             ; call bc
-01F3: CD7602   [141]        call    jp_bc
-01F6: 1896     [153]        jr	    success
+01F0: CD7702   [195]        call    jp_bc
+01F3: FDE1     [209]        pop	    iy
+01F5: DDE1     [223]        pop	    ix
+01F7: 188E     [235]        jr	    done
                         #endlocal
                         
-01F8:                   cmd_do_disp_bytes::
-01F8: E5       [11]         push    hl
+01F9:                   cmd_do_disp_bytes::
+01F9: E5       [11]         push    hl
                             ; TODO: NYI
-01F9: E1       [21]         pop	    hl
-01FA: C9       [31]         ret
+01FA: E1       [21]         pop	    hl
+01FB: C9       [31]         ret
                         
-01FB:                   cmd_do_disp_words::
-01FB: E5       [11]         push    hl
+01FC:                   cmd_do_disp_words::
+01FC: E5       [11]         push    hl
                             ; TODO: NYI
-01FC: E1       [21]         pop	    hl
-01FD: C9       [31]         ret
+01FD: E1       [21]         pop	    hl
+01FE: C9       [31]         ret
                         
-01FE:                   cmd_do_call::
-01FE: E5       [11]         push    hl
+01FF:                   cmd_do_call::
+01FF: E5       [11]         push    hl
                             ; TODO: NYI
-01FF: E1       [21]         pop	    hl
-0200: C9       [31]         ret
+0200: E1       [21]         pop	    hl
+0201: C9       [31]         ret
                         
-0201:                   cmd_do_reset::
-0201: E5       [11]         push    hl
-0202: 2E52     [18]         ld	    l, 'R'
-0204: CD1F03   [35]         call    sio_putc
-0207: CDD903   [52]         call    delay_1ms
-020A: F3       [56]         di
-020B: C7       [67]         rst	    0x00	; reset
+0202:                   cmd_do_reset::
+0202: E5       [11]         push    hl
+                            M_sio_putc 'R'
+0203: 2E52     [18]         ld	    l, 'R'
+0205: CD2303   [35]         call    sio_putc
+0208: CDDD03   [52]         call    delay_1ms
+020B: F3       [56]         di
+020C: C7       [67]         rst	    0x00	; reset
                         
                         #local
-020C:                   cmd_do_input::
-020C: E5       [11]         push    hl
-020D: C5       [22]         push    bc
+020D:                   cmd_do_input::
+020D: E5       [11]         push    hl
+020E: C5       [22]         push    bc
                             M_sio_puts prompt_str
-020E: 213002   [32]         ld	    hl, prompt_str
-0211: CD2903   [49]         call    sio_puts
-0214: CDBF02   [66]         call    sio_gethex8
-0217: 7C       [70]         ld	    a, h
-0218: B7       [74]         or	    a		; fast test a==0
-0219: 200C     [81|86]      jr	    nz, done
+020F: 213102   [32]         ld	    hl, prompt_str
+0212: CD2D03   [49]         call    sio_puts
+0215: CDC302   [66]         call    sio_gethex8
+0218: 7C       [70]         ld	    a, h
+0219: B7       [74]         or	    a		; fast test a==0
+021A: 200C     [81|86]      jr	    nz, done
                             ; I/O address is in l
-021B: 4D       [85]         ld	    c, l
+021C: 4D       [85]         ld	    c, l
                             M_sio_puts cmd_equals_str
-021C: 216D02   [95]         ld	    hl, cmd_equals_str
-021F: CD2903   [112]        call    sio_puts
-0222: ED68     [124]        in	    l, (c)
-0224: CD3F03   [141]        call    sio_puthex8
-0227:                   done:
+021D: 216E02   [95]         ld	    hl, cmd_equals_str
+0220: CD2D03   [112]        call    sio_puts
+0223: ED68     [124]        in	    l, (c)
+0225: CD4303   [141]        call    sio_puthex8
+0228:                   done:
                             M_sio_puts crlf
-0227: 219E00   [10]         ld	    hl, crlf
-022A: CD2903   [27]         call    sio_puts
-022D: C1       [37]         pop	    bc
-022E: E1       [47]         pop	    hl
-022F: C9       [57]         ret
+0228: 219E00   [10]         ld	    hl, crlf
+022B: CD2D03   [27]         call    sio_puts
+022E: C1       [37]         pop	    bc
+022F: E1       [47]         pop	    hl
+0230: C9       [57]         ret
                         
-0230:                   prompt_str:
-0230: 492400                .asciz  "I$"
+0231:                   prompt_str:
+0231: 492400                .asciz  "I$"
                         #endlocal
                         
                         #local
-0233:                   cmd_do_output::
-0233: E5       [11]         push    hl
-0234: C5       [22]         push    bc
+0234:                   cmd_do_output::
+0234: E5       [11]         push    hl
+0235: C5       [22]         push    bc
                             M_sio_puts prompt_str
-0235: 216102   [32]         ld	    hl, prompt_str
-0238: CD2903   [49]         call    sio_puts
-023B: CDBF02   [66]         call    sio_gethex8
-023E: 7C       [70]         ld	    a, h
-023F: B7       [74]         or	    a		; fast test a==0
-0240: 2016     [81|86]      jr	    nz, done
+0236: 216202   [32]         ld	    hl, prompt_str
+0239: CD2D03   [49]         call    sio_puts
+023C: CDC302   [66]         call    sio_gethex8
+023F: 7C       [70]         ld	    a, h
+0240: B7       [74]         or	    a		; fast test a==0
+0241: 2016     [81|86]      jr	    nz, done
                             ; I/O address is in l -- stash it in c
-0242: 4D       [85]         ld	    c, l
+0243: 4D       [85]         ld	    c, l
                             M_sio_puts cmd_equals_str
-0243: 216D02   [95]         ld	    hl, cmd_equals_str
-0246: CD2903   [112]        call    sio_puts
-0249: CDBF02   [129]        call    sio_gethex8
-024C: 7C       [133]        ld	    a, h
-024D: B7       [137]        or	    a		; fast test a==0
-024E: 2008     [144|149]    jr	    nz, done
+0244: 216E02   [95]         ld	    hl, cmd_equals_str
+0247: CD2D03   [112]        call    sio_puts
+024A: CDC302   [129]        call    sio_gethex8
+024D: 7C       [133]        ld	    a, h
+024E: B7       [137]        or	    a		; fast test a==0
+024F: 2008     [144|149]    jr	    nz, done
                             ; output value is in l
-0250: ED69     [156]        out	    (c), l
+0251: ED69     [156]        out	    (c), l
                             M_sio_puts cmd_ok_str
-0252: 217002   [166]        ld	    hl, cmd_ok_str
-0255: CD2903   [183]        call    sio_puts
-0258:                   done:
+0253: 217102   [166]        ld	    hl, cmd_ok_str
+0256: CD2D03   [183]        call    sio_puts
+0259:                   done:
                             M_sio_puts crlf
-0258: 219E00   [10]         ld	    hl, crlf
-025B: CD2903   [27]         call    sio_puts
-025E: C1       [37]         pop	    bc
-025F: E1       [47]         pop	    hl
-0260: C9       [57]         ret
+0259: 219E00   [10]         ld	    hl, crlf
+025C: CD2D03   [27]         call    sio_puts
+025F: C1       [37]         pop	    bc
+0260: E1       [47]         pop	    hl
+0261: C9       [57]         ret
                         
-0261:                   prompt_str:
-0261: 4F2400                .asciz  "O$"
+0262:                   prompt_str:
+0262: 4F2400                .asciz  "O$"
                         #endlocal
                         
-0264:                   cmd_do_cr::
-0264: E5       [11]         push    hl
+0265:                   cmd_do_cr::
+0265: E5       [11]         push    hl
                             M_sio_puts crlf
-0265: 219E00   [21]         ld	    hl, crlf
-0268: CD2903   [38]         call    sio_puts
-026B: E1       [48]         pop	    hl
-026C: C9       [58]         ret
+0266: 219E00   [21]         ld	    hl, crlf
+0269: CD2D03   [38]         call    sio_puts
+026C: E1       [48]         pop	    hl
+026D: C9       [58]         ret
                         
-026D:                   cmd_equals_str::
-026D: 3D2400                .asciz  "=$"
-0270:                   cmd_ok_str::
-0270: 0D0A4F4B              .text   CR, LF, "OK", NUL
-0274: 00                
+026E:                   cmd_equals_str::
+026E: 3D2400                .asciz  "=$"
+0271:                   cmd_ok_str::
+0271: 0D0A4F4B              .text   CR, LF, "OK", NUL
+0275: 00                
                         
                         ; Library routines
                         ; ----------------
@@ -789,98 +798,99 @@
                         ; Call jp_hl to make a call to the address in hl. What actually happens is the call to jp_hl loads
                         ; the return address on the stack, then control transfers to jp_hl, which jumps to the address
                         ; in hl, thus giving the effect of "call hl", which isn't a Z80 instruction.
-0275:                   jp_hl::
-0275: E9       [ 4]         jp	    hl
+0276:                   jp_hl::
+0276: E9       [ 4]         jp	    hl
                         
                         ; Call jp_bc to make a call to the address in bc. What actually happens is the call to jp_bc loads
                         ; the return address on the stack, then control transfers to jp_bc, which jumps to the address
                         ; in bc, thus giving the effect of "call bc", which isn't a Z80 instruction.
-0276:                   jp_bc::
-0276: C5       [11]         push    bc
-0277: C9       [21]         ret
+0277:                   jp_bc::
+0277: C5       [11]         push    bc
+0278: C9       [21]         ret
                         
                         ; uint8_t toupper(uint8_t ch)
                         ; - map character "ch" to upper-case, if it is a lower-case letter
                         #local
-0278:                   toupper::
-0278: 7D       [ 4]         ld	    a, l
-0279: FE61     [11]         cp	    'a'
-027B: D8       [16|22]      ret	    c
-027C: FE7B     [23]         cp	    'z'+1
-027E: D0       [28|34]      ret	    nc
-027F: E6DF     [35]         and	    ~0x20
-0281: 6F       [39]         ld	    l, a
-0282: C9       [49]         ret
+0279:                   toupper::
+0279: 7D       [ 4]         ld	    a, l
+027A: FE61     [11]         cp	    'a'
+027C: D8       [16|22]      ret	    c
+027D: FE7B     [23]         cp	    'z'+1
+027F: D0       [28|34]      ret	    nc
+0280: E6DF     [35]         and	    ~0x20
+0282: 6F       [39]         ld	    l, a
+0283: C9       [49]         ret
                         #endlocal
                         
                         ; Z_flag isxdigit(uint8_t ch)
                         ; - set Z flag iff "ch" is a digit 0-9 or A-F
                         #local
-0283:                   isxdigit::
-0283: 7D       [ 4]         ld	    a, l
-0284: FE30     [11]         cp	    '0'
-0286: 380C     [18|23]      jr	    c, no
-0288: FE3A     [25]         cp	    '9'+1
-028A: 380B     [32|37]      jr	    c, yes
-028C: FE41     [39]         cp	    'A'
-028E: 3804     [46|51]      jr	    c, no
-0290: FE47     [53]         cp	    'F'+1
-0292: 3803     [60|65]      jr	    c, yes
+0284:                   isxdigit::
+0284: 7D       [ 4]         ld	    a, l
+0285: FE30     [11]         cp	    '0'
+0287: 380C     [18|23]      jr	    c, no
+0289: FE3A     [25]         cp	    '9'+1
+028B: 380B     [32|37]      jr	    c, yes
+028D: FE41     [39]         cp	    'A'
+028F: 3804     [46|51]      jr	    c, no
+0291: FE47     [53]         cp	    'F'+1
+0293: 3803     [60|65]      jr	    c, yes
                             ; otherwise, no
-0294:                   no:
-0294: FE30     [ 7]         cp	    '0'		; reset Z flag (a != '0', so Z is reset)
-0296: C9       [17]         ret
-0297:                   yes:
-0297: AF       [ 4]         xor	    a		; set Z flag
-0298: C9       [14]         ret
+0295:                   no:
+0295: FE30     [ 7]         cp	    '0'		; reset Z flag (a != '0', so Z is reset)
+0297: C9       [17]         ret
+0298:                   yes:
+0298: AF       [ 4]         xor	    a		; set Z flag
+0299: C9       [14]         ret
                         #endlocal
                         
                         ; uint8_t hex2bin(uint8_t ch)
                         ; - converts the single hex digit "ch" (must be 0-9 or A-F) into a binary value between 0-15
                         #local
-0299:                   hex2bin::
-0299: 7D       [ 4]         ld	    a, l
-029A: FE41     [11]         cp	    'A'
-029C: 3004     [18|23]      jr	    nc, hex
-029E: D630     [25]         sub	    '0'
-02A0: 6F       [29]         ld	    l, a
-02A1: C9       [39]         ret
-02A2:                   hex:
-02A2: D637     [ 7]         sub	    'A'-10
-02A4: 6F       [11]         ld	    l, a
-02A5: C9       [21]         ret
+029A:                   hex2bin::
+029A: 7D       [ 4]         ld	    a, l
+029B: FE41     [11]         cp	    'A'
+029D: 3004     [18|23]      jr	    nc, hex
+029F: D630     [25]         sub	    '0'
+02A1: 6F       [29]         ld	    l, a
+02A2: C9       [39]         ret
+02A3:                   hex:
+02A3: D637     [ 7]         sub	    'A'-10
+02A5: 6F       [11]         ld	    l, a
+02A6: C9       [21]         ret
                         #endlocal
                         
                         ; uint8_t bin2hex(uint8_t val)
                         ; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
                         #local
-02A6:                   bin2hex::
-02A6: 7D       [ 4]         ld	    a, l
-02A7: E60F     [11]         and	    0xF
-02A9: FE0A     [18]         cp	    0xA
-02AB: 3804     [25|30]      jr	    c, decimal
-02AD: C637     [32]         add	    'A'-10
-02AF: 6F       [36]         ld	    l, a
-02B0: C9       [46]         ret
-02B1:                   decimal:
-02B1: C630     [ 7]         add	    '0'
-02B3: 6F       [11]         ld	    l, a
-02B4: C9       [21]         ret
+02A7:                   bin2hex::
+02A7: 7D       [ 4]         ld	    a, l
+02A8: E60F     [11]         and	    0xF
+02AA: FE0A     [18]         cp	    0xA
+02AC: 3804     [25|30]      jr	    c, decimal
+02AE: C637     [32]         add	    'A'-10
+02B0: 6F       [36]         ld	    l, a
+02B1: C9       [46]         ret
+02B2:                   decimal:
+02B2: C630     [ 7]         add	    '0'
+02B4: 6F       [11]         ld	    l, a
+02B5: C9       [21]         ret
                         #endlocal
                         
                         ; uint8_t sio_getc()
                         ; - wait synchronously until a byte is available from port A, and return it
                         #local
-02B5:                   sio_getc::
-02B5:                   waitRX:
+02B6:                   sio_getc::
+02B6:                   waitRX:
                             ; wait for an input character
-02B5: DB22     [11]         in	    a, (PORT_SIOACTL)
-02B7: CB47     [19]         bit	    SIORR0_IDX_RCA, a
-02B9: 28FA     [26|31]      jr	    z, waitRX
+02B6: DB22     [11]         in	    a, (PORT_SIOACTL)
+02B8: CB47     [19]         bit	    SIORR0_IDX_RCA, a
+02BA: 28FA     [26|31]      jr	    z, waitRX
                             ; read input character
-02BB: DB20     [37]         in	    a, (PORT_SIOADAT)
-02BD: 6F       [41]         ld	    l, a
-02BE: C9       [51]         ret
+02BC: DB20     [37]         in	    a, (PORT_SIOADAT)
+02BE: 6F       [41]         ld	    l, a
+02BF: CD5C03   [58]         call    seg_writehex
+02C2: C9       [68]         ret
                         #endlocal
                         
                         ; int16_t sio_gethex8()
@@ -891,287 +901,287 @@
                         ; - CR accepts entry
                         ; - returns unsigned 8-bit value entered, or -1 if aborted
                         #local
-02BF:                   sio_gethex8::
-02BF: C5       [11]         push    bc
-02C0:                   getFirst:
-02C0: CDB502   [17]         call    sio_getc
-02C3: 7D       [21]         ld	    a, l
-02C4: FE1B     [28]         cp	    ESC
-02C6: 2852     [35|40]      jr	    z, abort
-02C8: CD7802   [52]         call    toupper
-02CB: CD8302   [69]         call    isxdigit	; Z set iff is hex digit
-02CE: 20F0     [76|81]      jr	    nz, getFirst
-02D0: CD1F03   [93]         call    sio_putc	; echo digit
-02D3: 45       [97]         ld	    b, l	; store high digit in b
-02D4:                   getSecond:
-02D4: CDB502   [17]         call    sio_getc
-02D7: 7D       [21]         ld	    a, l
-02D8: FE1B     [28]         cp	    ESC
-02DA: 283E     [35|40]      jr	    z, abort
-02DC: FE08     [42]         cp	    BS
-02DE: 2005     [49|54]      jr	    nz, notBS1
-02E0: CD1F03   [66]         call    sio_putc	; echo BS
-02E3: 18DB     [78]         jr	    getFirst
-02E5:                   notBS1:
-02E5: CD7802   [17]         call    toupper
-02E8: CD8302   [34]         call    isxdigit	; Z set iff is hex digit
-02EB: 20E7     [41|46]      jr	    nz, getSecond
-02ED: CD1F03   [58]         call    sio_putc	; echo digit
-02F0: 4D       [62]         ld	    c, l	; store low digit in c
-02F1:                   getThird:
-02F1: CDB502   [17]         call    sio_getc
-02F4: 7D       [21]         ld	    a, l
-02F5: FE1B     [28]         cp	    ESC
-02F7: 2821     [35|40]      jr	    z, abort
-02F9: FE0D     [42]         cp	    CR
-02FB: 2809     [49|54]      jr	    z, convert
-02FD: FE08     [56]         cp	    BS
-02FF: 20F0     [63|68]      jr	    nz, getThird
+02C3:                   sio_gethex8::
+02C3: C5       [11]         push    bc
+02C4:                   getFirst:
+02C4: CDB602   [17]         call    sio_getc
+02C7: 7D       [21]         ld	    a, l
+02C8: FE1B     [28]         cp	    ESC
+02CA: 2852     [35|40]      jr	    z, abort
+02CC: CD7902   [52]         call    toupper
+02CF: CD8402   [69]         call    isxdigit	; Z set iff is hex digit
+02D2: 20F0     [76|81]      jr	    nz, getFirst
+02D4: CD2303   [93]         call    sio_putc	; echo digit
+02D7: 45       [97]         ld	    b, l	; store high digit in b
+02D8:                   getSecond:
+02D8: CDB602   [17]         call    sio_getc
+02DB: 7D       [21]         ld	    a, l
+02DC: FE1B     [28]         cp	    ESC
+02DE: 283E     [35|40]      jr	    z, abort
+02E0: FE08     [42]         cp	    BS
+02E2: 2005     [49|54]      jr	    nz, notBS1
+02E4: CD2303   [66]         call    sio_putc	; echo BS
+02E7: 18DB     [78]         jr	    getFirst
+02E9:                   notBS1:
+02E9: CD7902   [17]         call    toupper
+02EC: CD8402   [34]         call    isxdigit	; Z set iff is hex digit
+02EF: 20E7     [41|46]      jr	    nz, getSecond
+02F1: CD2303   [58]         call    sio_putc	; echo digit
+02F4: 4D       [62]         ld	    c, l	; store low digit in c
+02F5:                   getThird:
+02F5: CDB602   [17]         call    sio_getc
+02F8: 7D       [21]         ld	    a, l
+02F9: FE1B     [28]         cp	    ESC
+02FB: 2821     [35|40]      jr	    z, abort
+02FD: FE0D     [42]         cp	    CR
+02FF: 2809     [49|54]      jr	    z, convert
+0301: FE08     [56]         cp	    BS
+0303: 20F0     [63|68]      jr	    nz, getThird
                             ; handle backspace
-0301: CD1F03   [80]         call    sio_putc	; echo BS
-0304: 18CE     [92]         jr	    getSecond
-0306:                   convert:
-0306: 68       [ 4]         ld	    l, b
-0307: CD9902   [21]         call    hex2bin
-030A: 45       [25]         ld	    b, l
-030B: 69       [29]         ld	    l, c
-030C: CD9902   [46]         call    hex2bin
+0305: CD2303   [80]         call    sio_putc	; echo BS
+0308: 18CE     [92]         jr	    getSecond
+030A:                   convert:
+030A: 68       [ 4]         ld	    l, b
+030B: CD9A02   [21]         call    hex2bin
+030E: 45       [25]         ld	    b, l
+030F: 69       [29]         ld	    l, c
+0310: CD9A02   [46]         call    hex2bin
                             ; compute a = (b << 4) | l
-030F: 78       [50]         ld	    a, b
-0310: 87       [54]         add	    a
-0311: 87       [58]         add	    a
-0312: 87       [62]         add	    a
-0313: 87       [66]         add	    a
-0314: B5       [70]         or	    l
-0315: 6F       [74]         ld	    l, a
-0316: 2600     [81]         ld	    h, 0
-0318: C1       [91]         pop	    bc
-0319: C9       [101]        ret
-031A:                   abort:
-031A: 21FFFF   [10]         ld	    hl, -1
-031D: C1       [20]         pop	    bc
-031E: C9       [30]         ret	    
+0313: 78       [50]         ld	    a, b
+0314: 87       [54]         add	    a
+0315: 87       [58]         add	    a
+0316: 87       [62]         add	    a
+0317: 87       [66]         add	    a
+0318: B5       [70]         or	    l
+0319: 6F       [74]         ld	    l, a
+031A: 2600     [81]         ld	    h, 0
+031C: C1       [91]         pop	    bc
+031D: C9       [101]        ret
+031E:                   abort:
+031E: 21FFFF   [10]         ld	    hl, -1
+0321: C1       [20]         pop	    bc
+0322: C9       [30]         ret	    
                         #endlocal
                         
                         ; void sio_putc(uint8_t ch)
                         ; - write the specified character "ch" to port A
                         #local
-031F:                   sio_putc::
-031F:                   waitTX:
+0323:                   sio_putc::
+0323:                   waitTX:
                             ; wait until transmitter is idle
-031F: DB22     [11]         in	    a, (PORT_SIOACTL)
-0321: CB57     [19]         bit	    SIORR0_IDX_TBE, a
-0323: 28FA     [26|31]      jr	    z, waitTX
+0323: DB22     [11]         in	    a, (PORT_SIOACTL)
+0325: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0327: 28FA     [26|31]      jr	    z, waitTX
                             ; write output character
-0325: 7D       [30]         ld	    a, l
-0326: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
-0328: C9       [51]         ret
+0329: 7D       [30]         ld	    a, l
+032A: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+032C: C9       [51]         ret
                         #endlocal
                         
                         ; void sio_puts(uint8_t *text)
                         ; - write the NUL-terminated string at "text" to port A
                         #local
-0329:                   sio_puts::
-0329: E5       [11]         push    hl
-032A: C5       [22]         push    bc
-032B:                   nextByte:
-032B: 7E       [ 7]         ld	    a, (hl)
-032C: 23       [13]         inc	    hl
-032D: B7       [17]         or	    a		; fast test a==0
-032E: 280C     [24|29]      jr	    z, done
-0330: 47       [28]         ld	    b, a
-0331:                   waitTX:
+032D:                   sio_puts::
+032D: E5       [11]         push    hl
+032E: C5       [22]         push    bc
+032F:                   nextByte:
+032F: 7E       [ 7]         ld	    a, (hl)
+0330: 23       [13]         inc	    hl
+0331: B7       [17]         or	    a		; fast test a==0
+0332: 280C     [24|29]      jr	    z, done
+0334: 47       [28]         ld	    b, a
+0335:                   waitTX:
                             ; wait until transmitter is idle
-0331: DB22     [11]         in	    a, (PORT_SIOACTL)
-0333: CB57     [19]         bit	    SIORR0_IDX_TBE, a
-0335: 28FA     [26|31]      jr	    z, waitTX
+0335: DB22     [11]         in	    a, (PORT_SIOACTL)
+0337: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0339: 28FA     [26|31]      jr	    z, waitTX
                             ; write output character
-0337: 78       [30]         ld	    a, b
-0338: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
-033A: 18EF     [53]         jr	    nextByte
-033C:                   done:
-033C: C1       [10]         pop	    bc
-033D: E1       [20]         pop	    hl
-033E: C9       [30]         ret
+033B: 78       [30]         ld	    a, b
+033C: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+033E: 18EF     [53]         jr	    nextByte
+0340:                   done:
+0340: C1       [10]         pop	    bc
+0341: E1       [20]         pop	    hl
+0342: C9       [30]         ret
                         #endlocal
                         
                         ; void sio_puthex8(uint8_t val)
                         ; - writes the specified 8-bit value "val" as a pair of hex digits to port A
-033F:                   sio_puthex8::
-033F: E5       [11]         push    hl
-0340: 65       [15]         ld	    h, l
-0341: CB3D     [23]         srl	    l
-0343: CB3D     [31]         srl	    l
-0345: CB3D     [39]         srl	    l
-0347: CB3D     [47]         srl	    l
-0349: CDA602   [64]         call    bin2hex
-034C: CD1F03   [81]         call    sio_putc
-034F: 6C       [85]         ld	    l, h
-0350: CDA602   [102]        call    bin2hex
-0353: CD1F03   [119]        call    sio_putc
-0356: E1       [129]        pop	    hl
-0357: C9       [139]        ret
+0343:                   sio_puthex8::
+0343: E5       [11]         push    hl
+0344: 65       [15]         ld	    h, l
+0345: CB3D     [23]         srl	    l
+0347: CB3D     [31]         srl	    l
+0349: CB3D     [39]         srl	    l
+034B: CB3D     [47]         srl	    l
+034D: CDA702   [64]         call    bin2hex
+0350: CD2303   [81]         call    sio_putc
+0353: 6C       [85]         ld	    l, h
+0354: CDA702   [102]        call    bin2hex
+0357: CD2303   [119]        call    sio_putc
+035A: E1       [129]        pop	    hl
+035B: C9       [139]        ret
                         
                         ; void seg_writehex(uint8_t val)
                         ; - write the two hex digits of "val" to the 7-segment displays
-0358:                   seg_writehex::
-0358: E5       [11]         push    hl
-0359: CD8003   [28]         call    seg1_writehex
-035C: 7D       [32]         ld	    a, l
-035D: 07       [36]         rlca
-035E: 07       [40]         rlca
-035F: 07       [44]         rlca
-0360: 07       [48]         rlca
-0361: 6F       [52]         ld	    l, a
-0362: CD6703   [69]         call    seg0_writehex
-0365: E1       [79]         pop	    hl
-0366: C9       [89]         ret
+035C:                   seg_writehex::
+035C: E5       [11]         push    hl
+035D: CD8403   [28]         call    seg1_writehex
+0360: 7D       [32]         ld	    a, l
+0361: 07       [36]         rlca
+0362: 07       [40]         rlca
+0363: 07       [44]         rlca
+0364: 07       [48]         rlca
+0365: 6F       [52]         ld	    l, a
+0366: CD6B03   [69]         call    seg0_writehex
+0369: E1       [79]         pop	    hl
+036A: C9       [89]         ret
                         
                         ; void seg0_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-0367:                   seg0_writehex::
-0367: E5       [11]         push    hl
-0368: C5       [22]         push    bc
-0369: 019903   [32]         ld	    bc, hex2seg_table
-036C: 7D       [36]         ld	    a, l
-036D: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-036F: 6F       [47]         ld	    l, a
-0370: 2600     [54]         ld	    h, 0
-0372: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-0373: 3A0020   [78]         ld	    a, (Seg0_data)
-0376: E680     [85]         and	    SEG_DP
-0378: B6       [92]         or	    (hl)
-0379: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
-037A: CDBF03   [113]        call    seg0_write
-037D: C1       [123]        pop	    bc
-037E: E1       [133]        pop	    hl
-037F: C9       [143]        ret
+036B:                   seg0_writehex::
+036B: E5       [11]         push    hl
+036C: C5       [22]         push    bc
+036D: 019D03   [32]         ld	    bc, hex2seg_table
+0370: 7D       [36]         ld	    a, l
+0371: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+0373: 6F       [47]         ld	    l, a
+0374: 2600     [54]         ld	    h, 0
+0376: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+0377: 3A0020   [78]         ld	    a, (Seg0_data)
+037A: E680     [85]         and	    SEG_DP
+037C: B6       [92]         or	    (hl)
+037D: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
+037E: CDC303   [113]        call    seg0_write
+0381: C1       [123]        pop	    bc
+0382: E1       [133]        pop	    hl
+0383: C9       [143]        ret
                         
                         ; void seg1_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-0380:                   seg1_writehex::
-0380: E5       [11]         push    hl
-0381: C5       [22]         push    bc
-0382: 019903   [32]         ld	    bc, hex2seg_table
-0385: 7D       [36]         ld	    a, l
-0386: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-0388: 6F       [47]         ld	    l, a
-0389: 2600     [54]         ld	    h, 0
-038B: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-038C: 3A0120   [78]         ld	    a, (Seg1_data)
-038F: E680     [85]         and	    SEG_DP
-0391: B6       [92]         or	    (hl)
-0392: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
-0393: CDC603   [113]        call    seg1_write
-0396: C1       [123]        pop	    bc
-0397: E1       [133]        pop	    hl
-0398: C9       [143]        ret
+0384:                   seg1_writehex::
+0384: E5       [11]         push    hl
+0385: C5       [22]         push    bc
+0386: 019D03   [32]         ld	    bc, hex2seg_table
+0389: 7D       [36]         ld	    a, l
+038A: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+038C: 6F       [47]         ld	    l, a
+038D: 2600     [54]         ld	    h, 0
+038F: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+0390: 3A0120   [78]         ld	    a, (Seg1_data)
+0393: E680     [85]         and	    SEG_DP
+0395: B6       [92]         or	    (hl)
+0396: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
+0397: CDCA03   [113]        call    seg1_write
+039A: C1       [123]        pop	    bc
+039B: E1       [133]        pop	    hl
+039C: C9       [143]        ret
                         
-0399:                   hex2seg_table::
+039D:                   hex2seg_table::
                             ; 0
-0399: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
+039D: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
                             ; 1
-039A: 06                    .byte SEG_B | SEG_C
+039E: 06                    .byte SEG_B | SEG_C
                             ; 2
-039B: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
+039F: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
                             ; 3
-039C: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
+03A0: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
                             ; 4
-039D: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
+03A1: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
                             ; 5
-039E: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
+03A2: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
                             ; 6
-039F: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+03A3: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; 7
-03A0: 07                    .byte SEG_A | SEG_B | SEG_C
+03A4: 07                    .byte SEG_A | SEG_B | SEG_C
                             ; 8
-03A1: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
+03A5: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
                             ; 9
-03A2: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
+03A6: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
                             ; A
-03A3: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
+03A7: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
                             ; b
-03A4: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+03A8: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; C
-03A5: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
+03A9: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
                             ; d
-03A6: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
+03AA: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
                             ; E
-03A7: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
+03AB: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
                             ; F
-03A8: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
+03AC: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
                         
                         ; void seg0_toggle(uint8_t bits)
                         ; - toggle specified bits of first 7-segment display register
-03A9:                   seg0_toggle::
-03A9: E5       [11]         push    hl
-03AA: 3A0020   [24]         ld	    a, (Seg0_data)
-03AD: AD       [28]         xor	    l
-03AE: 6F       [32]         ld	    l, a
-03AF: CDBF03   [49]         call    seg0_write
-03B2: E1       [59]         pop	    hl
-03B3: C9       [69]         ret
+03AD:                   seg0_toggle::
+03AD: E5       [11]         push    hl
+03AE: 3A0020   [24]         ld	    a, (Seg0_data)
+03B1: AD       [28]         xor	    l
+03B2: 6F       [32]         ld	    l, a
+03B3: CDC303   [49]         call    seg0_write
+03B6: E1       [59]         pop	    hl
+03B7: C9       [69]         ret
                         
                         ; void seg1_toggle(uint8_t bits)
                         ; - toggle specified bits of second 7-segment display register
-03B4:                   seg1_toggle::
-03B4: E5       [11]         push    hl
-03B5: 3A0120   [24]         ld	    a, (Seg1_data)
-03B8: AD       [28]         xor	    l
-03B9: 6F       [32]         ld	    l, a
-03BA: CDC603   [49]         call    seg1_write
-03BD: E1       [59]         pop	    hl
-03BE: C9       [69]         ret
+03B8:                   seg1_toggle::
+03B8: E5       [11]         push    hl
+03B9: 3A0120   [24]         ld	    a, (Seg1_data)
+03BC: AD       [28]         xor	    l
+03BD: 6F       [32]         ld	    l, a
+03BE: CDCA03   [49]         call    seg1_write
+03C1: E1       [59]         pop	    hl
+03C2: C9       [69]         ret
                         
                         ; void seg0_write(uint8_t bits)
                         ; - write raw bits to first 7-segment display register
-03BF:                   seg0_write::
-03BF: 7D       [ 4]         ld	    a, l
-03C0: 320020   [17]         ld	    (Seg0_data), a
-03C3: D300     [28]         out	    (PORT_SEG0), a
-03C5: C9       [38]         ret
+03C3:                   seg0_write::
+03C3: 7D       [ 4]         ld	    a, l
+03C4: 320020   [17]         ld	    (Seg0_data), a
+03C7: D300     [28]         out	    (PORT_SEG0), a
+03C9: C9       [38]         ret
                         
                         ; void seg1_write(uint8_t bits)
                         ; - write raw bits to second 7-segment display register
-03C6:                   seg1_write::
-03C6: 7D       [ 4]         ld	    a, l
-03C7: 320120   [17]         ld	    (Seg1_data), a
-03CA: D310     [28]         out	    (PORT_SEG1), a
-03CC: C9       [38]         ret
+03CA:                   seg1_write::
+03CA: 7D       [ 4]         ld	    a, l
+03CB: 320120   [17]         ld	    (Seg1_data), a
+03CE: D310     [28]         out	    (PORT_SEG1), a
+03D0: C9       [38]         ret
                         
                         ; void delay_ms(uint8_t ms)
                         ; - delay for at least the specified number of milliseconds
                         #local
-03CD:                   delay_ms::
-03CD: 2C       [ 4]         inc	    l
-03CE: 2D       [ 8]         dec	    l
-03CF: C8       [13|19]      ret	    z		; delay of 0 returns immediately
-03D0: C5       [24]         push    bc
-03D1: 45       [28]         ld	    b, l
-03D2:                   loop:
-03D2: CDD903   [17]         call    delay_1ms
-03D5: 10FB     [25|30]      djnz    loop
-03D7: C1       [35]         pop	    bc
-03D8: C9       [45]         ret
+03D1:                   delay_ms::
+03D1: 2C       [ 4]         inc	    l
+03D2: 2D       [ 8]         dec	    l
+03D3: C8       [13|19]      ret	    z		; delay of 0 returns immediately
+03D4: C5       [24]         push    bc
+03D5: 45       [28]         ld	    b, l
+03D6:                   loop:
+03D6: CDDD03   [17]         call    delay_1ms
+03D9: 10FB     [25|30]      djnz    loop
+03DB: C1       [35]         pop	    bc
+03DC: C9       [45]         ret
                         #endlocal
                         
                         ; void delay_1ms()
                         ; - delay for 1ms (technically, 0.9999ms)
                         #local
-03D9:                   delay_1ms::
-03D9: C5       [11]         push    bc		; 11 T-states
+03DD:                   delay_1ms::
+03DD: C5       [11]         push    bc		; 11 T-states
                         ; To delay 1ms, we want to wait 10,000 T-states (@10MHz)
                         ; The loop is (38*b + 13*(b-1) + 8) T-states long
                         ; Rearranging: 51*b - 5
                         ; Solve for b: b = (10000 + 5 / 51) = 196.17
-03DA: 06C3     [18]         ld	    b, 195	; 7 T-states
-03DC:                   loop:
-03DC: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
-03DF: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
-03E2: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
-03E4: C1       [56]         pop	    bc		; 10 T-states
-03E5: 00       [60]         nop			; 4 T-states
-03E6: C9       [70]         ret			; 10 T-states
+03DE: 06C3     [18]         ld	    b, 195	; 7 T-states
+03E0:                   loop:
+03E0: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
+03E3: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
+03E6: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
+03E8: C1       [56]         pop	    bc		; 10 T-states
+03E9: 00       [60]         nop			; 4 T-states
+03EA: C9       [70]         ret			; 10 T-states
                         ; We also assume the routine is CALLed, for 17 T-states.
                         ; Total delay is therefore:
                         ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
@@ -1182,5 +1192,5 @@
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0249 sec.
+total time: 0.0187 sec.
 no errors

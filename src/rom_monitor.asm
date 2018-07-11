@@ -30,6 +30,11 @@ M_sio_puts  macro str
     call    sio_puts
     endm
 
+M_sio_putc  macro ch
+    ld	    l, &ch
+    call    sio_putc
+    endm
+
 ; 128KB Static RAM - AS6C1008-55PCN
 ; The first 8KB is shadowed by the EPROM.
 ; The next 56KB is mapped from 0x2000-0xFFFF.
@@ -205,8 +210,7 @@ cmd_loop::
     push    hl
     push    bc
 prompt:
-    ld	    l, '>'
-    call    sio_putc
+    M_sio_putc '>'
 nextByte:
     call    sio_getc
     ; map input byte to upper case
@@ -251,14 +255,6 @@ cmd_do_packet::
     push    hl
     push    bc
     push    de
-    ; await SOH byte, but abort on ESC
-waitSOH:
-    call    sio_getc
-    ld	    a, l
-    cp	    ESC
-    jr	    z, done
-    cp	    SOH
-    jr	    nz, waitSOH
     ; get packet type
     call    sio_getc
     ld	    a, l
@@ -269,10 +265,10 @@ waitSOH:
     ; unrecognized packet type!
     ; might be nice to consume everything up to EOT, but how long should we wait?
 failure:
-    ld	    l, NAK
+    ld	    l, 'N'
     jr	    putcAndDone
 success:
-    ld	    l, ACK
+    ld	    l, 'A'
 putcAndDone:
     call    sio_putc
 done:
@@ -280,6 +276,7 @@ done:
     pop	    bc
     pop	    hl
     ret
+
 doWrite:
     ; Write packet consists of:
     ;	'W'
@@ -362,9 +359,16 @@ doCall:
     ; validate checksum
     cp	    e
     jr	    nz, failure
+    M_sio_putc 'A'
+    ; af is scratch & we already save/restore bc, de, hl
+    ; save/restore ix, iy too
+    push    ix
+    push    iy
     ; call bc
     call    jp_bc
-    jr	    success
+    pop	    iy
+    pop	    ix
+    jr	    done
 #endlocal
 
 cmd_do_disp_bytes::
@@ -387,8 +391,7 @@ cmd_do_call::
 
 cmd_do_reset::
     push    hl
-    ld	    l, 'R'
-    call    sio_putc
+    M_sio_putc 'R'
     call    delay_1ms
     di
     rst	    0x00	; reset
@@ -554,6 +557,7 @@ waitRX:
     ; read input character
     in	    a, (PORT_SIOADAT)
     ld	    l, a
+    call    seg_writehex
     ret
 #endlocal
 
