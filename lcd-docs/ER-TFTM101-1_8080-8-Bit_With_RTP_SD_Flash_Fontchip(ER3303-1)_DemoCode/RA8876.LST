@@ -1,0 +1,139 @@
+C51 COMPILER V9.01   RA8876                                                                08/26/2015 16:38:20 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE RA8876
+OBJECT MODULE PLACED IN RA8876.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE RA8876.c LARGE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          //----------------------------------------------------------------------
+   2          //EASTRISING TECHNOLOGY CO,.LTD.//
+   3          // Module    : ER-TFTM101-1  10.1 INCH TFT LCD  1024*600
+   4          // Lanuage   : C51 Code
+   5          // Create    : JAVEN LIU
+   6          // Date      : 2015-08-01
+   7          // Drive IC  : RA8876     FLASH:W25Q128FV  128M BIT   FONT CHIP: 30L24T3Y
+   8          // INTERFACE : 8 BIT 8080   
+   9          // MCU           : STC12LE5C60S2     1T MCU
+  10          // MCU VDD       : 3.3V
+  11          // MODULE VDD : 5V OR 3.3V 
+  12          //----------------------------------------------------------------------
+  13          
+  14          //===========================================================
+  15          #include <STC12C5A.H>
+  16          #include <math.h>
+  17          #include <stdio.h>
+  18          #include<stdlib.h>
+  19          #include <intrins.h>
+  20          #include"RA8876.h" 
+  21          #include"8876demo.h" 
+  22          #include"SD.h"  
+  23          #include"TP.h"   
+  24          
+  25          
+  26          //=============================================================
+  27          
+  28          
+  29          #define uchar      unsigned char
+  30          #define uint       unsigned int
+  31          #define ulong      unsigned long
+  32          
+  33          
+  34          
+  35          /////////////////////main////////////////////
+  36          void main(void)
+  37          { 
+  38   1      
+  39   1              P0=0xff;
+  40   1              P1=0xff;
+  41   1              P2=0xff;
+  42   1              P3=0xff;           
+  43   1      //      BL_ON=0;  //Backlight on when external signal control
+  44   1      
+  45   1      
+  46   1              delay_ms(100);//delay for RA8876 power on
+  47   1          RA8876_HW_Reset();
+  48   1              delay_ms(100);
+  49   1               while(LCD_StatusRead()&0x02);   //Initial_Display_test and  set SW2 pin2 = 1
+  50   1      
+  51   1              RA8876_initial();
+  52   1               Display_ON();
+  53   1               delay_ms(20);
+  54   1      
+  55   1      
+C51 COMPILER V9.01   RA8876                                                                08/26/2015 16:38:20 PAGE 2   
+
+  56   1              Foreground_color_65k(White);
+  57   1              Line_Start_XY(0,0);
+  58   1              Line_End_XY(1023,599);
+  59   1              Start_Square_Fill();
+  60   1      
+  61   1       while(1) 
+  62   1              {
+  63   2       ///////////////////////////////////////////////// BackLight  Brightness control test  whit RA8876's PWM0
+  64   2              Enable_PWM0_Interrupt();
+  65   2              Clear_PWM0_Interrupt_Flag();
+  66   2              Mask_PWM0_Interrupt_Flag();
+  67   2              Select_PWM0_Clock_Divided_By_2();
+  68   2              Select_PWM0();
+  69   2              Enable_PWM0_Dead_Zone();
+  70   2              Auto_Reload_PWM0();
+  71   2               Start_PWM0();
+  72   2              Set_Timer0_Compare_Buffer(0xffff);
+  73   2               delay_ms(2000);
+  74   2      
+  75   2              Set_Timer0_Compare_Buffer(0x0000);
+  76   2               delay_ms(2000);
+  77   2              Set_Timer0_Compare_Buffer(0x0ff0);
+  78   2               delay_ms(2000);
+  79   2                      Set_Timer0_Compare_Buffer(0xffff);
+  80   2               delay_ms(2000);
+  81   2      
+  82   2       ///////////////////////////////////////////////////////////
+  83   2       ///////////////////////////////////////////////////////////    
+  84   2               
+  85   2      
+  86   2              Geometric();
+  87   2              Text_Demo();
+  88   2              mono_Demo();       
+  89   2              gray();
+  90   2              TPTEST();
+  91   2              delay_ms(3000);
+  92   2              Display_JPG_SDCARD();
+  93   2              delay_ms(3000);
+  94   2              DMA_Demo();
+  95   2              BTE_Compare();
+  96   2              BTE_Pattern_Fill();
+  97   2              BTE_Color_Expansion();
+  98   2      
+  99   2               PIP_Demo();
+ 100   2               App_Demo_Waveform();
+ 101   2               App_Demo_Scrolling_Text();
+ 102   2               //App_Demo_Icon_Effect(); //need SD card for picture source
+ 103   2               App_Demo_slide_frame_buffer();
+ 104   2               App_Demo_multi_frame_buffer();
+ 105   2               App_Demo_Alpha_Blending();
+ 106   2              }
+ 107   1      }
+ 108          
+ 109          
+ 110          
+ 111          
+ 112                  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =  27149    ----
+   CONSTANT SIZE    =  30127    ----
+C51 COMPILER V9.01   RA8876                                                                08/26/2015 16:38:20 PAGE 3   
+
+   XDATA SIZE       =    531     423
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1214 @@
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SD
+OBJECT MODULE PLACED IN sd.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE sd.c LARGE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          //----------------------------------------------------------------------
+   2          //EASTRISING TECHNOLOGY CO,.LTD.//
+   3          // Module    : ER-TFTM101-1  10.1 INCH TFT LCD  1024*600
+   4          // Lanuage   : C51 Code
+   5          // Create    : JAVEN LIU
+   6          // Date      : 2015-08-01
+   7          // Drive IC  : RA8876     FLASH:W25Q128FV  128M BIT   FONT CHIP: 30L32
+   8          // INTERFACE : 16BIT 8080   
+   9          // MCU           : STC12LE5C60S2     1T MCU
+  10          // MCU VDD       : 3.3V
+  11          // MODULE VDD : 5V OR 3.3V 
+  12          //----------------------------------------------------------------------
+  13          
+  14          //===========================================================
+  15          #include <STC12C5A.H>
+  16          #include <stdio.h>
+  17          #include <intrins.h>
+  18          #include"RA8876.h"  
+  19          #include"SD.h"  
+  20          //#include"ra8876_demo.h"
+  21          
+  22          
+  23          //=============================================================
+  24          
+  25          
+  26          #define uchar      unsigned char
+  27          #define uint       unsigned int
+  28          #define ulong      unsigned long
+  29          
+  30            #define layer1_start_addr 0            
+  31            #define layer2_start_addr 800*600*2 
+  32            #define layer3_start_addr 800*600*2*2
+  33            #define layer4_start_addr 800*600*2*3
+  34            #define layer5_start_addr 800*600*2*4
+  35            #define layer6_start_addr 800*600*2*5
+  36          
+  37          //===========================================================
+  38          
+  39           ulong i,index = 0;  unsigned int j; 
+  40           unsigned int temp;
+  41            unsigned int counter;
+  42          
+  43          void BTE_Compare(void)
+  44          {
+  45   1         unsigned int temp;
+  46   1      
+  47   1      
+  48   1      
+  49   1              Select_Main_Window_16bpp();
+  50   1              Main_Image_Start_Address(0);                            
+  51   1              Main_Image_Width(800);                                                  
+  52   1              Main_Window_Start_XY(0,0);
+  53   1      
+  54   1              Canvas_Image_Start_address(0);//Layer 1
+  55   1              Canvas_image_width(800);//
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 2   
+
+  56   1          Active_Window_XY(0,0);
+  57   1              Active_Window_WH(800,600);
+  58   1      
+  59   1              Foreground_color_65k(White);
+  60   1              Line_Start_XY(0,0);
+  61   1              Line_End_XY(799,575);
+  62   1              Start_Square_Fill();
+  63   1      
+  64   1              Foreground_color_65k(Blue2);
+  65   1              Line_Start_XY(0,576);
+  66   1              Line_End_XY(799,599);
+  67   1              Start_Square_Fill();
+  68   1      
+  69   1              //Foreground_color_65k(White);
+  70   1              //Background_color_65k(Blue2);
+  71   1              //Goto_Text_XY(300,576);
+  72   1              //Show_String("Demo DMA");
+  73   1      
+  74   1              LCD_DisplayString(0,Line24 ,"                 Demo BTE Compare",White,Blue2);
+  75   1      
+  76   1              LCD_DisplayString(0,Line23 ,"Execute Logic 'OR' 0xf000",Black,White);
+  77   1      
+  78   1      
+  79   1          //DMA initial setting
+  80   1              Enable_SFlash_SPI();
+  81   1          Select_SFI_1();
+  82   1          Select_SFI_DMA_Mode();
+  83   1          Select_SFI_24bit_Address();
+  84   1      
+  85   1          //Select_SFI_Waveform_Mode_0();
+  86   1          Select_SFI_Waveform_Mode_3();
+  87   1      
+  88   1          //Select_SFI_0_DummyRead(); //normal read mode
+  89   1          Select_SFI_8_DummyRead(); //1byte dummy cycle
+  90   1          //Select_SFI_16_DummyRead();
+  91   1          //Select_SFI_24_DummyRead();
+  92   1      
+  93   1          Select_SFI_Single_Mode();
+  94   1          //Select_SFI_Dual_Mode0();
+  95   1          //Select_SFI_Dual_Mode1();
+  96   1      
+  97   1          SPI_Clock_Period(0);
+  98   1      
+  99   1      
+ 100   1              SFI_DMA_Destination_Upper_Left_Corner(50,40);
+ 101   1          SFI_DMA_Transfer_Width_Height(200,200);
+ 102   1          SFI_DMA_Source_Width(640);//
+ 103   1      
+ 104   1              SFI_DMA_Source_Start_Address(0);//
+ 105   1              Start_SFI_DMA();
+ 106   1          Check_Busy_SFI_DMA();
+ 107   1      
+ 108   1              SFI_DMA_Destination_Upper_Left_Corner(50+200+50,40);
+ 109   1          SFI_DMA_Transfer_Width_Height(200,200);
+ 110   1          SFI_DMA_Source_Width(640);//
+ 111   1      
+ 112   1              SFI_DMA_Source_Start_Address(0);//
+ 113   1              Start_SFI_DMA();
+ 114   1          Check_Busy_SFI_DMA();
+ 115   1      
+ 116   1              SFI_DMA_Destination_Upper_Left_Corner(50+200+50+200+50,40);
+ 117   1          SFI_DMA_Transfer_Width_Height(200,200);
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 3   
+
+ 118   1          SFI_DMA_Source_Width(640);//
+ 119   1      
+ 120   1              SFI_DMA_Source_Start_Address(0);//
+ 121   1              Start_SFI_DMA();
+ 122   1          Check_Busy_SFI_DMA();
+ 123   1      
+ 124   1              LCD_DisplayString(50,40+200+40 ,"Without BTE",Black,White);
+ 125   1      
+ 126   1              LCD_DisplayString(50+200+50,40+200+40 ,"With BTE Write",Black,White);
+ 127   1              LCD_DisplayString(50+200+50,40+200+40+24 ,"ROP",Black,White);
+ 128   1      
+ 129   1          LCD_DisplayString(50+200+50+200+50,40+200+40 ,"With BTE Move",Black,White);
+ 130   1              LCD_DisplayString(50+200+50+200+50,40+200+40+24 ,"ROP",Black,White);
+ 131   1      
+ 132   1              delay_ms(1000);
+ 133   1               //first block, MCU read and 'OR'0xff00 then write back
+ 134   1         //while(1)
+ 135   1         //{
+ 136   1                 //GPIO_SetBits(GPIOC, GPIO_Pin_1);           //test pin
+ 137   1                 Active_Window_XY(50,40);
+ 138   1                 Active_Window_WH(200,200);
+ 139   1               
+ 140   1                  Goto_Pixel_XY(50,40);
+ 141   1                  LCD_CmdWrite(0x04);
+ 142   1                  temp = LCD_DataRead();
+ 143   1                       Check_Mem_RD_FIFO_not_Empty();  //dummy
+ 144   1      
+ 145   1                  for(i=0; i<200*200;i++)
+ 146   1                        {                             
+ 147   2                         temp = LCD_DataRead();
+ 148   2                         Check_Mem_RD_FIFO_not_Empty();
+ 149   2                         temp |= 0xf000; 
+ 150   2                         LCD_DataWrite(temp);
+ 151   2                         Check_Mem_WR_FIFO_not_Full();
+ 152   2                         }
+ 153   1      
+ 154   1                //GPIO_ResetBits(GPIOC, GPIO_Pin_1);          //test pin
+ 155   1              // }
+ 156   1                      Active_Window_XY(0,0);
+ 157   1                  Active_Window_WH(800,600);
+ 158   1      
+ 159   1                //spent 51.12ms
+ 160   1                      LCD_DisplayString(50,40+200+40+72 ,"Spent 51.12ms",Black,White);
+ 161   1      
+ 162   1                 delay_ms(1000);
+ 163   1      
+ 164   1                //second block, MCU write with BTE ROP 
+ 165   1      
+ 166   1                //while(1)
+ 167   1            //{
+ 168   1                 //GPIO_SetBits(GPIOC, GPIO_Pin_1);   
+ 169   1      
+ 170   1                 BTE_S0_Color_16bpp();
+ 171   1      
+ 172   1             BTE_S1_Color_16bpp();
+ 173   1             BTE_S1_Memory_Start_Address(0);
+ 174   1             BTE_S1_Image_Width(800);
+ 175   1             BTE_S1_Window_Start_XY(50+200+50,40);
+ 176   1      
+ 177   1             BTE_Destination_Color_16bpp();  
+ 178   1             BTE_Destination_Memory_Start_Address(0);
+ 179   1             BTE_Destination_Image_Width(800);
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 4   
+
+ 180   1             BTE_Destination_Window_Start_XY(50+200+50,40);  
+ 181   1             BTE_Window_Size(200,200);
+ 182   1      
+ 183   1                 BTE_ROP_Code(14);
+ 184   1             BTE_Operation_Code(0); //BTE write
+ 185   1             BTE_Enable();
+ 186   1      
+ 187   1             LCD_CmdWrite(0x04);
+ 188   1              for(i=0; i<200*200;i++)
+ 189   1                        {                             
+ 190   2                         LCD_DataWrite(0xf000);
+ 191   2                         Check_Mem_WR_FIFO_not_Full();
+ 192   2                         }
+ 193   1             Check_Mem_WR_FIFO_Empty();//寫完後檢查
+ 194   1             Check_BTE_Busy();
+ 195   1      
+ 196   1                 //GPIO_ResetBits(GPIOC, GPIO_Pin_1);         
+ 197   1                 //}
+ 198   1                 //spent 25.56ms
+ 199   1                 LCD_DisplayString(50+200+50,40+200+40+72 ,"Spent 25.56ms",Black,White);
+ 200   1      
+ 201   1                 delay_ms(1000);
+ 202   1                 
+ 203   1                 
+ 204   1                //third block, BTE MOVE with ROP
+ 205   1                //while(1)
+ 206   1            //{
+ 207   1                // GPIO_SetBits(GPIOC, GPIO_Pin_1);   
+ 208   1                      Canvas_Image_Start_address(layer2_start_addr);//
+ 209   1                  Canvas_image_width(800);//
+ 210   1              Active_Window_XY(0,0);
+ 211   1                  Active_Window_WH(800,600);
+ 212   1      
+ 213   1                  Foreground_color_65k(0xf000);
+ 214   1                  Line_Start_XY(0,0);
+ 215   1                  Line_End_XY(200,200);
+ 216   1                  Start_Square_Fill();
+ 217   1                      //Main_Image_Start_Address(layer2_start_addr);
+ 218   1      
+ 219   1                      BTE_S0_Color_16bpp();
+ 220   1                      BTE_S0_Memory_Start_Address(layer2_start_addr);
+ 221   1                      BTE_S0_Image_Width(800);
+ 222   1                  BTE_S0_Window_Start_XY(0,0);
+ 223   1      
+ 224   1              BTE_S1_Color_16bpp();
+ 225   1              BTE_S1_Memory_Start_Address(layer1_start_addr);
+ 226   1              BTE_S1_Image_Width(800);
+ 227   1              BTE_S1_Window_Start_XY(50+200+50+200+50,40);
+ 228   1      
+ 229   1              BTE_Destination_Color_16bpp();  
+ 230   1              BTE_Destination_Memory_Start_Address(layer1_start_addr);
+ 231   1              BTE_Destination_Image_Width(800);
+ 232   1              BTE_Destination_Window_Start_XY(50+200+50+200+50,40);  
+ 233   1              BTE_Window_Size(200,200);
+ 234   1      
+ 235   1                  BTE_ROP_Code(14);
+ 236   1              BTE_Operation_Code(2); //BTE write
+ 237   1              BTE_Enable();
+ 238   1                      Check_BTE_Busy();
+ 239   1      
+ 240   1                      //GPIO_ResetBits(GPIOC, GPIO_Pin_1);            
+ 241   1                 //}
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 5   
+
+ 242   1                  //spent 6.4ms
+ 243   1                      Canvas_Image_Start_address(layer1_start_addr);//
+ 244   1                      LCD_DisplayString(50+200+50+200+50,40+200+40+72 ,"Spent 6.4ms",Black,White);
+ 245   1                                 delay_ms(5000);
+ 246   1      
+ 247   1      }
+ 248          
+ 249          
+ 250          void BTE_Color_Expansion(void)
+ 251          {
+ 252   1        
+ 253   1      
+ 254   1              Select_Main_Window_16bpp();
+ 255   1              Main_Image_Start_Address(0);                            
+ 256   1              Main_Image_Width(800);                                                  
+ 257   1              Main_Window_Start_XY(0,0);
+ 258   1      
+ 259   1              Canvas_Image_Start_address(layer1_start_addr);//Layer 1
+ 260   1              Canvas_image_width(800);//
+ 261   1          Active_Window_XY(0,0);
+ 262   1              Active_Window_WH(800,600);
+ 263   1      
+ 264   1              Foreground_color_65k(Black);
+ 265   1              Line_Start_XY(0,0);
+ 266   1              Line_End_XY(799,575);
+ 267   1              Start_Square_Fill();
+ 268   1      
+ 269   1              Foreground_color_65k(Blue2);
+ 270   1              Line_Start_XY(0,576);
+ 271   1              Line_End_XY(799,599);
+ 272   1              Start_Square_Fill();
+ 273   1      
+ 274   1              LCD_DisplayString(0,Line24 ,"            Demo BTE Color Expansion",White,Blue2);
+ 275   1      
+ 276   1              //LCD_DisplayString(0,Line23 ,"",Black,White);
+ 277   1      
+ 278   1      
+ 279   1          //DMA initial setting
+ 280   1              Enable_SFlash_SPI();
+ 281   1          Select_SFI_1();
+ 282   1          Select_SFI_DMA_Mode();
+ 283   1          Select_SFI_24bit_Address();
+ 284   1      
+ 285   1          //Select_SFI_Waveform_Mode_0();
+ 286   1          Select_SFI_Waveform_Mode_3();
+ 287   1      
+ 288   1          //Select_SFI_0_DummyRead(); //normal read mode
+ 289   1          Select_SFI_8_DummyRead(); //1byte dummy cycle
+ 290   1          //Select_SFI_16_DummyRead();
+ 291   1          //Select_SFI_24_DummyRead();
+ 292   1      
+ 293   1          Select_SFI_Single_Mode();
+ 294   1          //Select_SFI_Dual_Mode0();
+ 295   1          //Select_SFI_Dual_Mode1();
+ 296   1      
+ 297   1          SPI_Clock_Period(0);
+ 298   1      
+ 299   1      
+ 300   1              SFI_DMA_Destination_Upper_Left_Corner(80,40);
+ 301   1          SFI_DMA_Transfer_Width_Height(640,480);
+ 302   1          SFI_DMA_Source_Width(640);//
+ 303   1      
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 6   
+
+ 304   1              SFI_DMA_Source_Start_Address(640*480*2*5);//
+ 305   1              Start_SFI_DMA();
+ 306   1          Check_Busy_SFI_DMA();
+ 307   1      
+ 308   1      
+ 309   1              //color expansion and bte memory copy(move) 
+ 310   1      
+ 311   1        j=0;
+ 312   1       do
+ 313   1       {
+ 314   2         for(i=0;i<3;i++)
+ 315   2         {
+ 316   3               //switch to layer2 update screen, and execute color expansion and copy to layer1
+ 317   3               Canvas_Image_Start_address(layer2_start_addr);//
+ 318   3               Foreground_color_65k(Black);
+ 319   3               Line_Start_XY(0,0);
+ 320   3               Line_End_XY(799,575);
+ 321   3               Start_Square_Fill();
+ 322   3               //SFI_DMA_Source_Start_Address(640*480*2*i);//
+ 323   3               Start_SFI_DMA();
+ 324   3           Check_Busy_SFI_DMA();
+ 325   3      
+ 326   3               BTE_S0_Color_16bpp();
+ 327   3       
+ 328   3           BTE_S1_Color_16bpp();
+ 329   3      
+ 330   3           BTE_Destination_Color_16bpp();  
+ 331   3           BTE_Destination_Memory_Start_Address(layer2_start_addr);
+ 332   3           BTE_Destination_Image_Width(800);
+ 333   3           BTE_Destination_Window_Start_XY(80+70,40+70);  
+ 334   3           BTE_Window_Size(160,160);
+ 335   3               Foreground_color_65k(color65k_blue);
+ 336   3           Background_color_65k(color65k_red);
+ 337   3               BTE_ROP_Code(15);
+ 338   3           BTE_Operation_Code(8); //BTE color expansion
+ 339   3      
+ 340   3               BTE_Enable();
+ 341   3               LCD_CmdWrite(0x04);
+ 342   3      
+ 343   3               switch(i)
+ 344   3               {
+ 345   4                case 0 :                       
+ 346   4                                Show_picture(10*160,f1); 
+ 347   4                                Check_Mem_WR_FIFO_Empty();      
+ 348   4                        Check_BTE_Busy();
+ 349   4                                break;
+ 350   4                case 1 :
+ 351   4                                Show_picture(10*160,f2); 
+ 352   4                                Check_Mem_WR_FIFO_Empty();      
+ 353   4                        Check_BTE_Busy();
+ 354   4                                break;
+ 355   4                case 2 :
+ 356   4                                Show_picture(10*160,f3); 
+ 357   4                                Check_Mem_WR_FIFO_Empty();      
+ 358   4                        Check_BTE_Busy();
+ 359   4                                break;
+ 360   4                 default:
+ 361   4                                break;
+ 362   4               }
+ 363   3      
+ 364   3              
+ 365   3      
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 7   
+
+ 366   3      
+ 367   3               LCD_DisplayString(80+70,40+70+160+20,"Color Expansion",Black,White);
+ 368   3      
+ 369   3               Foreground_color_65k(color65k_blue);
+ 370   3           Background_color_65k(color65k_red);
+ 371   3      
+ 372   3               BTE_Operation_Code(9); //BTE color expansion with chroma key
+ 373   3               BTE_Destination_Window_Start_XY(80+320+70,40+70);  
+ 374   3               BTE_Enable();
+ 375   3               LCD_CmdWrite(0x04);
+ 376   3      
+ 377   3               switch(i)
+ 378   3               {
+ 379   4                case 0 :                      
+ 380   4                                Show_picture(10*160,f1); 
+ 381   4                                Check_Mem_WR_FIFO_Empty();      
+ 382   4                        Check_BTE_Busy();
+ 383   4                                break;
+ 384   4                case 1 :
+ 385   4                                Show_picture(10*160,f2); 
+ 386   4                                Check_Mem_WR_FIFO_Empty();      
+ 387   4                        Check_BTE_Busy();
+ 388   4                                break;
+ 389   4                case 2 :
+ 390   4                                Show_picture(10*160,f3); 
+ 391   4                                Check_Mem_WR_FIFO_Empty();      
+ 392   4                        Check_BTE_Busy();
+ 393   4                                break;
+ 394   4                 default:
+ 395   4                                break;
+ 396   4               }
+ 397   3               
+ 398   3      
+ 399   3               LCD_DisplayString(80+320+70,40+70+160+20,"Color Expansion",Black,White);
+ 400   3               LCD_DisplayString(80+320+70,40+70+160+20+24,"With chroma key",Black,White);
+ 401   3      
+ 402   3                 //BTE memory(move) layer2 to layer1
+ 403   3                 //BTE_S0_Color_16bpp();
+ 404   3             BTE_S0_Memory_Start_Address(layer2_start_addr);
+ 405   3             BTE_S0_Image_Width(800);
+ 406   3             BTE_S0_Window_Start_XY(0,0);
+ 407   3      
+ 408   3             //BTE_Destination_Color_16bpp();  
+ 409   3             BTE_Destination_Memory_Start_Address(layer1_start_addr);
+ 410   3             BTE_Destination_Image_Width(800);
+ 411   3             BTE_Destination_Window_Start_XY(0,0);  
+ 412   3             BTE_Window_Size(800,575);
+ 413   3      
+ 414   3             BTE_ROP_Code(12); 
+ 415   3             BTE_Operation_Code(2); //BTE move
+ 416   3             BTE_Enable();              //memory copy s0(layer2) to layer1  
+ 417   3             Check_BTE_Busy();
+ 418   3      
+ 419   3               
+ 420   3                j++;
+ 421   3              }
+ 422   2      
+ 423   2         }while(j<30);
+ 424   1      
+ 425   1      
+ 426   1      
+ 427   1      }
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 8   
+
+ 428          
+ 429          
+ 430          
+ 431          void BTE_Pattern_Fill(void)
+ 432          {
+ 433   1              
+ 434   1      
+ 435   1              Select_Main_Window_16bpp();
+ 436   1              Main_Image_Start_Address(0);                            
+ 437   1              Main_Image_Width(800);                                                  
+ 438   1              Main_Window_Start_XY(0,0);
+ 439   1      
+ 440   1              Canvas_Image_Start_address(0);//Layer 1
+ 441   1              Canvas_image_width(800);//
+ 442   1          Active_Window_XY(0,0);
+ 443   1              Active_Window_WH(800,600);
+ 444   1      
+ 445   1              Foreground_color_65k(Black);
+ 446   1              Line_Start_XY(0,0);
+ 447   1              Line_End_XY(799,575);
+ 448   1              Start_Square_Fill();
+ 449   1      
+ 450   1              Foreground_color_65k(Blue2);
+ 451   1              Line_Start_XY(0,576);
+ 452   1              Line_End_XY(799,599);
+ 453   1              Start_Square_Fill();
+ 454   1      
+ 455   1              LCD_DisplayString(0,Line24 ,"              Demo BTE Pattern Fill",White,Blue2);
+ 456   1      
+ 457   1      
+ 458   1          //DMA initial setting
+ 459   1              Enable_SFlash_SPI();
+ 460   1          Select_SFI_1();
+ 461   1          Select_SFI_DMA_Mode();
+ 462   1          Select_SFI_24bit_Address();
+ 463   1      
+ 464   1          //Select_SFI_Waveform_Mode_0();
+ 465   1          Select_SFI_Waveform_Mode_3();
+ 466   1      
+ 467   1          //Select_SFI_0_DummyRead(); //normal read mode
+ 468   1          Select_SFI_8_DummyRead(); //1byte dummy cycle
+ 469   1          //Select_SFI_16_DummyRead();
+ 470   1          //Select_SFI_24_DummyRead();
+ 471   1      
+ 472   1          Select_SFI_Single_Mode();
+ 473   1          //Select_SFI_Dual_Mode0();
+ 474   1          //Select_SFI_Dual_Mode1();
+ 475   1      
+ 476   1          SPI_Clock_Period(0);
+ 477   1      
+ 478   1      
+ 479   1              SFI_DMA_Destination_Upper_Left_Corner(80,40);
+ 480   1          SFI_DMA_Transfer_Width_Height(640,480);
+ 481   1          SFI_DMA_Source_Width(640);//
+ 482   1      
+ 483   1              SFI_DMA_Source_Start_Address(640*480*2*4);//
+ 484   1              Start_SFI_DMA();
+ 485   1          Check_Busy_SFI_DMA();
+ 486   1      
+ 487   1      
+ 488   1              //write 16x16 pattern to sdram
+ 489   1              Pattern_Format_16X16(); 
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 9   
+
+ 490   1              Canvas_Image_Start_address(layer6_start_addr);//any layer 
+ 491   1          Canvas_image_width(16);
+ 492   1          Active_Window_XY(0,0);
+ 493   1          Active_Window_WH(16,16);
+ 494   1          Goto_Pixel_XY(0,0);
+ 495   1          Show_picture(16*16,pattern16x16_16bpp); 
+ 496   1      
+ 497   1              Canvas_Image_Start_address(layer1_start_addr);//
+ 498   1          Canvas_image_width(800);
+ 499   1          Active_Window_XY(0,0);
+ 500   1          Active_Window_WH(800,600);
+ 501   1      
+ 502   1          
+ 503   1              BTE_S0_Color_16bpp();
+ 504   1          BTE_S0_Memory_Start_Address(layer6_start_addr);
+ 505   1          BTE_S0_Image_Width(16);
+ 506   1       
+ 507   1          BTE_S1_Color_16bpp();
+ 508   1          BTE_S1_Memory_Start_Address(0);
+ 509   1          BTE_S1_Image_Width(800);
+ 510   1      
+ 511   1          BTE_Destination_Color_16bpp();  
+ 512   1          BTE_Destination_Memory_Start_Address(layer1_start_addr);
+ 513   1          BTE_Destination_Image_Width(800);
+ 514   1      
+ 515   1          BTE_ROP_Code(0xc);
+ 516   1          BTE_Operation_Code(0x06);//pattern fill     
+ 517   1      
+ 518   1              BTE_S1_Window_Start_XY(0,0);      
+ 519   1          BTE_Destination_Window_Start_XY(80,40);
+ 520   1          BTE_Window_Size(300,300);
+ 521   1      
+ 522   1          BTE_Enable();   
+ 523   1          Check_BTE_Busy();
+ 524   1              
+ 525   1              LCD_DisplayString(80,350,"Pattern Fill",Black,White);
+ 526   1                       
+ 527   1              Background_color_65k(color65k_red);
+ 528   1              BTE_S1_Window_Start_XY(0,0);      
+ 529   1          BTE_Destination_Window_Start_XY(80+300+40,40);
+ 530   1          BTE_Window_Size(300,300);
+ 531   1              BTE_Operation_Code(0x07);//pattern fill with chroma key
+ 532   1      
+ 533   1              BTE_Enable();   
+ 534   1          Check_BTE_Busy();
+ 535   1      
+ 536   1              LCD_DisplayString(80+300+40,350,"Pattern Fill With ",Black,White);
+ 537   1              LCD_DisplayString(80+300+40,374,"Chroma Key",Black,White);
+ 538   1          delay_ms(5000);
+ 539   1      
+ 540   1      }
+ 541          
+ 542          
+ 543          void PIP_Demo(void)
+ 544          {        
+ 545   1      
+ 546   1              Select_Main_Window_16bpp();
+ 547   1              Main_Image_Start_Address(0);                            
+ 548   1              Main_Image_Width(800);                                                  
+ 549   1              Main_Window_Start_XY(0,0);
+ 550   1      
+ 551   1              Canvas_Image_Start_address(0);//Layer 1
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 10  
+
+ 552   1              Canvas_image_width(800);//
+ 553   1          Active_Window_XY(0,0);
+ 554   1              Active_Window_WH(800,600);
+ 555   1      
+ 556   1              Foreground_color_65k(White);
+ 557   1              Line_Start_XY(0,0);
+ 558   1              Line_End_XY(799,575);
+ 559   1              Start_Square_Fill();
+ 560   1      
+ 561   1              Foreground_color_65k(Blue2);
+ 562   1              Line_Start_XY(0,576);
+ 563   1              Line_End_XY(799,599);
+ 564   1              Start_Square_Fill();
+ 565   1      
+ 566   1              LCD_DisplayString(0,Line24 ,"                    Demo PIP",White,Blue2);
+ 567   1      
+ 568   1      
+ 569   1           //寫入PIP1圖
+ 570   1               Memory_16bpp_Mode();
+ 571   1               delay_ms(20);
+ 572   1               Canvas_Image_Start_address(800*600*2);//Layer 2
+ 573   1               Canvas_image_width(800);//
+ 574   1           Active_Window_XY(0,0);
+ 575   1               Active_Window_WH(320,240);
+ 576   1           Goto_Pixel_XY(0,0);
+ 577   1               LCD_CmdWrite(0x04);
+ 578   1               for(i=0;i<320*240;i++)
+ 579   1               {
+ 580   2                LCD_DataWrite(color65k_blue);
+ 581   2                //Check_Mem_WR_FIFO_not_Full();
+ 582   2               }
+ 583   1                Check_Mem_WR_FIFO_Empty();
+ 584   1      
+ 585   1                LCD_DisplayString(120,120,"PIP1",White,Blue);
+ 586   1      
+ 587   1              //寫入PIP2圖
+ 588   1              Canvas_Image_Start_address((800*600*2)*2);//Layer 3
+ 589   1              Canvas_image_width(800);//
+ 590   1          Active_Window_XY(0,0);
+ 591   1              Active_Window_WH(320,240);
+ 592   1          Goto_Pixel_XY(0,0);
+ 593   1              LCD_CmdWrite(0x04);
+ 594   1              for(i=0;i<320*240;i++)
+ 595   1              {
+ 596   2               LCD_DataWrite(color65k_red);
+ 597   2               //Check_Mem_WR_FIFO_not_Full();
+ 598   2              }
+ 599   1              Check_Mem_WR_FIFO_Empty();
+ 600   1      
+ 601   1               LCD_DisplayString(120,120,"PIP2",White,Red);
+ 602   1      
+ 603   1      
+ 604   1              //PIP1
+ 605   1              Select_PIP1_Window_16bpp();//   
+ 606   1              Select_PIP1_Parameter();
+ 607   1              PIP_Image_Start_Address(800*600*2);
+ 608   1              PIP_Image_Width(800);
+ 609   1              PIP_Window_Width_Height(320,240);
+ 610   1              PIP_Window_Image_Start_XY(0,0);
+ 611   1              PIP_Display_Start_XY(80,40);
+ 612   1              Enable_PIP1();
+ 613   1              delay_ms(50);
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 11  
+
+ 614   1      
+ 615   1              //PIP2
+ 616   1          Select_PIP2_Window_16bpp(); //注意                  
+ 617   1              Select_PIP2_Parameter();
+ 618   1              PIP_Image_Start_Address((800*600*2)*2);
+ 619   1              PIP_Image_Width(800);
+ 620   1              PIP_Window_Width_Height(320,240);
+ 621   1              PIP_Window_Image_Start_XY(0,0);
+ 622   1              PIP_Display_Start_XY(80+320,40+240);
+ 623   1              Enable_PIP2();
+ 624   1              delay_ms(50);
+ 625   1      
+ 626   1      
+ 627   1           for(i=0;i<160;i++)
+ 628   1               {
+ 629   2                Select_PIP1_Parameter();
+ 630   2                PIP_Display_Start_XY(80+i,40+i);
+ 631   2                // PIP_Display_Start_XY(80,40+i);
+ 632   2                delay_ms(1);
+ 633   2                Select_PIP2_Parameter();
+ 634   2                PIP_Display_Start_XY(80+320-i,40+240-i);
+ 635   2                //PIP_Display_Start_XY(80+320,40+240-i);
+ 636   2                delay_ms(10);
+ 637   2               }
+ 638   1      
+ 639   1               for(i=0;i<160;i++)
+ 640   1               {
+ 641   2                Select_PIP1_Parameter();
+ 642   2                PIP_Display_Start_XY(80+159-i,40+159-i);
+ 643   2                //PIP_Display_Start_XY(80+159,40+159-i);
+ 644   2                delay_ms(1);
+ 645   2                Select_PIP2_Parameter();
+ 646   2                PIP_Display_Start_XY(80+320-159+i,40+240-159+i);
+ 647   2                 //PIP_Display_Start_XY(80+320-159,40+240-159+i);
+ 648   2                delay_ms(10);
+ 649   2                }
+ 650   1        
+ 651   1                delay_ms(2000);
+ 652   1      
+ 653   1      
+ 654   1              //DMA initial setting
+ 655   1              Enable_SFlash_SPI();
+ 656   1          Select_SFI_1();
+ 657   1          Select_SFI_DMA_Mode();
+ 658   1          Select_SFI_24bit_Address();
+ 659   1      
+ 660   1          //Select_SFI_Waveform_Mode_0();
+ 661   1          Select_SFI_Waveform_Mode_3();
+ 662   1      
+ 663   1          //Select_SFI_0_DummyRead(); //normal read mode
+ 664   1          Select_SFI_8_DummyRead(); //1byte dummy cycle
+ 665   1          //Select_SFI_16_DummyRead();
+ 666   1          //Select_SFI_24_DummyRead();
+ 667   1      
+ 668   1          Select_SFI_Single_Mode();
+ 669   1          //Select_SFI_Dual_Mode0();
+ 670   1          //Select_SFI_Dual_Mode1();
+ 671   1      
+ 672   1          SPI_Clock_Period(0);
+ 673   1      
+ 674   1              Canvas_Image_Start_address(800*600*2);//Layer 2
+ 675   1              Canvas_image_width(800);//
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 12  
+
+ 676   1      
+ 677   1              SFI_DMA_Destination_Upper_Left_Corner(0,0);
+ 678   1          SFI_DMA_Transfer_Width_Height(320,240);
+ 679   1          SFI_DMA_Source_Width(640);//
+ 680   1              SFI_DMA_Source_Start_Address(0);//
+ 681   1              Start_SFI_DMA();
+ 682   1          Check_Busy_SFI_DMA();
+ 683   1      
+ 684   1          Canvas_Image_Start_address(800*600*2*2);//Layer 3
+ 685   1              Canvas_image_width(800);//
+ 686   1      
+ 687   1              SFI_DMA_Destination_Upper_Left_Corner(0,0);
+ 688   1          SFI_DMA_Transfer_Width_Height(320,240);
+ 689   1          SFI_DMA_Source_Width(640);//
+ 690   1              SFI_DMA_Source_Start_Address(640*480*2);//
+ 691   1              Start_SFI_DMA();
+ 692   1          Check_Busy_SFI_DMA();
+ 693   1      
+ 694   1       
+ 695   1               for(i=0;i<160;i++)
+ 696   1               {
+ 697   2                Select_PIP1_Parameter();
+ 698   2                PIP_Display_Start_XY(80+i,40+i);
+ 699   2                //PIP_Display_Start_XY(80+i,40);
+ 700   2                delay_ms(1);
+ 701   2                Select_PIP2_Parameter();
+ 702   2                PIP_Display_Start_XY(80+320-i,40+240-i);
+ 703   2                //PIP_Display_Start_XY(80+320-i,40+240);
+ 704   2                delay_ms(10);
+ 705   2               }
+ 706   1      
+ 707   1               for(i=0;i<160;i++)
+ 708   1               {
+ 709   2                Select_PIP1_Parameter();
+ 710   2                PIP_Display_Start_XY(80+159-i,40+159-i);
+ 711   2                //PIP_Display_Start_XY(80+159-i,40+159);
+ 712   2                delay_ms(1);
+ 713   2                Select_PIP2_Parameter();
+ 714   2                PIP_Display_Start_XY(80+320-159+i,40+240-159+i);
+ 715   2                //PIP_Display_Start_XY(80+320-159+i,40+240-159);
+ 716   2                delay_ms(10);
+ 717   2                }
+ 718   1              
+ 719   1                delay_ms(2000);
+ 720   1      
+ 721   1                Disable_PIP1();
+ 722   1                Disable_PIP2();
+ 723   1      
+ 724   1      }
+ 725          
+ 726          
+ 727          
+ 728          
+ 729          
+ 730          
+ 731          
+ 732          
+ 733          
+ 734          
+ 735          
+ 736          
+ 737          
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 13  
+
+ 738          
+ 739          /////////////////////main////////////////////
+ 740          void main(void)
+ 741          {  
+ 742   1      
+ 743   1              P0=0xff;
+ 744   1              P1=0xff;
+ 745   1              P2=0xff;
+ 746   1              P3=0xff;           
+ 747   1              BL_ON=0;  //Backlight on when external signal control
+ 748   1      
+ 749   1      
+ 750   1              RA8876_initial();
+ 751   1               Display_ON();
+ 752   1               delay_ms(20);
+ 753   1      
+ 754   1         /*
+ 755   1              Select_Main_Window_16bpp();
+ 756   1              Main_Image_Start_Address(0);                            
+ 757   1              Main_Image_Width(1024);                                                 
+ 758   1              Main_Window_Start_XY(0,0);      
+ 759   1      
+ 760   1          Canvas_Image_Start_address(0);//Layer 1
+ 761   1              Canvas_image_width(1024);//
+ 762   1          Active_Window_XY(0,0);
+ 763   1              Active_Window_WH(1024,600);
+ 764   1      
+ 765   1        Graphic_Mode(); //back to graphic mode
+ 766   1            LCD_SetCursor(0,0);
+ 767   1           LCD_CmdWrite(0x04); //
+ 768   1        for(index = 0; index < 122880; index++)
+ 769   1        {
+ 770   1          LCD_DataWrite(Red);
+ 771   1        }
+ 772   1        for(index = 0; index < 122880; index++)
+ 773   1        {
+ 774   1          LCD_DataWrite(Green);
+ 775   1        }
+ 776   1         for(index = 0; index < 122880; index++)
+ 777   1        {
+ 778   1          LCD_DataWrite(Blue);
+ 779   1        }
+ 780   1         for(index = 0; index < 122880; index++)
+ 781   1        {
+ 782   1          LCD_DataWrite(Black);
+ 783   1        }
+ 784   1        for(index = 0; index < 122880; index++)
+ 785   1        {
+ 786   1          LCD_DataWrite(White);
+ 787   1        }
+ 788   1        */
+ 789   1      
+ 790   1              Select_Main_Window_16bpp();
+ 791   1              Main_Image_Start_Address(0);                            
+ 792   1              Main_Image_Width(1024);                                                 
+ 793   1              Main_Window_Start_XY(0,0);      
+ 794   1      
+ 795   1          Canvas_Image_Start_address(0);//Layer 1
+ 796   1              Canvas_image_width(1024);//
+ 797   1          Active_Window_XY(0,0);
+ 798   1              Active_Window_WH(1024,600);
+ 799   1      
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 14  
+
+ 800   1       //     Color_Bar_ON();
+ 801   1       //     NextStep();
+ 802   1        //    Color_Bar_OFF();
+ 803   1      
+ 804   1      
+ 805   1              Foreground_color_65k(Red);
+ 806   1              Line_Start_XY(0,0);
+ 807   1              Line_End_XY(1023,599);
+ 808   1              Start_Square_Fill();
+ 809   1              NextStep();
+ 810   1              Foreground_color_65k(Green);
+ 811   1              Line_Start_XY(0,0);
+ 812   1              Line_End_XY(1023,599);
+ 813   1              Start_Square_Fill();
+ 814   1              NextStep();
+ 815   1              Foreground_color_65k(Blue);
+ 816   1              Line_Start_XY(0,0);
+ 817   1              Line_End_XY(1023,599);
+ 818   1              Start_Square_Fill();
+ 819   1              NextStep();
+ 820   1              Foreground_color_65k(Cyan);
+ 821   1              Line_Start_XY(0,0);
+ 822   1              Line_End_XY(1023,599);
+ 823   1              Start_Square_Fill();
+ 824   1              NextStep();
+ 825   1              Foreground_color_65k(Yellow);
+ 826   1              Line_Start_XY(0,0);
+ 827   1              Line_End_XY(1023,599);
+ 828   1              Start_Square_Fill();
+ 829   1              NextStep();
+ 830   1              Foreground_color_65k(Magenta);
+ 831   1              Line_Start_XY(0,0);
+ 832   1              Line_End_XY(1023,599);
+ 833   1              Start_Square_Fill();
+ 834   1              NextStep();
+ 835   1              Foreground_color_65k(White);
+ 836   1              Line_Start_XY(0,0);
+ 837   1              Line_End_XY(1023,599);
+ 838   1              Start_Square_Fill();
+ 839   1              NextStep();
+ 840   1              Foreground_color_65k(Black);
+ 841   1              Line_Start_XY(0,0);
+ 842   1              Line_End_XY(1023,599);
+ 843   1              Start_Square_Fill();
+ 844   1              NextStep();
+ 845   1      
+ 846   1      
+ 847   1      /////////////////////////////////////////////////////////////////////////////      
+ 848   1              LCD_DisplayString(0,Line1 ,"EastRising Technology",White,Blue2);
+ 849   1          LCD_DisplayString(0,Line3 ,"www.buydisplay.ocm",White,Blue2);
+ 850   1          LCD_DisplayString(0,Line5 ,"10.1 inch TFT Module  1024*600 Dots",White,Blue2);
+ 851   1              NextStep();
+ 852   1      
+ 853   1      
+ 854   1              Foreground_color_65k(White);
+ 855   1              Line_Start_XY(0,0);
+ 856   1              Line_End_XY(1023,575);
+ 857   1              Start_Square_Fill();
+ 858   1      
+ 859   1              Foreground_color_65k(Blue2);
+ 860   1              Line_Start_XY(0,576);
+ 861   1              Line_End_XY(1023,599);
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 15  
+
+ 862   1              Start_Square_Fill();
+ 863   1      
+ 864   1      
+ 865   1              Foreground_color_65k(Black);
+ 866   1              Background_color_65k(White);
+ 867   1      
+ 868   1              CGROM_Select_Internal_CGROM();
+ 869   1              Font_Select_8x16_16x16();
+ 870   1              Goto_Text_XY(0,10);
+ 871   1              Show_String("Embedded 8x16 ASCII Character");
+ 872   1      
+ 873   1              Font_Select_12x24_24x24();
+ 874   1              Goto_Text_XY(0,26);
+ 875   1              Show_String("Embedded 12x24 ASCII Character");
+ 876   1      
+ 877   1              Font_Select_16x32_32x32();
+ 878   1              Goto_Text_XY(0,50);
+ 879   1              Show_String("Embedded 16x32 ASCII Character");
+ 880   1      
+ 881   1              /*
+ 882   1              Font_Width_X2();
+ 883   1              Goto_Text_XY(0,16);
+ 884   1              Show_String("Character Width Enlarge x2");
+ 885   1              Font_Width_X1();
+ 886   1              Font_Height_X2();
+ 887   1              Goto_Text_XY(0,32);
+ 888   1              Show_String("Character High Enlarge x2");
+ 889   1              Font_Width_X2();
+ 890   1              Font_Height_X2();
+ 891   1              Goto_Text_XY(0,64);
+ 892   1              Show_String("Character Width & High Enlarge x2");
+ 893   1              */
+ 894   1      
+ 895   1              Font_Select_8x16_16x16();
+ 896   1              Font_Width_X1();
+ 897   1              Font_Height_X1();
+ 898   1              Goto_Text_XY(0,100);
+ 899   1              Show_String("Supporting Genitop Inc. UNICODE/BIG5/GB etc. Serial Character ROM with 16x16/24x24/32X32 dot
+             -s Font.");
+ 900   1              Goto_Text_XY(0,116);
+ 901   1              Show_String("The supporting product numbers are GT21L16TW/GT21H16T1W, GT23L16U2W, GT23L24T3Y/GT23H24T3Y, 
+             -GT23L24M1Z, and GT23L32S4W/GT23H32S4W, GT23L24F6Y, GT23L24S1W.");
+ 902   1              
+ 903   1      
+ 904   1      
+ 905   1                //Foreground_color_65k(color65k_yellow);
+ 906   1            //Background_color_65k(color65k_purple);
+ 907   1      
+ 908   1                 //Font_Select_UserDefine_Mode();
+ 909   1             //CGROM_Select_Internal_CGROM();
+ 910   1              CGROM_Select_Genitop_FontROM();
+ 911   1      
+ 912   1               //GTFont_Select_GT21L16TW_GT21H16T1W();
+ 913   1           //GTFont_Select_GT23L16U2W();
+ 914   1           GTFont_Select_GT23L24T3Y_GT23H24T3Y();
+ 915   1           //GTFont_Select_GT23L24M1Z();
+ 916   1           //GTFont_Select_GT23L32S4W_GT23H32S4W();
+ 917   1           //GTFont_Select_GT20L24F6Y();
+ 918   1           //GTFont_Select_GT21L24S1W();
+ 919   1           //GTFont_Select_GT22L16A1Y();
+ 920   1      
+ 921   1               
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 16  
+
+ 922   1                
+ 923   1                Font_Width_X1();
+ 924   1            Font_Height_X1();
+ 925   1                CGROM_Select_Genitop_FontROM();
+ 926   1            Font_Select_12x24_24x24();
+ 927   1                Select_SFI_0();
+ 928   1            Select_SFI_Font_Mode();
+ 929   1            Select_SFI_24bit_Address();
+ 930   1            Select_SFI_Waveform_Mode_0();
+ 931   1            Select_SFI_0_DummyRead();
+ 932   1            Select_SFI_Single_Mode();
+ 933   1            SPI_Clock_Period(4);       // Freq must setting <=20MHZ
+ 934   1               
+ 935   1                Enable_SFlash_SPI();
+ 936   1      
+ 937   1                Foreground_color_65k(color65k_green);
+ 938   1                Background_color_65k(color65k_blue);
+ 939   1      
+ 940   1                Set_GTFont_Decoder(0x11);  //BIG5  
+ 941   1      
+ 942   1                Goto_Text_XY(0,160);
+ 943   1                Show_String("Demo GT23L24T3Y BIG5:");
+ 944   1                Font_Select_8x16_16x16();
+ 945   1                Goto_Text_XY(0,190);
+ 946   1                Show_String("集通中文繁體16x16:RA8876 TFT 圖形控制器");
+ 947   1                Font_Select_12x24_24x24();
+ 948   1                Goto_Text_XY(0,214);
+ 949   1                Show_String("集通中文繁體24x24:RA8876 TFT 圖形控制器");
+ 950   1      
+ 951   1      
+ 952   1                Foreground_color_65k(color65k_purple);
+ 953   1                Background_color_65k(color65k_yellow);
+ 954   1                Set_GTFont_Decoder(0x01);  //GB2312  
+ 955   1                Goto_Text_XY(0,246);
+ 956   1                Show_String("Demo GT23L24T3Y GB2312:");
+ 957   1                Font_Select_8x16_16x16();
+ 958   1                Goto_Text_XY(0,276);
+ 959   1                Show_String("摩籵笢恅潠极16x16:RA8876 TFT 芞倛諷秶ん");
+ 960   1                Font_Select_12x24_24x24();
+ 961   1                Goto_Text_XY(0,300);
+ 962   1                Show_String("摩籵笢恅潠极16x16:RA8876 TFT 芞倛諷秶ん");
+ 963   1      
+ 964   1                Set_GTFont_Decoder(0x11);  //BIG5
+ 965   1      
+ 966   1      
+ 967   1                Foreground_color_65k(color65k_black); 
+ 968   1                Font_Background_select_Transparency();//設定背景透明色
+ 969   1                
+ 970   1      
+ 971   1                Active_Window_XY(0,330);
+ 972   1                Active_Window_WH(80,80);
+ 973   1                Goto_Pixel_XY(0,330);
+ 974   1                Show_picture(80*80,pic_80x80); 
+ 975   1                Active_Window_XY(0,0);
+ 976   1                Active_Window_WH(1024,600);
+ 977   1      
+ 978   1                Goto_Text_XY(0,330);
+ 979   1                Show_String("Demo text transparent write");
+ 980   1                Goto_Text_XY(0,354);
+ 981   1                Show_String("背景透明字寫入");
+ 982   1      
+ 983   1      
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 17  
+
+ 984   1      
+ 985   1                Font_Background_select_Color();  //設定背景使用設定顏色
+ 986   1                Foreground_color_65k(color65k_black); 
+ 987   1                Background_color_65k(color65k_white);
+ 988   1      
+ 989   1                Goto_Text_XY(0,430);
+ 990   1                Show_String("Demo text cursor:");
+ 991   1                       
+ 992   1                Goto_Text_XY(0,454);
+ 993   1                Show_String("0123456789");
+ 994   1                Text_cursor_initial();
+ 995   1               delay_ms(1000);
+ 996   1      
+ 997   1                for(i=0;i<14;i++)
+ 998   1                {
+ 999   2                 delay_ms(100);
+1000   2                 Text_Cursor_H_V(1+i,15-i);      
+1001   2                }
+1002   1                       delay_ms(2000);
+1003   1      
+1004   1                Disable_Text_Cursor();
+1005   1      
+1006   1                CGROM_Select_Internal_CGROM();
+1007   1                Font_Select_8x16_16x16();
+1008   1      
+1009   1                Foreground_color_65k(color65k_blue); 
+1010   1                Goto_Text_XY(0,484);
+1011   1                Show_String("Demo graphic cursor:");
+1012   1      
+1013   1                Set_Graphic_Cursor_Color_1(0xff);
+1014   1            Set_Graphic_Cursor_Color_2(0x00);
+1015   1      
+1016   1                Graphic_cursor_initial();
+1017   1                Graphic_Cursor_XY(0,508);
+1018   1                Select_Graphic_Cursor_1();  
+1019   1                       delay_ms(2000);
+1020   1                Select_Graphic_Cursor_2();
+1021   1                delay_ms(2000);
+1022   1                Select_Graphic_Cursor_3();
+1023   1                delay_ms(2000);
+1024   1                Select_Graphic_Cursor_4();
+1025   1                delay_ms(2000);
+1026   1                Select_Graphic_Cursor_2(); 
+1027   1      
+1028   1                for(j=0;j<2;j++)
+1029   1                {
+1030   2                 for(i=0;i<1024;i++)
+1031   2                 {
+1032   3                  Graphic_Cursor_XY(i,508+j*20);      
+1033   3                      delay_ms(2);   
+1034   3                 }
+1035   2                }
+1036   1                 Graphic_Cursor_XY(0,508);    
+1037   1      
+1038   1               delay_ms(2000);
+1039   1               Disable_Graphic_Cursor();
+1040   1      
+1041   1              NextStep();
+1042   1      
+1043   1        ///////////////////////////////////////////////////////////////
+1044   1      
+1045   1              Select_Main_Window_16bpp();
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 18  
+
+1046   1              Main_Image_Start_Address(0);                            
+1047   1              Main_Image_Width(1024);                                                 
+1048   1              Main_Window_Start_XY(0,0);
+1049   1      
+1050   1              Canvas_Image_Start_address(0);//Layer 1
+1051   1              Canvas_image_width(1024);//
+1052   1          Active_Window_XY(0,0);
+1053   1              Active_Window_WH(1024,600);
+1054   1      
+1055   1              Foreground_color_65k(White);
+1056   1              Line_Start_XY(0,0);
+1057   1              Line_End_XY(1024,575);
+1058   1              Start_Square_Fill();
+1059   1      
+1060   1              Foreground_color_65k(Blue2);
+1061   1              Line_Start_XY(0,576);
+1062   1              Line_End_XY(1024,599);
+1063   1              Start_Square_Fill();
+1064   1      
+1065   1              //Foreground_color_65k(White);
+1066   1              //Background_color_65k(Blue2);
+1067   1              //Goto_Text_XY(300,576);
+1068   1              //Show_String("Demo DMA");
+1069   1      
+1070   1              LCD_DisplayString(0,Line24 ,"                    Demo DMA",White,Blue2);
+1071   1      
+1072   1              LCD_DisplayString(0,Line23 ,"  Demo direct access serial FLASH to show picture",Black,White);
+1073   1      
+1074   1      
+1075   1      
+1076   1          //DMA initial setting
+1077   1              Enable_SFlash_SPI();
+1078   1          Select_SFI_1();
+1079   1          Select_SFI_DMA_Mode();
+1080   1          Select_SFI_24bit_Address();
+1081   1      
+1082   1          //Select_SFI_Waveform_Mode_0();
+1083   1          Select_SFI_Waveform_Mode_3();
+1084   1      
+1085   1          //Select_SFI_0_DummyRead(); //normal read mode
+1086   1          Select_SFI_8_DummyRead(); //1byte dummy cycle
+1087   1          //Select_SFI_16_DummyRead();
+1088   1         //Select_SFI_24_DummyRead();
+1089   1      
+1090   1          Select_SFI_Single_Mode();
+1091   1          //Select_SFI_Dual_Mode0();
+1092   1         // Select_SFI_Dual_Mode1();
+1093   1      
+1094   1          SPI_Clock_Period(0);
+1095   1      
+1096   1      
+1097   1      
+1098   1      //DMA initail normally command setting
+1099   1      //      LCD_CmdWrite(0x01);
+1100   1      //      LCD_DataWrite(0x83);    
+1101   1      //      LCD_CmdWrite(0xB7);
+1102   1      //      LCD_DataWrite(0xd4);
+1103   1      //      LCD_CmdWrite(0xBB);
+1104   1      //  LCD_DataWrite(0x00);
+1105   1      
+1106   1         /*
+1107   1         //if used 32bit address Flash ex.256Mbit,512Mbit
+C51 COMPILER V9.01   SD                                                                    08/07/2015 08:41:31 PAGE 19  
+
+1108   1         //must be executed following in 24bit address mode to switch to 32bit address mode
+1109   1      
+1110   1         //Select_nSS_drive_on_xnsfcs0();
+1111   1         Select_nSS_drive_on_xnsfcs1();
+1112   1      
+1113   1         Reset_CPOL();
+1114   1         //Set_CPOL();
+1115   1         Reset_CPHA();
+1116   1         //Set_CPHA();
+1117   1      
+1118   1        //Enter 4-byte mode  
+1119   1         nSS_Active();
+1120   1         SPI_Master_FIFO_Data_Put(0xB7);  //switch to 32bit address mode
+1121   1         delay_us(10); 
+1122   1         nSS_Inactive();
+1123   1      
+1124   1         Select_SFI_32bit_Address();
+1125   1         */
+1126   1      
+1127   1      
+1128   1              SFI_DMA_Destination_Upper_Left_Corner(0,0);
+1129   1          SFI_DMA_Transfer_Width_Height(1024,600);
+1130   1          SFI_DMA_Source_Width(1024);//
+1131   1      
+1132   1              //execute DMA to show 640x480 picture
+1133   1               for(i=0;i<4;i++)
+1134   1               {
+1135   2                SFI_DMA_Source_Start_Address(i*1024*600*2);//
+1136   2                Start_SFI_DMA();
+1137   2            Check_Busy_SFI_DMA();
+1138   2                delay_ms(30);
+1139   2              NextStep();
+1140   2               }
+1141   1       ////////////////////////////////////////////////////////////////
+1142   1      
+1143   1      
+1144   1              BTE_Compare();
+1145   1              BTE_Pattern_Fill();
+1146   1              BTE_Color_Expansion();
+1147   1      
+1148   1      
+1149   1      }
+1150          
+1151          
+1152          
+1153                  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =  17189    ----
+   CONSTANT SIZE    =  29590    ----
+   XDATA SIZE       =    526     209
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
