@@ -9,9 +9,19 @@ $CMP 74HC164
 D 8-bit parallel-out gated serial-in shift register with asynchronous clear
 $ENDCMP
 #
+$CMP 74LVC4245A
+D Octal dual supply translating transceiver; 3-state
+K 8-bit octal transceiver 3State
+$ENDCMP
+#
 $CMP AS6C1008-55SIN
 D 1Mbit 128Kx8 Static RAM
 K SRAM
+$ENDCMP
+#
+$CMP KMDGX-6S-BS
+D 6-pin Mini-DIN connector
+K Mini-DIN
 $ENDCMP
 #
 $CMP LTD-6940HR
