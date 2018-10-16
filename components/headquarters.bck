@@ -9,6 +9,11 @@ $CMP 74HC164
 D 8-bit parallel-out gated serial-in shift register with asynchronous clear
 $ENDCMP
 #
+$CMP 74HC670
+D 4 x 4 Register File Tristate
+K CMOS Register 3State
+$ENDCMP
+#
 $CMP 74LVC4245A
 D Octal dual supply translating transceiver; 3-state
 K 8-bit octal transceiver 3State
