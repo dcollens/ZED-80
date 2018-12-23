@@ -1,39 +1,6 @@
-EESchema Schematic File Version 2
-LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:Zilog
-LIBS:Oscillators
-LIBS:switches
-LIBS:headquarters
+EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 25 0
+EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
@@ -48,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Z84C40 U10
+L headquarters:Z84C40 U10
 U 1 1 59D787F0
 P 4150 2900
 F 0 "U10" H 3750 3991 50  0000 L TNN
@@ -59,7 +26,7 @@ F 3 "" H 4550 4000 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR037
+L power:GND #PWR037
 U 1 1 59D787F7
 P 4150 4500
 F 0 "#PWR037" H 4150 4250 50  0001 C CNN
@@ -70,7 +37,7 @@ F 3 "" H 4150 4500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR038
+L power:VCC #PWR038
 U 1 1 59D787FD
 P 4150 1700
 F 0 "#PWR038" H 4150 1550 50  0001 C CNN
@@ -115,7 +82,7 @@ D7
 NoConn ~ 4750 3700
 NoConn ~ 4750 2500
 $Comp
-L MAX232 U11
+L Interface_UART:MAX232 U11
 U 1 1 59D7883E
 P 6450 2350
 F 0 "U11" H 6350 3475 50  0000 R CNN
@@ -126,7 +93,7 @@ F 3 "" H 6450 2450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR039
+L power:GND #PWR039
 U 1 1 59D78845
 P 6450 3550
 F 0 "#PWR039" H 6450 3300 50  0001 C CNN
@@ -137,7 +104,7 @@ F 3 "" H 6450 3550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR040
+L power:VCC #PWR040
 U 1 1 59D7884B
 P 6450 1150
 F 0 "#PWR040" H 6450 1000 50  0001 C CNN
@@ -148,7 +115,7 @@ F 3 "" H 6450 1150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR041
+L power:GND #PWR041
 U 1 1 59D7885B
 P 4750 3000
 F 0 "#PWR041" H 4750 2750 50  0001 C CNN
@@ -159,7 +126,7 @@ F 3 "" H 4750 3000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR042
+L power:GND #PWR042
 U 1 1 59D78862
 P 4750 4200
 F 0 "#PWR042" H 4750 3950 50  0001 C CNN
@@ -170,7 +137,7 @@ F 3 "" H 4750 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L MAX232 U12
+L Interface_UART:MAX232 U12
 U 1 1 59D78869
 P 6450 5200
 F 0 "U12" H 6350 6325 50  0000 R CNN
@@ -181,7 +148,7 @@ F 3 "" H 6450 5300 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR043
+L power:GND #PWR043
 U 1 1 59D78870
 P 6450 6400
 F 0 "#PWR043" H 6450 6150 50  0001 C CNN
@@ -192,7 +159,7 @@ F 3 "" H 6450 6400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR044
+L power:VCC #PWR044
 U 1 1 59D78876
 P 6450 4000
 F 0 "#PWR044" H 6450 3850 50  0001 C CNN
@@ -203,7 +170,7 @@ F 3 "" H 6450 4000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C12
+L Device:C C12
 U 1 1 59D78888
 P 5650 1600
 F 0 "C12" H 5675 1700 50  0000 L CNN
@@ -214,7 +181,7 @@ F 3 "" H 5650 1600 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 $Comp
-L C C17
+L Device:C C17
 U 1 1 59D7888F
 P 7550 2400
 F 0 "C17" H 7575 2500 50  0000 L CNN
@@ -225,7 +192,7 @@ F 3 "" H 7550 2400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C14
+L Device:C C14
 U 1 1 59D78896
 P 7250 1600
 F 0 "C14" H 7275 1700 50  0000 L CNN
@@ -236,7 +203,7 @@ F 3 "" H 7250 1600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR045
+L power:GND #PWR045
 U 1 1 59D7889D
 P 7550 2550
 F 0 "#PWR045" H 7550 2300 50  0001 C CNN
@@ -247,7 +214,7 @@ F 3 "" H 7550 2550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C16
+L Device:C C16
 U 1 1 59D788A4
 P 7550 1800
 F 0 "C16" H 7575 1900 50  0000 L CNN
@@ -258,7 +225,7 @@ F 3 "" H 7550 1800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR046
+L power:VCC #PWR046
 U 1 1 59D788AC
 P 7550 1650
 F 0 "#PWR046" H 7550 1500 50  0001 C CNN
@@ -269,7 +236,7 @@ F 3 "" H 7550 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C19
+L Device:C C19
 U 1 1 59D788B2
 P 7550 5250
 F 0 "C19" H 7575 5350 50  0000 L CNN
@@ -280,7 +247,7 @@ F 3 "" H 7550 5250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C15
+L Device:C C15
 U 1 1 59D788B9
 P 7250 4450
 F 0 "C15" H 7275 4550 50  0000 L CNN
@@ -291,7 +258,7 @@ F 3 "" H 7250 4450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR047
+L power:GND #PWR047
 U 1 1 59D788C0
 P 7550 5400
 F 0 "#PWR047" H 7550 5150 50  0001 C CNN
@@ -302,7 +269,7 @@ F 3 "" H 7550 5400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C18
+L Device:C C18
 U 1 1 59D788C7
 P 7550 4650
 F 0 "C18" H 7575 4750 50  0000 L CNN
@@ -313,7 +280,7 @@ F 3 "" H 7550 4650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR048
+L power:VCC #PWR048
 U 1 1 59D788CF
 P 7550 4500
 F 0 "#PWR048" H 7550 4350 50  0001 C CNN
@@ -324,7 +291,7 @@ F 3 "" H 7550 4500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C13
+L Device:C C13
 U 1 1 59D788D5
 P 5650 4450
 F 0 "C13" H 5675 4550 50  0000 L CNN
@@ -335,7 +302,7 @@ F 3 "" H 5650 4450 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 $Comp
-L DB9_Male_MountingHoles SER1
+L Connector:DB9_Male_MountingHoles SER1
 U 1 1 59D788DC
 P 8400 2800
 F 0 "SER1" H 8400 3450 50  0000 C CNN
@@ -346,7 +313,7 @@ F 3 "" H 8400 2800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR049
+L power:GND #PWR049
 U 1 1 59D788EF
 P 7950 2400
 F 0 "#PWR049" H 7950 2150 50  0001 C CNN
@@ -361,7 +328,7 @@ NoConn ~ 8100 3100
 NoConn ~ 8100 2500
 NoConn ~ 8100 2600
 $Comp
-L DB9_Male_MountingHoles SER2
+L Connector:DB9_Male_MountingHoles SER2
 U 1 1 59D788FA
 P 8400 5650
 F 0 "SER2" H 8400 6300 50  0000 C CNN
@@ -372,7 +339,7 @@ F 3 "" H 8400 5650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR050
+L power:GND #PWR050
 U 1 1 59D78907
 P 7950 5250
 F 0 "#PWR050" H 7950 5000 50  0001 C CNN
@@ -389,7 +356,7 @@ NoConn ~ 8100 5450
 NoConn ~ 4750 2400
 NoConn ~ 4750 3600
 $Comp
-L GND #PWR051
+L power:GND #PWR051
 U 1 1 59D7891A
 P 8400 3400
 F 0 "#PWR051" H 8400 3150 50  0001 C CNN
@@ -400,7 +367,7 @@ F 3 "" H 8400 3400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR052
+L power:GND #PWR052
 U 1 1 59D78920
 P 8400 6250
 F 0 "#PWR052" H 8400 6000 50  0001 C CNN
@@ -446,8 +413,6 @@ Wire Wire Line
 	3250 2600 3550 2600
 Wire Wire Line
 	3250 2700 3550 2700
-Wire Bus Line
-	3150 2100 3150 2800
 Wire Wire Line
 	5650 2850 5350 2850
 Wire Wire Line
@@ -581,7 +546,7 @@ C/~D
 Text HLabel 2100 3600 0    60   Input ~ 0
 B/~A
 $Comp
-L GND #PWR053
+L power:GND #PWR053
 U 1 1 59D81D49
 P 3700 7400
 F 0 "#PWR053" H 3700 7150 50  0001 C CNN
@@ -592,7 +557,7 @@ F 3 "" H 3700 7400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C21
+L Device:C C21
 U 1 1 59D81D4F
 P 4250 7250
 F 0 "C21" H 4275 7350 50  0000 L CNN
@@ -603,7 +568,7 @@ F 3 "" H 4250 7250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR054
+L power:VCC #PWR054
 U 1 1 59D81D56
 P 3700 7100
 F 0 "#PWR054" H 3700 6950 50  0001 C CNN
@@ -618,11 +583,11 @@ Near\nU10
 Connection ~ 4250 7100
 Connection ~ 4250 7400
 Wire Wire Line
-	3700 7400 4850 7400
+	3700 7400 4250 7400
 Wire Wire Line
-	3700 7100 4850 7100
+	3700 7100 4250 7100
 $Comp
-L C C22
+L Device:C C22
 U 1 1 59D81D90
 P 4550 7250
 F 0 "C22" H 4575 7350 50  0000 L CNN
@@ -633,7 +598,7 @@ F 3 "" H 4550 7250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C23
+L Device:C C23
 U 1 1 59D81D96
 P 4850 7250
 F 0 "C23" H 4875 7350 50  0000 L CNN
@@ -652,7 +617,7 @@ Connection ~ 4550 7400
 Wire Wire Line
 	4900 2300 4750 2300
 Wire Wire Line
-	4900 1400 4900 2300
+	4900 1400 4900 2100
 Wire Wire Line
 	4900 2100 4750 2100
 Wire Wire Line
@@ -684,4 +649,16 @@ Wire Wire Line
 	4950 4100 4950 4900
 Wire Wire Line
 	4950 4900 2100 4900
+Wire Wire Line
+	4250 7100 4550 7100
+Wire Wire Line
+	4250 7400 4550 7400
+Wire Wire Line
+	4550 7100 4850 7100
+Wire Wire Line
+	4550 7400 4850 7400
+Wire Wire Line
+	4900 2100 4900 2300
+Wire Bus Line
+	3150 2100 3150 2800
 $EndSCHEMATC

@@ -1,39 +1,6 @@
-EESchema Schematic File Version 2
-LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:Zilog
-LIBS:Oscillators
-LIBS:switches
-LIBS:headquarters
+EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 25 0
+EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
@@ -48,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Z84C30 U17
+L headquarters:Z84C30 U17
 U 1 1 59D9201C
 P 3500 3150
 F 0 "U17" H 3000 4241 50  0000 L TNN
@@ -59,7 +26,7 @@ F 3 "" H 4000 4250 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR066
+L power:VCC #PWR066
 U 1 1 59D9205A
 P 3500 1950
 F 0 "#PWR066" H 3500 1800 50  0001 C CNN
@@ -70,7 +37,7 @@ F 3 "" H 3500 1950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR067
+L power:GND #PWR067
 U 1 1 59D92070
 P 3500 4950
 F 0 "#PWR067" H 3500 4700 50  0001 C CNN
@@ -131,8 +98,6 @@ Entry Wire Line
 Text HLabel 1100 2000 0    60   BiDi ~ 0
 D[0..7]
 Wire Bus Line
-	2550 2850 2550 2000
-Wire Bus Line
 	2550 2000 1100 2000
 Text HLabel 1100 3150 0    60   Input ~ 0
 ~CE
@@ -179,7 +144,7 @@ Wire Wire Line
 Wire Wire Line
 	1100 4450 2800 4450
 $Comp
-L C C27
+L Device:C C27
 U 1 1 59D92B9B
 P 4800 6750
 F 0 "C27" H 4825 6850 50  0000 L CNN
@@ -190,7 +155,7 @@ F 3 "" H 4800 6750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR068
+L power:GND #PWR068
 U 1 1 59D92BA2
 P 4550 6900
 F 0 "#PWR068" H 4550 6650 50  0001 C CNN
@@ -201,7 +166,7 @@ F 3 "" H 4550 6900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR069
+L power:VCC #PWR069
 U 1 1 59D92BAF
 P 4550 6600
 F 0 "#PWR069" H 4550 6450 50  0001 C CNN
@@ -213,8 +178,6 @@ F 3 "" H 4550 6600 50  0001 C CNN
 $EndComp
 Text Notes 4750 6550 0    60   ~ 0
 Near\nU17
-Connection ~ 4800 6600
-Connection ~ 4800 6900
 Wire Wire Line
 	4550 6600 4800 6600
 Wire Wire Line
@@ -226,10 +189,10 @@ Wire Wire Line
 Wire Wire Line
 	4300 2500 4200 2500
 Wire Wire Line
-	4200 2250 5200 2250
+	4200 2250 4300 2250
 Connection ~ 4300 2500
 $Comp
-L CXO_DIP8 X2
+L Oscillator:CXO_DIP8 X2
 U 1 1 59DCF0C2
 P 5500 2250
 F 0 "X2" H 5300 2500 50  0000 L CNN
@@ -240,7 +203,7 @@ F 3 "http://www.abracon.com/Oscillators/ACH.pdf" H 5400 2250 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 $Comp
-L GND #PWR070
+L power:GND #PWR070
 U 1 1 59DCF0C9
 P 5500 2550
 F 0 "#PWR070" H 5500 2300 50  0001 C CNN
@@ -251,7 +214,7 @@ F 3 "" H 5500 2550 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR071
+L power:VCC #PWR071
 U 1 1 59DCF0CF
 P 5500 1950
 F 0 "#PWR071" H 5500 1800 50  0001 C CNN
@@ -266,7 +229,7 @@ Wire Wire Line
 Wire Wire Line
 	5800 1950 5800 2250
 Wire Wire Line
-	4300 2250 4300 2750
+	4300 2250 4300 2500
 Connection ~ 4300 2250
 Text HLabel 6300 3000 2    60   Output ~ 0
 CCLK0
@@ -284,4 +247,10 @@ Wire Wire Line
 	4400 2600 4400 3100
 Wire Wire Line
 	4400 3100 6300 3100
+Wire Wire Line
+	4300 2500 4300 2750
+Wire Wire Line
+	4300 2250 5200 2250
+Wire Bus Line
+	2550 2000 2550 2850
 $EndSCHEMATC

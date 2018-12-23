@@ -1,6 +1,39 @@
-EESchema Schematic File Version 4
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:Zilog
+LIBS:Oscillators
+LIBS:switches
+LIBS:headquarters
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 25 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
@@ -15,7 +48,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L headquarters:74HC670 U24
+L 74HC670 U24
 U 1 1 5B503DBE
 P 5450 2450
 F 0 "U24" H 5150 3050 50  0000 L CNN
@@ -27,6 +60,14 @@ F 3 "" H 5400 2450 50  0001 C CNN
 $EndComp
 Text HLabel 2350 1850 0    60   Input ~ 0
 D[0..3]
+Wire Wire Line
+	4600 3700 4450 3700
+Wire Wire Line
+	4600 3900 4450 3900
+Wire Wire Line
+	4600 4100 4450 4100
+Wire Wire Line
+	4600 4300 4450 4300
 Text Label 4450 3700 0    60   ~ 0
 D0
 Text Label 4450 3900 0    60   ~ 0
@@ -81,6 +122,8 @@ Text Label 6150 2250 2    60   ~ 0
 A17
 Text HLabel 2300 4600 0    60   Input ~ 0
 ~RESET
+Wire Wire Line
+	2300 4600 4600 4600
 NoConn ~ 6000 3900
 NoConn ~ 6000 4000
 NoConn ~ 6000 4100
@@ -88,7 +131,7 @@ NoConn ~ 6000 4200
 NoConn ~ 6000 4300
 NoConn ~ 6000 4400
 $Comp
-L Device:D_ALT D2
+L D_ALT D2
 U 1 1 5B5113B5
 P 6250 3150
 F 0 "D2" H 6250 3250 50  0000 C CNN
@@ -99,7 +142,7 @@ F 3 "" H 6250 3150 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Device:D_ALT D3
+L D_ALT D3
 U 1 1 5B51141C
 P 6550 3150
 F 0 "D3" H 6550 3250 50  0000 C CNN
@@ -110,7 +153,7 @@ F 3 "" H 6550 3150 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Device:D_ALT D4
+L D_ALT D4
 U 1 1 5B51143C
 P 6850 3150
 F 0 "D4" H 6850 3250 50  0000 C CNN
@@ -121,7 +164,7 @@ F 3 "" H 6850 3150 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Device:D_ALT D5
+L D_ALT D5
 U 1 1 5B51145E
 P 7150 3150
 F 0 "D5" H 7150 3250 50  0000 C CNN
@@ -132,7 +175,7 @@ F 3 "" H 7150 3150 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	6250 3300 6550 3300
+	6250 3300 7150 3300
 Connection ~ 6850 3300
 Connection ~ 6550 3300
 Wire Wire Line
@@ -147,18 +190,22 @@ Wire Wire Line
 Wire Wire Line
 	7150 1950 7150 3000
 $Comp
-L 74xx:74LS175 U23
+L 74LS175 U23
 U 1 1 5B5115BC
-P 5500 4100
-F 0 "U23" H 5500 4100 50  0000 C CNN
-F 1 "74VHC175" H 5600 3700 50  0000 C CNN
-F 2 "" H 5500 4100 50  0001 C CNN
-F 3 "" H 5500 4100 50  0001 C CNN
-	1    5500 4100
+P 5300 4150
+F 0 "U23" H 5300 4150 50  0000 C CNN
+F 1 "74VHC175" H 5400 3750 50  0000 C CNN
+F 2 "" H 5300 4150 50  0001 C CNN
+F 3 "" H 5300 4150 50  0001 C CNN
+	1    5300 4150
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
 	6250 3700 6000 3700
+Wire Wire Line
+	6000 3800 6000 3150
+Wire Wire Line
+	6000 3150 4950 3150
 Wire Wire Line
 	4950 3150 4950 2950
 Text HLabel 2300 3100 0    60   Input ~ 0
@@ -190,9 +237,11 @@ Entry Wire Line
 Entry Wire Line
 	4350 2150 4450 2250
 Wire Bus Line
+	4350 4200 4350 1850
+Wire Bus Line
 	4350 1850 2350 1850
 $Comp
-L 74xx:74LS32 U4
+L 74LS32 U4
 U 1 1 5B5120F3
 P 3250 3200
 F 0 "U4" H 3250 3250 50  0000 C CNN
@@ -203,19 +252,21 @@ F 3 "" H 3250 3200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
+	2300 3100 2650 3100
+Wire Wire Line
+	3850 3200 4700 3200
+Wire Wire Line
 	4700 3200 4700 2600
 Wire Wire Line
 	4700 2600 4950 2600
 Wire Wire Line
 	2300 3650 2650 3650
 Wire Wire Line
-	2650 3300 2650 3650
+	2650 3300 2650 4100
 $Comp
-L 74xx:74HC02 U9
+L 74HC02 U9
 U 3 1 5B5124C8
 P 3250 4200
-AR Path="/5B5124C8" Ref="U9"  Part="3" 
-AR Path="/5B502B1D/5B5124C8" Ref="U9"  Part="3" 
 F 0 "U9" H 3250 4250 50  0000 C CNN
 F 1 "74AHC02" H 3300 4150 50  0000 C CNN
 F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 3250 4200 50  0001 C CNN
@@ -223,11 +274,15 @@ F 3 "" H 3250 4200 50  0001 C CNN
 	3    3250 4200
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	2300 4300 2650 4300
 Connection ~ 2650 3650
 Wire Wire Line
 	3850 4200 3850 4500
+Wire Wire Line
+	3850 4500 4600 4500
 $Comp
-L Device:C C36
+L C C36
 U 1 1 5B522DC2
 P 4500 6400
 F 0 "C36" H 4525 6500 50  0000 L CNN
@@ -238,7 +293,7 @@ F 3 "" H 4500 6400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR094
+L GND #PWR094
 U 1 1 5B522DC9
 P 4250 6550
 F 0 "#PWR094" H 4250 6300 50  0001 C CNN
@@ -249,7 +304,7 @@ F 3 "" H 4250 6550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C C37
+L C C37
 U 1 1 5B522DCF
 P 4800 6400
 F 0 "C37" H 4825 6500 50  0000 L CNN
@@ -260,7 +315,7 @@ F 3 "" H 4800 6400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:VCC #PWR095
+L VCC #PWR095
 U 1 1 5B522DD6
 P 4250 6250
 F 0 "#PWR095" H 4250 6100 50  0001 C CNN
@@ -276,72 +331,10 @@ Text Notes 4750 6200 0    60   ~ 0
 Near\nU24
 Connection ~ 4500 6250
 Connection ~ 4500 6550
+Connection ~ 4800 6250
+Connection ~ 4800 6550
 Wire Wire Line
-	4250 6550 4500 6550
+	4250 6550 4800 6550
 Wire Wire Line
-	4250 6250 4500 6250
-Wire Wire Line
-	6850 3300 7150 3300
-Wire Wire Line
-	6550 3300 6850 3300
-Wire Wire Line
-	2650 3650 2650 4100
-Wire Wire Line
-	4500 6250 4800 6250
-Wire Wire Line
-	4500 6550 4800 6550
-Wire Wire Line
-	3550 4200 3850 4200
-Wire Wire Line
-	2950 4100 2650 4100
-Wire Wire Line
-	2300 4300 2950 4300
-Wire Wire Line
-	2300 4600 5000 4600
-Wire Wire Line
-	3850 4500 5000 4500
-Wire Wire Line
-	4450 4300 5000 4300
-Wire Wire Line
-	4450 4100 5000 4100
-Wire Wire Line
-	4450 3900 5000 3900
-Wire Wire Line
-	4450 3700 5000 3700
-$Comp
-L power:VCC #PWR0110
-U 1 1 5C333009
-P 5500 3400
-F 0 "#PWR0110" H 5500 3250 50  0001 C CNN
-F 1 "VCC" H 5517 3573 50  0000 C CNN
-F 2 "" H 5500 3400 50  0001 C CNN
-F 3 "" H 5500 3400 50  0001 C CNN
-	1    5500 3400
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR0111
-U 1 1 5C333057
-P 5500 4900
-F 0 "#PWR0111" H 5500 4650 50  0001 C CNN
-F 1 "GND" H 5505 4727 50  0000 C CNN
-F 2 "" H 5500 4900 50  0001 C CNN
-F 3 "" H 5500 4900 50  0001 C CNN
-	1    5500 4900
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6000 3800 6050 3800
-Wire Wire Line
-	6050 3800 6050 3150
-Wire Wire Line
-	4950 3150 6050 3150
-Wire Wire Line
-	2300 3100 2950 3100
-Wire Wire Line
-	2650 3300 2950 3300
-Wire Wire Line
-	3550 3200 4700 3200
-Wire Bus Line
-	4350 1850 4350 4200
+	4250 6250 4800 6250
 $EndSCHEMATC
