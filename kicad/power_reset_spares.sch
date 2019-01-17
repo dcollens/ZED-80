@@ -1,0 +1,479 @@
+EESchema Schematic File Version 4
+LIBS:z80-cache
+EELAYER 26 0
+EELAYER END
+$Descr USLetter 11000 8500
+encoding utf-8
+Sheet 7 10
+Title "Power, reset, and spares"
+Date "2018-07-20"
+Rev "12"
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L power:GND #PWR072
+U 1 1 59EFCC3B
+P 800 2350
+F 0 "#PWR072" H 800 2100 50  0001 C CNN
+F 1 "GND" H 800 2200 50  0000 C CNN
+F 2 "" H 800 2350 50  0001 C CNN
+F 3 "" H 800 2350 50  0001 C CNN
+	1    800  2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS08 U16
+U 2 1 59EFCC41
+P 1100 950
+F 0 "U16" H 1100 1000 50  0000 C CNN
+F 1 "74AHC08" H 1100 900 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1100 950 50  0001 C CNN
+F 3 "" H 1100 950 50  0001 C CNN
+	2    1100 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS08 U16
+U 3 1 59EFCC48
+P 1100 1400
+F 0 "U16" H 1100 1450 50  0000 C CNN
+F 1 "74AHC08" H 1100 1350 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1100 1400 50  0001 C CNN
+F 3 "" H 1100 1400 50  0001 C CNN
+	3    1100 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS08 U16
+U 4 1 59EFCC4F
+P 1100 1900
+F 0 "U16" H 1100 1950 50  0000 C CNN
+F 1 "74AHC08" H 1100 1850 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1100 1900 50  0001 C CNN
+F 3 "" H 1100 1900 50  0001 C CNN
+	4    1100 1900
+	1    0    0    -1  
+$EndComp
+NoConn ~ 1400 1900
+NoConn ~ 1400 1400
+NoConn ~ 1400 950 
+$Comp
+L 74xx:74HC14 U2
+U 4 1 59EFD892
+P 2800 950
+F 0 "U2" H 2950 1050 50  0000 C CNN
+F 1 "74AHC14" H 3000 850 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 2800 950 50  0001 C CNN
+F 3 "" H 2800 950 50  0001 C CNN
+	4    2800 950 
+	1    0    0    -1  
+$EndComp
+NoConn ~ 3100 950 
+$Comp
+L power:GND #PWR073
+U 1 1 59EFDA40
+P 2500 1300
+F 0 "#PWR073" H 2500 1050 50  0001 C CNN
+F 1 "GND" H 2500 1150 50  0000 C CNN
+F 2 "" H 2500 1300 50  0001 C CNN
+F 3 "" H 2500 1300 50  0001 C CNN
+	1    2500 1300
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC02 U9
+U 4 1 59EFDB83
+P 3750 950
+AR Path="/59EFDB83" Ref="U9"  Part="4" 
+AR Path="/59EFC926/59EFDB83" Ref="U9"  Part="4" 
+F 0 "U9" H 3750 1000 50  0000 C CNN
+F 1 "74AHC02" H 3800 900 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 3750 950 50  0001 C CNN
+F 3 "" H 3750 950 50  0001 C CNN
+	4    3750 950 
+	1    0    0    -1  
+$EndComp
+NoConn ~ 4050 950 
+$Comp
+L power:GND #PWR074
+U 1 1 59EFDC50
+P 3450 1350
+F 0 "#PWR074" H 3450 1100 50  0001 C CNN
+F 1 "GND" H 3450 1200 50  0000 C CNN
+F 2 "" H 3450 1350 50  0001 C CNN
+F 3 "" H 3450 1350 50  0001 C CNN
+	1    3450 1350
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS32 U4
+U 4 1 5B52E72D
+P 1950 1400
+F 0 "U4" H 1950 1450 50  0000 C CNN
+F 1 "74AHC32" H 1950 1350 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1950 1400 50  0001 C CNN
+F 3 "" H 1950 1400 50  0001 C CNN
+	4    1950 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS32 U4
+U 3 1 5B52E734
+P 1950 950
+F 0 "U4" H 1950 1000 50  0000 C CNN
+F 1 "74AHC32" H 1950 900 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1950 950 50  0001 C CNN
+F 3 "" H 1950 950 50  0001 C CNN
+	3    1950 950 
+	1    0    0    -1  
+$EndComp
+NoConn ~ 2250 950 
+NoConn ~ 2250 1400
+$Comp
+L power:GND #PWR075
+U 1 1 5B52E856
+P 1650 1850
+F 0 "#PWR075" H 1650 1600 50  0001 C CNN
+F 1 "GND" H 1650 1700 50  0000 C CNN
+F 2 "" H 1650 1850 50  0001 C CNN
+F 3 "" H 1650 1850 50  0001 C CNN
+	1    1650 1850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3450 1050 3450 1350
+Wire Wire Line
+	3450 850  3450 1050
+Connection ~ 3450 1050
+Wire Wire Line
+	2500 950  2500 1300
+Wire Wire Line
+	800  1050 800  1300
+Wire Wire Line
+	800  1500 800  1800
+Wire Wire Line
+	800  2000 800  2350
+Wire Wire Line
+	800  850  800  1050
+Connection ~ 800  1050
+Wire Wire Line
+	800  1300 800  1500
+Connection ~ 800  1300
+Connection ~ 800  1500
+Wire Wire Line
+	800  1800 800  2000
+Connection ~ 800  1800
+Connection ~ 800  2000
+Wire Wire Line
+	1650 850  1650 1050
+Wire Wire Line
+	1650 1500 1650 1850
+Wire Wire Line
+	1650 1050 1650 1300
+Connection ~ 1650 1050
+Wire Wire Line
+	1650 1300 1650 1500
+Connection ~ 1650 1300
+Connection ~ 1650 1500
+$Comp
+L Device:LED_Small_ALT D?
+U 1 1 5CB1CF93
+P 6550 1150
+AR Path="/5CB1CF93" Ref="D?"  Part="1" 
+AR Path="/59EFC926/5CB1CF93" Ref="D1"  Part="1" 
+F 0 "D1" H 6500 1275 50  0000 L CNN
+F 1 "Green" H 6550 1052 50  0000 C CNN
+F 2 "LEDs:LED_D5.0mm" V 6550 1150 50  0001 C CNN
+F 3 "" V 6550 1150 50  0001 C CNN
+	1    6550 1150
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5CB1CF9A
+P 6550 1550
+AR Path="/5CB1CF9A" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CB1CF9A" Ref="#PWR023"  Part="1" 
+F 0 "#PWR023" H 6550 1300 50  0001 C CNN
+F 1 "GND" H 6550 1400 50  0000 C CNN
+F 2 "" H 6550 1550 50  0001 C CNN
+F 3 "" H 6550 1550 50  0001 C CNN
+	1    6550 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR?
+U 1 1 5CB1CFA0
+P 6550 950
+AR Path="/5CB1CFA0" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CB1CFA0" Ref="#PWR022"  Part="1" 
+F 0 "#PWR022" H 6550 800 50  0001 C CNN
+F 1 "VCC" H 6550 1100 50  0000 C CNN
+F 2 "" H 6550 950 50  0001 C CNN
+F 3 "" H 6550 950 50  0001 C CNN
+	1    6550 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5CB1CFA6
+P 6550 1400
+AR Path="/5CB1CFA6" Ref="R?"  Part="1" 
+AR Path="/59EFC926/5CB1CFA6" Ref="R18"  Part="1" 
+F 0 "R18" V 6630 1400 50  0000 C CNN
+F 1 "10K" V 6550 1400 50  0000 C CNN
+F 2 "Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 6480 1400 50  0001 C CNN
+F 3 "" H 6550 1400 50  0001 C CNN
+	1    6550 1400
+	1    0    0    -1  
+$EndComp
+NoConn ~ 6300 1150
+NoConn ~ 6300 1250
+$Comp
+L Connector_Generic:Conn_01x02 J?
+U 1 1 5CB1CFAF
+P 7300 1300
+AR Path="/5CB1CFAF" Ref="J?"  Part="1" 
+AR Path="/59EFC926/5CB1CFAF" Ref="J6"  Part="1" 
+F 0 "J6" H 7300 1400 50  0000 C CNN
+F 1 "PWR" H 7300 1100 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_2x01_Pitch2.54mm" H 7300 1300 50  0001 C CNN
+F 3 "" H 7300 1300 50  0001 C CNN
+	1    7300 1300
+	1    0    0    1   
+$EndComp
+$Comp
+L Device:CP1_Small C?
+U 1 1 5CB1CFB6
+P 6850 1250
+AR Path="/5CB1CFB6" Ref="C?"  Part="1" 
+AR Path="/59EFC926/5CB1CFB6" Ref="C24"  Part="1" 
+F 0 "C24" H 6860 1320 50  0000 L CNN
+F 1 "10uF" H 6860 1170 50  0000 L CNN
+F 2 "Capacitors_THT:CP_Radial_D5.0mm_P2.50mm" H 6850 1250 50  0001 C CNN
+F 3 "" H 6850 1250 50  0001 C CNN
+	1    6850 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:USB_B J?
+U 1 1 5CB1CFBD
+P 6000 1150
+AR Path="/5CB1CFBD" Ref="J?"  Part="1" 
+AR Path="/59EFC926/5CB1CFBD" Ref="J5"  Part="1" 
+F 0 "J5" H 5800 1600 50  0000 L CNN
+F 1 "USB_B" H 5800 1500 50  0000 L CNN
+F 2 "z80_footprints:USB_B_E8144-B02022-L" H 6150 1100 50  0001 C CNN
+F 3 "" H 6150 1100 50  0001 C CNN
+	1    6000 1150
+	1    0    0    -1  
+$EndComp
+$Comp
+L Regulator_Linear:MIC5504-3.3YM5 U?
+U 1 1 5CB1CFC4
+P 7850 1050
+AR Path="/5CB1CFC4" Ref="U?"  Part="1" 
+AR Path="/59EFC926/5CB1CFC4" Ref="U20"  Part="1" 
+F 0 "U20" H 7600 1300 50  0000 C CNN
+F 1 "MIC5504-3.3YM5" H 8250 794 50  0000 C CNN
+F 2 "TO_SOT_Packages_SMD:SOT-23-5" H 7850 650 50  0001 C CNN
+F 3 "" H 7850 1250 50  0001 C CNN
+	1    7850 1050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3V3 #PWR?
+U 1 1 5CB1CFCB
+P 8450 950
+AR Path="/5CB1CFCB" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CB1CFCB" Ref="#PWR096"  Part="1" 
+F 0 "#PWR096" H 8450 800 50  0001 C CNN
+F 1 "+3V3" H 8450 1090 50  0000 C CNN
+F 2 "" H 8450 950 50  0001 C CNN
+F 3 "" H 8450 950 50  0001 C CNN
+	1    8450 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 5CB1CFD1
+P 8650 1200
+AR Path="/5CB1CFD1" Ref="C?"  Part="1" 
+AR Path="/59EFC926/5CB1CFD1" Ref="C30"  Part="1" 
+F 0 "C30" H 8675 1300 50  0000 L CNN
+F 1 "1uF" H 8675 1100 50  0000 L CNN
+F 2 "" H 8688 1050 50  0001 C CNN
+F 3 "" H 8650 1200 50  0001 C CNN
+	1    8650 1200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5900 1550 6000 1550
+Connection ~ 6000 1550
+Wire Wire Line
+	6300 950  6550 950 
+Connection ~ 6550 1550
+Wire Wire Line
+	6550 950  6550 1050
+Wire Wire Line
+	7100 950  7100 1200
+Connection ~ 6550 950 
+Wire Wire Line
+	6850 1150 6850 950 
+Connection ~ 6850 950 
+Wire Wire Line
+	6850 1550 6850 1350
+Connection ~ 6850 1550
+Wire Wire Line
+	7100 1550 7100 1300
+Wire Wire Line
+	7850 1550 7850 1350
+Connection ~ 7100 950 
+Wire Wire Line
+	8650 950  8650 1050
+Wire Wire Line
+	8250 950  8450 950 
+Connection ~ 8450 950 
+Wire Wire Line
+	8650 1550 8650 1350
+Connection ~ 7850 1550
+Wire Wire Line
+	6000 1550 6550 1550
+Wire Wire Line
+	6550 1550 6850 1550
+Wire Wire Line
+	6550 950  6850 950 
+Wire Wire Line
+	6850 950  7100 950 
+Wire Wire Line
+	6850 1550 7100 1550
+Wire Wire Line
+	8450 950  8650 950 
+Wire Wire Line
+	7850 1550 8650 1550
+Wire Wire Line
+	7100 950  7450 950 
+Wire Wire Line
+	7450 1150 7450 950 
+Connection ~ 7450 950 
+Wire Wire Line
+	7100 1550 7850 1550
+Connection ~ 7100 1550
+$Comp
+L Switch:SW_Push SW?
+U 1 1 5CB6E60F
+P 6100 2850
+AR Path="/5CB6E60F" Ref="SW?"  Part="1" 
+AR Path="/59EFC926/5CB6E60F" Ref="SW1"  Part="1" 
+F 0 "SW1" H 6150 2950 50  0000 L CNN
+F 1 "KS01Q" H 6100 2790 50  0000 C CNN
+F 2 "z80_footprints:KS-01Q-02" H 6100 3050 50  0001 C CNN
+F 3 "" H 6100 3050 50  0001 C CNN
+	1    6100 2850
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 1 1 5CB6E616
+P 6900 2850
+AR Path="/5CB6E616" Ref="U?"  Part="1" 
+AR Path="/59EFC926/5CB6E616" Ref="U2"  Part="1" 
+F 0 "U2" H 7050 2950 50  0000 C CNN
+F 1 "74AHC14" H 7100 2750 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 6900 2850 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn74ahc14.pdf" H 6900 2850 50  0001 C CNN
+	1    6900 2850
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5CB6E61D
+P 5900 3400
+AR Path="/5CB6E61D" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CB6E61D" Ref="#PWR02"  Part="1" 
+F 0 "#PWR02" H 5900 3150 50  0001 C CNN
+F 1 "GND" H 5900 3250 50  0000 C CNN
+F 2 "" H 5900 3400 50  0001 C CNN
+F 3 "" H 5900 3400 50  0001 C CNN
+	1    5900 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 5CB6E623
+P 6450 3150
+AR Path="/5CB6E623" Ref="C?"  Part="1" 
+AR Path="/59EFC926/5CB6E623" Ref="C1"  Part="1" 
+F 0 "C1" H 6475 3250 50  0000 L CNN
+F 1 "0.1uF" H 6475 3050 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 6488 3000 50  0001 C CNN
+F 3 "" H 6450 3150 50  0001 C CNN
+	1    6450 3150
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5CB6E62A
+P 6450 2550
+AR Path="/5CB6E62A" Ref="R?"  Part="1" 
+AR Path="/59EFC926/5CB6E62A" Ref="R1"  Part="1" 
+F 0 "R1" V 6530 2550 50  0000 C CNN
+F 1 "1M" V 6450 2550 50  0000 C CNN
+F 2 "Resistors_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 6380 2550 50  0001 C CNN
+F 3 "" H 6450 2550 50  0001 C CNN
+	1    6450 2550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR?
+U 1 1 5CB6E631
+P 6450 2400
+AR Path="/5CB6E631" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CB6E631" Ref="#PWR07"  Part="1" 
+F 0 "#PWR07" H 6450 2250 50  0001 C CNN
+F 1 "VCC" H 6450 2550 50  0000 C CNN
+F 2 "" H 6450 2400 50  0001 C CNN
+F 3 "" H 6450 2400 50  0001 C CNN
+	1    6450 2400
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 2 1 5CB6E637
+P 7900 2850
+AR Path="/5CB6E637" Ref="U?"  Part="2" 
+AR Path="/59EFC926/5CB6E637" Ref="U2"  Part="2" 
+F 0 "U2" H 8050 2950 50  0000 C CNN
+F 1 "74AHC14" H 8100 2750 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 7900 2850 50  0001 C CNN
+F 3 "" H 7900 2850 50  0001 C CNN
+	2    7900 2850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6300 2850 6450 2850
+Connection ~ 6450 2850
+Wire Wire Line
+	6450 2700 6450 2850
+Wire Wire Line
+	5900 2850 5900 3300
+Wire Wire Line
+	5900 3300 6450 3300
+Connection ~ 5900 3300
+Wire Wire Line
+	6450 2850 6450 3000
+Wire Wire Line
+	5900 3300 5900 3400
+Wire Wire Line
+	6450 2850 6600 2850
+Wire Wire Line
+	7200 2850 7600 2850
+Wire Wire Line
+	8200 2850 8350 2850
+Text HLabel 8350 2850 2    60   Output ~ 0
+~RESET
+$EndSCHEMATC

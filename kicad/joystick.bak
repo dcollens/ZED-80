@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 2 9
+Sheet 2 10
 Title "Joystick Ports"
 Date "2018-07-20"
 Rev "12"

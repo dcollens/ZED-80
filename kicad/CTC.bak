@@ -4,8 +4,8 @@ EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 6 9
-Title "CTC, Baud Rate Generation"
+Sheet 6 10
+Title "Timers, Baud Rate Generation"
 Date "2018-07-20"
 Rev "12"
 Comp ""

@@ -4,8 +4,8 @@ EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 8 9
-Title ""
+Sheet 8 10
+Title "LCD Interface"
 Date "2018-07-20"
 Rev "12"
 Comp ""

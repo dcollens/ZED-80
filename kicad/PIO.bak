@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 5 9
+Sheet 5 10
 Title "PIO, PS/2 Keyboard Port"
 Date "2018-07-20"
 Rev "12"
