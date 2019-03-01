@@ -411,21 +411,21 @@ F 3 "" H 8700 3050 50  0001 C CNN
 	1    8700 3050
 	1    0    0    -1  
 $EndComp
-Text Label 8750 1550 2    60   ~ 0
+Text Label 8850 1550 2    60   ~ 0
 D0
-Text Label 8750 1650 2    60   ~ 0
+Text Label 8850 1650 2    60   ~ 0
 D1
-Text Label 8750 1750 2    60   ~ 0
+Text Label 8850 1750 2    60   ~ 0
 D2
-Text Label 8750 1850 2    60   ~ 0
+Text Label 8850 1850 2    60   ~ 0
 D3
-Text Label 8750 1950 2    60   ~ 0
+Text Label 8850 1950 2    60   ~ 0
 D4
-Text Label 8750 2050 2    60   ~ 0
+Text Label 8850 2050 2    60   ~ 0
 D5
-Text Label 8750 2150 2    60   ~ 0
+Text Label 8850 2150 2    60   ~ 0
 D6
-Text Label 8750 2250 2    60   ~ 0
+Text Label 8850 2250 2    60   ~ 0
 D7
 Text Label 7300 1550 0    60   ~ 0
 A0
@@ -463,9 +463,9 @@ Text Label 5200 2950 0    60   ~ 0
 PA14
 Text Label 5200 3050 0    60   ~ 0
 PA15
-Text Label 8750 2450 2    60   ~ 0
+Text Label 8850 2450 2    60   ~ 0
 ~WR
-Text Label 8750 2550 2    60   ~ 0
+Text Label 8850 2550 2    60   ~ 0
 ~RD
 NoConn ~ 8600 2950
 $Comp
@@ -481,7 +481,7 @@ F 3 "" H 9250 950 50  0001 C CNN
 $EndComp
 Text Notes 9200 750  0    60   ~ 0
 Near\nU5
-Text Label 8900 2750 2    60   ~ 0
+Text Label 8850 2750 2    60   ~ 0
 ~MREQ
 Text Label 2750 5550 0    60   ~ 0
 ~IORQ
@@ -873,7 +873,7 @@ Text Label 700  3200 0    60   ~ 0
 A15
 Text Label 700  3450 0    60   ~ 0
 ~IORQ6
-Text Label 900  4900 3    60   ~ 0
+Text Label 750  4900 3    60   ~ 0
 ~IORQ7
 Text Label 700  3300 0    60   ~ 0
 PA[14..17]
@@ -1010,22 +1010,6 @@ Wire Wire Line
 Wire Wire Line
 	7500 3150 7300 3150
 Wire Wire Line
-	8600 1550 8750 1550
-Wire Wire Line
-	8600 1650 8750 1650
-Wire Wire Line
-	8600 1750 8750 1750
-Wire Wire Line
-	8600 1850 8750 1850
-Wire Wire Line
-	8600 1950 8750 1950
-Wire Wire Line
-	8600 2050 8750 2050
-Wire Wire Line
-	8600 2150 8750 2150
-Wire Wire Line
-	8600 2250 8750 2250
-Wire Wire Line
 	7500 1550 7300 1550
 Wire Wire Line
 	7500 1650 7300 1650
@@ -1061,16 +1045,8 @@ Wire Wire Line
 	5400 2950 5200 2950
 Wire Wire Line
 	5400 3050 5200 3050
-Wire Wire Line
-	8600 2550 8750 2550
-Wire Wire Line
-	8600 2450 8750 2450
 Connection ~ 8950 800 
 Connection ~ 8950 1100
-Wire Wire Line
-	8600 2750 8900 2750
-Wire Wire Line
-	8600 2650 8900 2650
 Connection ~ 9250 800 
 Connection ~ 9250 1100
 Wire Wire Line
@@ -1306,7 +1282,7 @@ Wire Wire Line
 Wire Wire Line
 	700  3450 1250 3450
 Wire Wire Line
-	900  4900 900  5250
+	750  4900 750  5250
 Wire Bus Line
 	1250 2700 700  2700
 Wire Bus Line
@@ -1315,7 +1291,7 @@ Text Label 5200 3150 0    60   ~ 0
 PA16
 Text Label 7300 3150 0    60   ~ 0
 PA16
-Text Label 8900 2650 2    60   ~ 0
+Text Label 8850 2650 2    60   ~ 0
 PA17
 Text Label 7050 950  2    60   ~ 0
 PA17
@@ -1481,128 +1457,120 @@ S 5050 6650 750  1100
 U 5CC65FE6
 F0 "SD card" 60
 F1 "SDcard.sch" 60
+F2 "D[0..7]" B L 5050 6750 60 
+F3 "~RD" I L 5050 6900 60 
+F4 "~WR" I L 5050 7000 60 
+F5 "~CS" I L 5050 7100 60 
+F6 "SDCLK" I L 5050 7250 60 
+F7 "~SDCS" I L 5050 7350 60 
+F8 "OCLK" I L 5050 7550 60 
+F9 "~ICLR" I L 5050 7450 60 
 $EndSheet
 $Comp
 L 74xx:74LS273 U23
 U 1 1 5C3D0091
-P 1900 5550
-F 0 "U23" H 1650 6200 50  0000 C CNN
-F 1 "74AC273" H 2100 4900 50  0000 C CNN
-F 2 "" H 1900 5550 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74LS273" H 1900 5550 50  0001 C CNN
-	1    1900 5550
+P 1750 5550
+F 0 "U23" H 1500 6200 50  0000 C CNN
+F 1 "74AC273" H 1950 4900 50  0000 C CNN
+F 2 "" H 1750 5550 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS273" H 1750 5550 50  0001 C CNN
+	1    1750 5550
 	1    0    0    -1  
 $EndComp
-Text Label 1100 6050 0    60   ~ 0
+Text Label 950  6050 0    60   ~ 0
 ~RESET
-Text Label 1250 5050 0    60   ~ 0
+Text Label 1100 5050 0    60   ~ 0
 D0
-Text Label 1250 5150 0    60   ~ 0
+Text Label 1100 5150 0    60   ~ 0
 D1
-Text Label 1250 5250 0    60   ~ 0
+Text Label 1100 5250 0    60   ~ 0
 D2
-Text Label 1250 5350 0    60   ~ 0
+Text Label 1100 5350 0    60   ~ 0
 D3
-Text Label 1250 5450 0    60   ~ 0
+Text Label 1100 5450 0    60   ~ 0
 D4
-Text Label 1250 5550 0    60   ~ 0
+Text Label 1100 5550 0    60   ~ 0
 D5
-Text Label 1250 5650 0    60   ~ 0
+Text Label 1100 5650 0    60   ~ 0
 D6
-Text Label 1250 5750 0    60   ~ 0
+Text Label 1100 5750 0    60   ~ 0
 D7
 Wire Wire Line
-	1400 5050 1250 5050
+	1250 5050 1100 5050
 Wire Wire Line
-	1400 5150 1250 5150
+	1250 5150 1100 5150
 Wire Wire Line
-	1400 5250 1250 5250
+	1250 5250 1100 5250
 Wire Wire Line
-	1400 5350 1250 5350
+	1250 5350 1100 5350
 Wire Wire Line
-	1400 5450 1250 5450
+	1250 5450 1100 5450
 Wire Wire Line
-	1400 5550 1250 5550
+	1250 5550 1100 5550
 Wire Wire Line
-	1400 5650 1250 5650
+	1250 5650 1100 5650
 Wire Wire Line
-	1400 5750 1250 5750
+	1250 5750 1100 5750
 Wire Wire Line
-	1100 6050 1400 6050
-Wire Wire Line
-	2400 5050 2650 5050
-Wire Wire Line
-	2400 5150 2650 5150
-Wire Wire Line
-	2400 5250 2650 5250
-Wire Wire Line
-	2400 5350 2650 5350
-Wire Wire Line
-	2400 5450 2650 5450
-Wire Wire Line
-	2400 5550 2650 5550
-Wire Wire Line
-	2400 5650 2650 5650
-Wire Wire Line
-	2400 5750 2650 5750
-Text Label 2650 5050 2    60   ~ 0
+	950  6050 1250 6050
+Text Label 2600 5050 2    60   ~ 0
 MMUEN
-Text Label 2650 5150 2    60   ~ 0
-CTL1
-Text Label 2650 5250 2    60   ~ 0
-CTL2
-Text Label 2650 5350 2    60   ~ 0
-CTL3
-Text Label 2650 5450 2    60   ~ 0
-CTL4
-Text Label 2650 5550 2    60   ~ 0
+Text Label 2600 5150 2    60   ~ 0
+SDCLK
+Text Label 2600 5250 2    60   ~ 0
+~SDCS
+Text Label 2600 5350 2    60   ~ 0
+~SDICLR
+Text Label 2600 5450 2    60   ~ 0
+SDOCLK
+Text Label 2600 5550 2    60   ~ 0
 CTL5
-Text Label 2650 5650 2    60   ~ 0
+Text Label 2600 5650 2    60   ~ 0
 CTL6
-Text Label 2650 5750 2    60   ~ 0
+Text Label 2600 5750 2    60   ~ 0
 CTL7
 $Comp
 L 74xx:74HC02 U9
 U 3 1 5C48A0C2
-P 1000 5550
+P 850 5550
 AR Path="/5C48A0C2" Ref="U9"  Part="3" 
 AR Path="/5B502B1D/5C48A0C2" Ref="U?"  Part="3" 
-F 0 "U9" V 950 5550 50  0000 C CNN
-F 1 "74AHC02" V 1050 5550 50  0000 C CNN
-F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 1000 5550 50  0001 C CNN
-F 3 "" H 1000 5550 50  0001 C CNN
-	3    1000 5550
+F 0 "U9" V 800 5550 50  0000 C CNN
+F 1 "74AHC02" V 900 5550 50  0000 C CNN
+F 2 "Housings_DIP:DIP-14_W7.62mm_LongPads" H 850 5550 50  0001 C CNN
+F 3 "" H 850 5550 50  0001 C CNN
+	3    850  5550
 	0    1    1    0   
 $EndComp
 $Comp
 L power:GND #PWR098
 U 1 1 5C4ED809
-P 1900 6350
-F 0 "#PWR098" H 1900 6100 50  0001 C CNN
-F 1 "GND" H 1905 6177 50  0000 C CNN
-F 2 "" H 1900 6350 50  0001 C CNN
-F 3 "" H 1900 6350 50  0001 C CNN
-	1    1900 6350
+P 1750 6350
+F 0 "#PWR098" H 1750 6100 50  0001 C CNN
+F 1 "GND" H 1755 6177 50  0000 C CNN
+F 2 "" H 1750 6350 50  0001 C CNN
+F 3 "" H 1750 6350 50  0001 C CNN
+	1    1750 6350
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:VCC #PWR097
 U 1 1 5C4EDEE4
-P 1900 4750
-F 0 "#PWR097" H 1900 4600 50  0001 C CNN
-F 1 "VCC" H 1917 4923 50  0000 C CNN
-F 2 "" H 1900 4750 50  0001 C CNN
-F 3 "" H 1900 4750 50  0001 C CNN
-	1    1900 4750
+P 1750 4750
+F 0 "#PWR097" H 1750 4600 50  0001 C CNN
+F 1 "VCC" H 1767 4923 50  0000 C CNN
+F 2 "" H 1750 4750 50  0001 C CNN
+F 3 "" H 1750 4750 50  0001 C CNN
+	1    1750 4750
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1400 5950 1400 5850
+	1250 5950 1250 5850
 Wire Wire Line
-	1400 5850 1000 5850
+	1250 5850 850  5850
 Wire Wire Line
-	1100 5250 1100 4900
-Text Label 1100 4900 3    60   ~ 0
+	950  5250 950  4900
+Text Label 950  4900 3    60   ~ 0
 ~WR
 $Sheet
 S 1250 2600 800  1050
@@ -1647,7 +1615,94 @@ Text Label 4750 6150 0    60   ~ 0
 Wire Wire Line
 	4750 6150 5050 6150
 Wire Bus Line
+	4750 5650 4750 6750
+Wire Bus Line
+	4750 6750 5050 6750
+Connection ~ 4750 5650
+Text Label 4700 6900 0    60   ~ 0
+~RD
+Text Label 4700 7000 0    60   ~ 0
+~WR
+Text Label 4700 7100 0    60   ~ 0
+~IORQ8
+Text Label 4700 7250 0    60   ~ 0
+SDCLK
+Text Label 4700 7350 0    60   ~ 0
+~SDCS
+Text Label 4700 7450 0    60   ~ 0
+~SDICLR
+Text Label 4700 7550 0    60   ~ 0
+SDOCLK
+Wire Wire Line
+	4700 6900 5050 6900
+Wire Wire Line
+	4700 7000 5050 7000
+Wire Wire Line
+	4700 7100 5050 7100
+Wire Wire Line
+	4700 7250 5050 7250
+Wire Wire Line
+	4700 7350 5050 7350
+Wire Wire Line
+	4700 7450 5050 7450
+Wire Wire Line
+	4700 7550 5050 7550
+Wire Wire Line
+	2300 5150 2600 5150
+Wire Wire Line
+	2300 5250 2600 5250
+Wire Wire Line
+	2300 5350 2600 5350
+Wire Wire Line
+	2300 5450 2600 5450
+Wire Wire Line
+	2300 5550 2600 5550
+Wire Wire Line
+	2300 5650 2600 5650
+Wire Wire Line
+	2300 5750 2600 5750
+Wire Wire Line
+	8600 2650 8850 2650
+Wire Wire Line
+	8600 2750 8850 2750
+Wire Wire Line
+	8600 1550 8850 1550
+Wire Wire Line
+	8600 1650 8850 1650
+Wire Wire Line
+	8600 1750 8850 1750
+Wire Wire Line
+	8600 1850 8850 1850
+Wire Wire Line
+	8600 1950 8850 1950
+Wire Wire Line
+	8600 2050 8850 2050
+Wire Wire Line
+	8600 2150 8850 2150
+Wire Wire Line
+	8600 2250 8850 2250
+Wire Wire Line
+	8600 2450 8850 2450
+Wire Wire Line
+	8600 2550 8850 2550
+Wire Wire Line
+	2250 5050 2600 5050
+Wire Bus Line
 	4750 3350 4750 4300
 Wire Bus Line
 	4750 1650 4750 3150
+Wire Wire Line
+	2250 5150 2300 5150
+Wire Wire Line
+	2250 5250 2300 5250
+Wire Wire Line
+	2250 5350 2300 5350
+Wire Wire Line
+	2250 5450 2300 5450
+Wire Wire Line
+	2250 5550 2300 5550
+Wire Wire Line
+	2250 5650 2300 5650
+Wire Wire Line
+	2250 5750 2300 5750
 $EndSCHEMATC

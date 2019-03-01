@@ -522,8 +522,6 @@ F 3 "" H 6050 4150 50  0001 C CNN
 	1    6050 4150
 	1    0    0    -1  
 $EndComp
-NoConn ~ 6550 3550
-NoConn ~ 6550 3450
 Wire Wire Line
 	5550 2850 5350 2850
 Wire Wire Line
@@ -617,13 +615,7 @@ Wire Wire Line
 Wire Wire Line
 	5350 2850 2000 2850
 Wire Wire Line
-	5550 3450 5550 3550
-Wire Wire Line
-	5550 3550 5550 3750
-Connection ~ 5550 3550
-Wire Wire Line
 	5550 3750 5550 3850
-Connection ~ 5550 3750
 Connection ~ 5550 3850
 Wire Wire Line
 	6050 4150 5550 4150
@@ -632,6 +624,26 @@ Wire Wire Line
 Connection ~ 6050 4150
 Wire Wire Line
 	5550 3350 2000 3350
+Text GLabel 5100 3450 0    60   Input ~ 0
+SDCLK_5V
+Text GLabel 5100 3600 0    60   Input ~ 0
+~SDCS_5V
+Wire Wire Line
+	5100 3450 5550 3450
+Wire Wire Line
+	5100 3600 5550 3600
+Wire Wire Line
+	5550 3600 5550 3550
+Text GLabel 7000 3450 2    60   Output ~ 0
+SDCLK_3V3
+Text GLabel 7000 3600 2    60   Output ~ 0
+~SDCS_3V3
+Wire Wire Line
+	6550 3450 7000 3450
+Wire Wire Line
+	6550 3550 6550 3600
+Wire Wire Line
+	6550 3600 7000 3600
 Wire Bus Line
 	5200 1300 5200 2000
 $EndSCHEMATC
