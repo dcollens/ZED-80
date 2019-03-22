@@ -461,8 +461,6 @@ Wire Wire Line
 	1600 1150 3700 1150
 Wire Wire Line
 	3800 4550 5400 4550
-Text Notes 9600 1300 0    60   ~ 0
-Hook up to some GP-in?
 Text GLabel 6600 5500 0    60   Input ~ 0
 SDCLK_3V3
 Text GLabel 6600 5650 0    60   Input ~ 0
@@ -530,9 +528,69 @@ Wire Wire Line
 Connection ~ 1700 7450
 Wire Wire Line
 	2050 7750 1700 7750
+Connection ~ 1700 7750
+$Comp
+L Device:R R?
+U 1 1 5C96B667
+P 9900 1000
+F 0 "R?" H 9950 1000 50  0000 L CNN
+F 1 "10K" V 9900 1000 50  0000 C CNN
+F 2 "" V 9830 1000 50  0001 C CNN
+F 3 "~" H 9900 1000 50  0001 C CNN
+	1    9900 1000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5C96B6D4
+P 9600 1000
+F 0 "R?" H 9650 1000 50  0000 L CNN
+F 1 "10K" V 9600 1000 50  0000 C CNN
+F 2 "" V 9530 1000 50  0001 C CNN
+F 3 "~" H 9600 1000 50  0001 C CNN
+	1    9600 1000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9500 1350 9600 1350
+$Comp
+L power:VCC #PWR?
+U 1 1 5C96FF4A
+P 9900 850
+F 0 "#PWR?" H 9900 700 50  0001 C CNN
+F 1 "VCC" H 9917 1023 50  0000 C CNN
+F 2 "" H 9900 850 50  0001 C CNN
+F 3 "" H 9900 850 50  0001 C CNN
+	1    9900 850 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9750 6300 1500 6300
+Wire Wire Line
+	9900 6450 1500 6450
+Text HLabel 1500 6300 0    60   Output ~ 0
+~SDWP
+Text HLabel 1500 6450 0    60   Output ~ 0
+~SDCD
+Wire Wire Line
+	9750 6300 9750 1350
+Wire Wire Line
+	9500 1250 9900 1250
+Wire Wire Line
+	9900 1150 9900 1250
+Connection ~ 9900 1250
+Wire Wire Line
+	9900 1250 9900 6450
+Wire Wire Line
+	9600 1150 9600 1350
+Connection ~ 9600 1350
+Wire Wire Line
+	9600 1350 9750 1350
 Wire Bus Line
 	5250 700  5250 1950
 Wire Bus Line
 	6650 700  6650 4250
-Connection ~ 1700 7750
+Wire Wire Line
+	9600 850  9900 850 
+Connection ~ 9900 850 
 $EndSCHEMATC

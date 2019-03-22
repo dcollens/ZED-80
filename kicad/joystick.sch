@@ -174,21 +174,17 @@ Wire Wire Line
 	5350 2550 6250 2550
 Wire Wire Line
 	6250 2550 6250 2050
-Wire Wire Line
-	5350 3150 5650 3150
 $Comp
 L power:GND #PWR026
 U 1 1 59D6AB23
-P 5500 2650
-F 0 "#PWR026" H 5500 2400 50  0001 C CNN
-F 1 "GND" H 5500 2500 50  0000 C CNN
-F 2 "" H 5500 2650 50  0001 C CNN
-F 3 "" H 5500 2650 50  0001 C CNN
-	1    5500 2650
+P 5400 2850
+F 0 "#PWR026" H 5400 2600 50  0001 C CNN
+F 1 "GND" H 5400 2700 50  0000 C CNN
+F 2 "" H 5400 2850 50  0001 C CNN
+F 3 "" H 5400 2850 50  0001 C CNN
+	1    5400 2850
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	5350 2650 5500 2650
 Wire Wire Line
 	6750 2800 6500 2800
 Wire Wire Line
@@ -434,22 +430,16 @@ Connection ~ 5850 3800
 Connection ~ 6050 3800
 Text HLabel 2850 5100 0    60   BiDi ~ 0
 D[0..7]
-Text HLabel 2850 5750 0    60   Input ~ 0
+Text HLabel 2850 5900 0    60   Input ~ 0
 ~RD
 Wire Wire Line
-	2850 5750 5750 5750
-Text HLabel 2850 5900 0    60   Input ~ 0
+	2850 5900 5750 5900
+Text HLabel 2850 6000 0    60   Input ~ 0
 ~IORQ0
-Text HLabel 2850 6050 0    60   Input ~ 0
+Text HLabel 2850 5800 0    60   Input ~ 0
 ~IORQ1
 Wire Wire Line
-	5650 6050 2850 6050
-Wire Wire Line
-	2850 5900 7400 5900
-Wire Wire Line
-	7400 3250 5650 3250
-Wire Wire Line
-	5650 3250 5650 3150
+	5650 5800 2850 5800
 Wire Bus Line
 	3700 5100 2850 5100
 $Comp
@@ -543,12 +533,6 @@ Wire Wire Line
 Wire Wire Line
 	5150 1200 5450 1200
 Wire Wire Line
-	5350 2850 5350 2750
-Wire Wire Line
-	5350 2750 5350 2650
-Connection ~ 5350 2750
-Connection ~ 5350 2650
-Wire Wire Line
 	5350 4900 5350 4800
 Wire Wire Line
 	5350 4800 5350 4700
@@ -620,9 +604,9 @@ F 3 "" H 4850 5500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5750 5100 5750 5750
+	5750 5100 5750 5900
 Wire Wire Line
-	5650 5200 5650 6050
+	5650 5200 5650 5800
 Connection ~ 5450 1750
 Connection ~ 7050 3000
 $Comp
@@ -637,7 +621,39 @@ F 3 "" H 4850 3450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7400 3250 7400 5900
+	5400 2850 5350 2850
+Wire Wire Line
+	2850 6000 7400 6000
+Wire Wire Line
+	5350 3150 5350 3550
+Wire Wire Line
+	5350 3550 7400 3550
+Wire Wire Line
+	7400 3550 7400 6000
+Wire Wire Line
+	5350 2750 5800 2750
+Wire Wire Line
+	5800 2750 5800 3450
+Wire Wire Line
+	5800 3450 7500 3450
+Wire Wire Line
+	7500 3450 7500 6100
+Wire Wire Line
+	7500 6100 2850 6100
+Wire Wire Line
+	5350 2650 5900 2650
+Wire Wire Line
+	5900 2650 5900 3350
+Wire Wire Line
+	5900 3350 7600 3350
+Wire Wire Line
+	7600 3350 7600 6200
+Wire Wire Line
+	7600 6200 2850 6200
 Wire Bus Line
 	3700 2250 3700 5100
+Text HLabel 2850 6100 0    60   Input ~ 0
+~SDCD
+Text HLabel 2850 6200 0    60   Input ~ 0
+~SDWP
 $EndSCHEMATC

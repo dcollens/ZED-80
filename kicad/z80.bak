@@ -1523,12 +1523,6 @@ Text Label 2600 5350 2    60   ~ 0
 ~SDICLR
 Text Label 2600 5450 2    60   ~ 0
 SDOCLK
-Text Label 2600 5550 2    60   ~ 0
-CTL5
-Text Label 2600 5650 2    60   ~ 0
-CTL6
-Text Label 2600 5750 2    60   ~ 0
-CTL7
 $Comp
 L 74xx:74HC02 U9
 U 3 1 5C48A0C2
@@ -1648,20 +1642,6 @@ Wire Wire Line
 Wire Wire Line
 	4700 7550 5050 7550
 Wire Wire Line
-	2300 5150 2600 5150
-Wire Wire Line
-	2300 5250 2600 5250
-Wire Wire Line
-	2300 5350 2600 5350
-Wire Wire Line
-	2300 5450 2600 5450
-Wire Wire Line
-	2300 5550 2600 5550
-Wire Wire Line
-	2300 5650 2600 5650
-Wire Wire Line
-	2300 5750 2600 5750
-Wire Wire Line
 	8600 2650 8850 2650
 Wire Wire Line
 	8600 2750 8850 2750
@@ -1687,22 +1667,29 @@ Wire Wire Line
 	8600 2550 8850 2550
 Wire Wire Line
 	2250 5050 2600 5050
+NoConn ~ 2600 5550
+Wire Wire Line
+	2250 5150 2600 5150
+Wire Wire Line
+	2250 5250 2600 5250
+Wire Wire Line
+	2250 5350 2600 5350
+Wire Wire Line
+	2250 5450 2600 5450
+Wire Wire Line
+	2250 5550 2600 5550
+Wire Wire Line
+	2250 5650 2600 5650
+Wire Wire Line
+	2250 5750 2600 5750
+NoConn ~ 2600 5650
+NoConn ~ 2600 5750
+NoConn ~ 4300 5950
+NoConn ~ 4300 6050
+NoConn ~ 4300 6150
+NoConn ~ 4300 6250
 Wire Bus Line
 	4750 3350 4750 4300
 Wire Bus Line
 	4750 1650 4750 3150
-Wire Wire Line
-	2250 5150 2300 5150
-Wire Wire Line
-	2250 5250 2300 5250
-Wire Wire Line
-	2250 5350 2300 5350
-Wire Wire Line
-	2250 5450 2300 5450
-Wire Wire Line
-	2250 5550 2300 5550
-Wire Wire Line
-	2250 5650 2300 5650
-Wire Wire Line
-	2250 5750 2300 5750
 $EndSCHEMATC
