@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 10 10
+Sheet 10 11
 Title "Memory Management Unit"
 Date "2018-07-20"
 Rev "12"
@@ -15,11 +15,11 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L headquarters:74HC670 U24
+L 74xx:74LS670 U24
 U 1 1 5B503DBE
 P 5450 2450
-F 0 "U24" H 5150 3050 50  0000 L CNN
-F 1 "74HC670" H 5450 1850 50  0000 C CNN
+F 0 "U24" H 5150 3100 50  0000 L CNN
+F 1 "74HC670" H 5650 1700 50  0000 C CNN
 F 2 "" H 5400 2450 50  0001 C CNN
 F 3 "" H 5400 2450 50  0001 C CNN
 	1    5450 2450
@@ -27,24 +27,24 @@ F 3 "" H 5400 2450 50  0001 C CNN
 $EndComp
 Text HLabel 2350 1850 0    60   Input ~ 0
 D[0..3]
-Text HLabel 2300 2400 0    60   Input ~ 0
+Text HLabel 2300 2450 0    60   Input ~ 0
 WA0
-Text HLabel 2300 2500 0    60   Input ~ 0
+Text HLabel 2300 2550 0    60   Input ~ 0
 WA1
 Text HLabel 2300 3300 0    60   Input ~ 0
 ~WR
-Text HLabel 2300 2750 0    60   Input ~ 0
-RA0
 Text HLabel 2300 2850 0    60   Input ~ 0
+RA0
+Text HLabel 2300 2950 0    60   Input ~ 0
 RA1
 Wire Wire Line
-	2300 2400 4950 2400
+	2300 2450 4950 2450
 Wire Wire Line
-	4950 2500 2300 2500
-Wire Wire Line
-	2300 2750 4950 2750
+	4950 2550 2300 2550
 Wire Wire Line
 	2300 2850 4950 2850
+Wire Wire Line
+	2300 2950 4950 2950
 Text HLabel 2350 1750 0    60   Output ~ 0
 A[14..17]
 Wire Wire Line
@@ -159,9 +159,9 @@ F 3 "" H 3250 3200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4700 3200 4700 2600
+	4700 3200 4700 2650
 Wire Wire Line
-	4700 2600 4950 2600
+	4700 2650 4950 2650
 $Comp
 L power:GND #PWR094
 U 1 1 5B522DC9
@@ -230,14 +230,36 @@ F 3 "" H 4650 3450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4950 2950 4950 3450
-Wire Wire Line
 	4350 3450 4350 3750
 Connection ~ 4350 3750
 Wire Wire Line
 	4350 3750 6250 3750
 Wire Wire Line
 	6250 3300 6250 3750
+$Comp
+L power:GND #PWR0145
+U 1 1 5CBBC460
+P 5450 3350
+F 0 "#PWR0145" H 5450 3100 50  0001 C CNN
+F 1 "GND" H 5455 3177 50  0000 C CNN
+F 2 "" H 5450 3350 50  0001 C CNN
+F 3 "" H 5450 3350 50  0001 C CNN
+	1    5450 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR0144
+U 1 1 5CBBC6B8
+P 5450 1650
+F 0 "#PWR0144" H 5450 1500 50  0001 C CNN
+F 1 "VCC" H 5467 1823 50  0000 C CNN
+F 2 "" H 5450 1650 50  0001 C CNN
+F 3 "" H 5450 1650 50  0001 C CNN
+	1    5450 1650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4950 3050 4950 3450
 Wire Bus Line
 	4350 1850 4350 2150
 $EndSCHEMATC

@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 8 10
+Sheet 8 11
 Title "LCD Interface"
 Date "2018-07-20"
 Rev "12"
@@ -231,7 +231,7 @@ F 3 "" H 10050 4450 50  0001 C CNN
 	1    10050 4450
 	1    0    0    -1  
 $EndComp
-Text HLabel 2000 2000 0    60   BiDi ~ 0
+Text HLabel 2000 1750 0    60   BiDi ~ 0
 D[0..7]
 Text HLabel 2000 2850 0    60   Input ~ 0
 ~RD
@@ -263,120 +263,120 @@ $EndComp
 $Comp
 L power:VCC #PWR086
 U 1 1 5B4E19BB
-P 5900 950
-F 0 "#PWR086" H 5900 800 50  0001 C CNN
-F 1 "VCC" H 5900 1100 50  0000 C CNN
-F 2 "" H 5900 950 50  0001 C CNN
-F 3 "" H 5900 950 50  0001 C CNN
-	1    5900 950 
+P 5900 700
+F 0 "#PWR086" H 5900 550 50  0001 C CNN
+F 1 "VCC" H 5900 850 50  0000 C CNN
+F 2 "" H 5900 700 50  0001 C CNN
+F 3 "" H 5900 700 50  0001 C CNN
+	1    5900 700 
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3V3 #PWR087
 U 1 1 5B4E19D3
-P 6200 950
-F 0 "#PWR087" H 6200 800 50  0001 C CNN
-F 1 "+3V3" H 6200 1090 50  0000 C CNN
-F 2 "" H 6200 950 50  0001 C CNN
-F 3 "" H 6200 950 50  0001 C CNN
-	1    6200 950 
+P 6200 700
+F 0 "#PWR087" H 6200 550 50  0001 C CNN
+F 1 "+3V3" H 6200 840 50  0000 C CNN
+F 2 "" H 6200 700 50  0001 C CNN
+F 3 "" H 6200 700 50  0001 C CNN
+	1    6200 700 
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6100 950  6200 950 
-Connection ~ 6200 950 
+	6100 700  6200 700 
+Connection ~ 6200 700 
 Wire Bus Line
-	5200 2000 2000 2000
+	5200 1750 2000 1750
 $Comp
 L headquarters:74LVC4245A U21
 U 1 1 5B4E22A0
-P 6050 1700
-F 0 "U21" H 5650 2300 50  0000 L CNN
-F 1 "74LVC4245A" H 6050 1100 50  0000 C CNN
-F 2 "" H 6050 1700 50  0001 C CNN
-F 3 "" H 6050 1700 50  0001 C CNN
-	1    6050 1700
+P 6050 1450
+F 0 "U21" H 5650 2050 50  0000 L CNN
+F 1 "74LVC4245A" H 6050 1200 50  0000 C CNN
+F 2 "" H 6050 1450 50  0001 C CNN
+F 3 "" H 6050 1450 50  0001 C CNN
+	1    6050 1450
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5450 1200 5300 1200
+	5450 950  5300 950 
 Wire Wire Line
-	5450 1300 5300 1300
+	5450 1050 5300 1050
 Wire Wire Line
-	5450 1400 5300 1400
+	5450 1150 5300 1150
 Wire Wire Line
-	5450 1500 5300 1500
+	5450 1250 5300 1250
 Wire Wire Line
-	5450 1600 5300 1600
+	5450 1350 5300 1350
 Wire Wire Line
-	5450 1700 5300 1700
+	5450 1450 5300 1450
 Wire Wire Line
-	5450 1800 5300 1800
+	5450 1550 5300 1550
 Wire Wire Line
-	5450 1900 5300 1900
-Text Label 5300 1200 0    60   ~ 0
+	5450 1650 5300 1650
+Text Label 5300 950  0    60   ~ 0
 D0
-Text Label 5300 1300 0    60   ~ 0
+Text Label 5300 1050 0    60   ~ 0
 D1
-Text Label 5300 1400 0    60   ~ 0
+Text Label 5300 1150 0    60   ~ 0
 D2
-Text Label 5300 1500 0    60   ~ 0
+Text Label 5300 1250 0    60   ~ 0
 D3
-Text Label 5300 1600 0    60   ~ 0
+Text Label 5300 1350 0    60   ~ 0
 D4
-Text Label 5300 1700 0    60   ~ 0
+Text Label 5300 1450 0    60   ~ 0
 D5
-Text Label 5300 1800 0    60   ~ 0
+Text Label 5300 1550 0    60   ~ 0
 D6
-Text Label 5300 1900 0    60   ~ 0
+Text Label 5300 1650 0    60   ~ 0
 D7
 Entry Wire Line
-	5200 1300 5300 1200
+	5200 1050 5300 950 
 Entry Wire Line
-	5200 1400 5300 1300
+	5200 1150 5300 1050
 Entry Wire Line
-	5200 1500 5300 1400
+	5200 1250 5300 1150
 Entry Wire Line
-	5200 1600 5300 1500
+	5200 1350 5300 1250
 Entry Wire Line
-	5200 1700 5300 1600
+	5200 1450 5300 1350
 Entry Wire Line
-	5200 1800 5300 1700
+	5200 1550 5300 1450
 Entry Wire Line
-	5200 1900 5300 1800
+	5200 1650 5300 1550
 Entry Wire Line
-	5200 2000 5300 1900
+	5200 1750 5300 1650
 Wire Wire Line
-	6650 1200 6900 1200
+	6650 950  6900 950 
 Wire Wire Line
-	6650 1300 6900 1300
+	6650 1050 6900 1050
 Wire Wire Line
-	6650 1400 6900 1400
+	6650 1150 6900 1150
 Wire Wire Line
-	6650 1500 6900 1500
+	6650 1250 6900 1250
 Wire Wire Line
-	6650 1600 6900 1600
+	6650 1350 6900 1350
 Wire Wire Line
-	6650 1700 6900 1700
+	6650 1450 6900 1450
 Wire Wire Line
-	6650 1800 6900 1800
+	6650 1550 6900 1550
 Wire Wire Line
-	6650 1900 6900 1900
-Text Label 6900 1200 2    60   ~ 0
+	6650 1650 6900 1650
+Text Label 6900 950  2    60   ~ 0
 P_D0
-Text Label 6900 1300 2    60   ~ 0
+Text Label 6900 1050 2    60   ~ 0
 P_D1
-Text Label 6900 1400 2    60   ~ 0
+Text Label 6900 1150 2    60   ~ 0
 P_D2
-Text Label 6900 1500 2    60   ~ 0
+Text Label 6900 1250 2    60   ~ 0
 P_D3
-Text Label 6900 1600 2    60   ~ 0
+Text Label 6900 1350 2    60   ~ 0
 P_D4
-Text Label 6900 1700 2    60   ~ 0
+Text Label 6900 1450 2    60   ~ 0
 P_D5
-Text Label 6900 1800 2    60   ~ 0
+Text Label 6900 1550 2    60   ~ 0
 P_D6
-Text Label 6900 1900 2    60   ~ 0
+Text Label 6900 1650 2    60   ~ 0
 P_D7
 Text Notes 10150 2300 2    60   ~ 0
 LCD panel connector
@@ -523,23 +523,13 @@ F 3 "" H 6050 4150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5550 2850 5350 2850
-Wire Wire Line
 	2000 2950 5550 2950
-Wire Wire Line
-	2000 3050 5450 3050
 Wire Wire Line
 	2000 3150 5550 3150
 Wire Wire Line
 	2000 3250 5550 3250
 Wire Wire Line
-	5450 2200 5450 3050
-Connection ~ 5450 3050
-Wire Wire Line
-	5450 2100 5350 2100
-Wire Wire Line
-	5350 2100 5350 2850
-Connection ~ 5350 2850
+	5450 1850 5350 1850
 Wire Wire Line
 	7900 2950 9400 2950
 Wire Wire Line
@@ -611,10 +601,6 @@ Wire Wire Line
 Wire Wire Line
 	9400 4750 9900 4750
 Wire Wire Line
-	5450 3050 5550 3050
-Wire Wire Line
-	5350 2850 2000 2850
-Wire Wire Line
 	5550 3750 5550 3850
 Connection ~ 5550 3850
 Wire Wire Line
@@ -644,6 +630,41 @@ Wire Wire Line
 	6550 3550 6550 3600
 Wire Wire Line
 	6550 3600 7000 3600
+Wire Wire Line
+	2000 2850 5350 2850
+Wire Wire Line
+	2000 3050 5450 3050
+Wire Wire Line
+	5450 1950 5450 3050
+Connection ~ 5450 3050
+Wire Wire Line
+	5450 3050 5550 3050
+Wire Wire Line
+	5350 1850 5350 2850
+Connection ~ 5350 2850
+Wire Wire Line
+	5350 2850 5550 2850
+$Comp
+L power:GND #PWR0141
+U 1 1 5CC16D4B
+P 6300 2200
+F 0 "#PWR0141" H 6300 1950 50  0001 C CNN
+F 1 "GND" H 6305 2027 50  0000 C CNN
+F 2 "" H 6300 2200 50  0001 C CNN
+F 3 "" H 6300 2200 50  0001 C CNN
+	1    6300 2200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5950 2200 6050 2200
+Wire Wire Line
+	6050 2200 6150 2200
+Connection ~ 6050 2200
+Wire Wire Line
+	6150 2200 6300 2200
+Connection ~ 6150 2200
 Wire Bus Line
-	5200 1300 5200 2000
+	5200 1050 5200 1750
+Text Notes 3100 2500 0    60   ~ 0
+TODO: If neither ~RD~ nor ~WR~ are active,\nthen we must not drive the bus here. \nCurrently an IORQ interrupt cycle could decode\nthis ~CS~ and drive the bus inappropriately.
 $EndSCHEMATC

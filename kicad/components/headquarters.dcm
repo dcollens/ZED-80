@@ -1,17 +1,7 @@
 EESchema-DOCLIB  Version 2.0
 #
-$CMP 74HC161
-D Synchronous 4 bit programmable binary counter
-K TTL CNT CNT4
-$ENDCMP
-#
 $CMP 74HC164
 D 8-bit parallel-out gated serial-in shift register with asynchronous clear
-$ENDCMP
-#
-$CMP 74HC670
-D 4 x 4 Register File Tristate
-K CMOS Register 3State
 $ENDCMP
 #
 $CMP 74LVC4245A
@@ -24,6 +14,14 @@ D 1Mbit 128Kx8 Static RAM
 K SRAM
 $ENDCMP
 #
+$CMP AY-3-8910
+D General Instrument 3-channel programmable sound generator
+$ENDCMP
+#
+$CMP AY-3-8913
+D General Instrument 3-channel programmable sound generator
+$ENDCMP
+#
 $CMP KMDGX-6S-BS
 D 6-pin Mini-DIN connector
 K Mini-DIN
@@ -32,6 +30,10 @@ $ENDCMP
 $CMP LTD-6940HR
 D DISPLAY 7 SEGMENTS common K
 K 7 SEGMENTS
+$ENDCMP
+#
+$CMP YM2149F
+D Yamaha 3-channel programmable sound generator
 $ENDCMP
 #
 $CMP Z84C20

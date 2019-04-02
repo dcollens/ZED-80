@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 4 10
+Sheet 4 11
 Title "Serial Ports"
 Date "2018-07-20"
 Rev "12"

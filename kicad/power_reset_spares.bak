@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 7 10
+Sheet 7 11
 Title "Power, reset, and spares"
 Date "2018-07-20"
 Rev "12"
@@ -462,4 +462,185 @@ Wire Wire Line
 Connection ~ 3450 1050
 Wire Wire Line
 	3450 1050 3450 1350
+Text Notes 7500 1800 0    60   ~ 0
+TODO: Need larger 3.3V LDO regulator
+$Comp
+L Oscillator:CXO_DIP8 X?
+U 1 1 5CA34C8B
+P 6050 4500
+AR Path="/5CA34C8B" Ref="X?"  Part="1" 
+AR Path="/59EFC926/5CA34C8B" Ref="X1"  Part="1" 
+F 0 "X1" H 5850 4750 50  0000 L CNN
+F 1 "ACH20MHZ" H 6100 4250 50  0000 L CNN
+F 2 "Oscillators:Oscillator_DIP-8" H 6500 4150 50  0001 C CNN
+F 3 "http://www.abracon.com/Oscillators/ACH.pdf" H 5950 4500 50  0001 C CNN
+	1    6050 4500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5CA34C91
+P 6050 4800
+AR Path="/5CA34C91" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CA34C91" Ref="#PWR06"  Part="1" 
+F 0 "#PWR06" H 6050 4550 50  0001 C CNN
+F 1 "GND" H 6050 4650 50  0000 C CNN
+F 2 "" H 6050 4800 50  0001 C CNN
+F 3 "" H 6050 4800 50  0001 C CNN
+	1    6050 4800
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR?
+U 1 1 5CA34C97
+P 6050 4200
+AR Path="/5CA34C97" Ref="#PWR?"  Part="1" 
+AR Path="/59EFC926/5CA34C97" Ref="#PWR03"  Part="1" 
+F 0 "#PWR03" H 6050 4050 50  0001 C CNN
+F 1 "VCC" H 6050 4350 50  0000 C CNN
+F 2 "" H 6050 4200 50  0001 C CNN
+F 3 "" H 6050 4200 50  0001 C CNN
+	1    6050 4200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6050 4200 5750 4200
+Wire Wire Line
+	5750 4200 5750 4500
+Connection ~ 6050 4200
+$Comp
+L 74xx:74LS390 U28
+U 1 1 5CA35A3F
+P 7500 3950
+F 0 "U28" H 7500 4200 50  0000 C CNN
+F 1 "74HC390" H 7500 3600 50  0000 C CNN
+F 2 "" H 7500 3950 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS390" H 7500 3950 50  0001 C CNN
+	1    7500 3950
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS390 U28
+U 2 1 5CA3A042
+P 7500 4900
+F 0 "U28" H 7500 5150 50  0000 C CNN
+F 1 "74HC390" H 7500 4550 50  0000 C CNN
+F 2 "" H 7500 4900 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS390" H 7500 4900 50  0001 C CNN
+	2    7500 4900
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS390 U28
+U 3 1 5CA3A8D7
+P 6050 5800
+F 0 "U28" H 6100 6150 50  0000 L CNN
+F 1 "74HC390" H 6100 5450 50  0000 L CNN
+F 2 "" H 6050 5800 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS390" H 6050 5800 50  0001 C CNN
+	3    6050 5800
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR0126
+U 1 1 5CA3F4B4
+P 6050 5300
+F 0 "#PWR0126" H 6050 5150 50  0001 C CNN
+F 1 "VCC" H 6067 5473 50  0000 C CNN
+F 2 "" H 6050 5300 50  0001 C CNN
+F 3 "" H 6050 5300 50  0001 C CNN
+	1    6050 5300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0127
+U 1 1 5CA3FB27
+P 6050 6300
+F 0 "#PWR0127" H 6050 6050 50  0001 C CNN
+F 1 "GND" H 6055 6127 50  0000 C CNN
+F 2 "" H 6050 6300 50  0001 C CNN
+F 3 "" H 6050 6300 50  0001 C CNN
+	1    6050 6300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0128
+U 1 1 5CA407E1
+P 7000 4150
+F 0 "#PWR0128" H 7000 3900 50  0001 C CNN
+F 1 "GND" H 7005 3977 50  0000 C CNN
+F 2 "" H 7000 4150 50  0001 C CNN
+F 3 "" H 7000 4150 50  0001 C CNN
+	1    7000 4150
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0129
+U 1 1 5CA40E15
+P 7000 5100
+F 0 "#PWR0129" H 7000 4850 50  0001 C CNN
+F 1 "GND" H 7005 4927 50  0000 C CNN
+F 2 "" H 7000 5100 50  0001 C CNN
+F 3 "" H 7000 5100 50  0001 C CNN
+	1    7000 5100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6350 4500 6350 3850
+Wire Wire Line
+	6350 3850 7000 3850
+Text HLabel 8350 3850 2    60   Output ~ 0
+CLK10M
+Wire Wire Line
+	8000 3850 8350 3850
+NoConn ~ 8000 3950
+NoConn ~ 8000 4050
+NoConn ~ 8000 4150
+Wire Wire Line
+	7000 3950 7000 4150
+Connection ~ 7000 4150
+Wire Wire Line
+	7000 4900 6600 4900
+Wire Wire Line
+	6600 4900 6600 4500
+Wire Wire Line
+	6600 4500 6350 4500
+Connection ~ 6350 4500
+Wire Wire Line
+	8000 5100 8150 5100
+Wire Wire Line
+	8150 5100 8150 4550
+Wire Wire Line
+	8150 4550 7000 4550
+Wire Wire Line
+	7000 4550 7000 4800
+NoConn ~ 8000 4900
+NoConn ~ 8000 5000
+Text HLabel 8350 4800 2    60   Output ~ 0
+CLK2M
+Wire Wire Line
+	8000 4800 8350 4800
+$Comp
+L Device:C C41
+U 1 1 5CA593DD
+P 5550 5750
+F 0 "C41" H 5600 5850 50  0000 L CNN
+F 1 "0.1uF" H 5600 5650 50  0000 L CNN
+F 2 "" H 5588 5600 50  0001 C CNN
+F 3 "~" H 5550 5750 50  0001 C CNN
+	1    5550 5750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6050 5300 5550 5300
+Wire Wire Line
+	5550 5300 5550 5600
+Wire Wire Line
+	5550 5900 5550 6300
+Wire Wire Line
+	5550 6300 6050 6300
+Connection ~ 6050 5300
+Connection ~ 6050 6300
+Text Notes 5300 5700 0    60   ~ 0
+Near\nU28
 $EndSCHEMATC

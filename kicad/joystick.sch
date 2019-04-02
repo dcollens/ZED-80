@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 2 10
+Sheet 2 11
 Title "Joystick Ports"
 Date "2018-07-20"
 Rev "12"
@@ -650,10 +650,10 @@ Wire Wire Line
 	7600 3350 7600 6200
 Wire Wire Line
 	7600 6200 2850 6200
-Wire Bus Line
-	3700 2250 3700 5100
 Text HLabel 2850 6100 0    60   Input ~ 0
 ~SDCD
 Text HLabel 2850 6200 0    60   Input ~ 0
 ~SDWP
+Wire Bus Line
+	3700 2250 3700 5100
 $EndSCHEMATC

@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 9 10
+Sheet 9 11
 Title "SD Card Interface"
 Date ""
 Rev ""
@@ -361,7 +361,7 @@ L 74xx:74LS541 U26
 U 1 1 5CD721C7
 P 5900 4150
 F 0 "U26" H 5650 4800 50  0000 C CNN
-F 1 "74AHC541" H 6100 3500 50  0000 C CNN
+F 1 "74AHC541" H 6150 3500 50  0000 C CNN
 F 2 "" H 5900 4150 50  0001 C CNN
 F 3 "http://www.ti.com/lit/gpn/sn74LS541" H 5900 4150 50  0001 C CNN
 	1    5900 4150
@@ -372,7 +372,7 @@ L headquarters:74HC164 U25
 U 1 1 5CD72BAE
 P 4750 4100
 F 0 "U25" H 4450 4700 50  0000 C CNN
-F 1 "74HCT164" H 4750 3700 50  0000 C CNN
+F 1 "74HCT164" H 5000 3700 50  0000 C CNN
 F 2 "" H 4600 4250 50  0001 C CNN
 F 3 "" H 4600 4250 50  0001 C CNN
 	1    4750 4100
@@ -448,21 +448,11 @@ Wire Wire Line
 Connection ~ 4200 5500
 Wire Wire Line
 	4200 5500 4500 5500
-Wire Wire Line
-	3800 4550 3800 1050
 Connection ~ 3800 1050
 Wire Wire Line
 	3800 1050 4200 1050
 Wire Wire Line
-	3700 1150 3700 4650
-Wire Wire Line
-	3700 4650 5400 4650
-Wire Wire Line
 	1600 1150 3700 1150
-Wire Wire Line
-	3800 4550 5400 4550
-Text Notes 9600 1300 0    60   ~ 0
-Hook up to some GP-in?
 Text GLabel 6600 5500 0    60   Input ~ 0
 SDCLK_3V3
 Text GLabel 6600 5650 0    60   Input ~ 0
@@ -530,9 +520,105 @@ Wire Wire Line
 Connection ~ 1700 7450
 Wire Wire Line
 	2050 7750 1700 7750
+Connection ~ 1700 7750
+$Comp
+L Device:R R35
+U 1 1 5C96B667
+P 9900 1000
+F 0 "R35" H 9950 1000 50  0000 L CNN
+F 1 "10K" V 9900 1000 50  0000 C CNN
+F 2 "" V 9830 1000 50  0001 C CNN
+F 3 "~" H 9900 1000 50  0001 C CNN
+	1    9900 1000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R34
+U 1 1 5C96B6D4
+P 9600 1000
+F 0 "R34" H 9650 1000 50  0000 L CNN
+F 1 "10K" V 9600 1000 50  0000 C CNN
+F 2 "" V 9530 1000 50  0001 C CNN
+F 3 "~" H 9600 1000 50  0001 C CNN
+	1    9600 1000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9500 1350 9600 1350
+$Comp
+L power:VCC #PWR0121
+U 1 1 5C96FF4A
+P 9900 850
+F 0 "#PWR0121" H 9900 700 50  0001 C CNN
+F 1 "VCC" H 9917 1023 50  0000 C CNN
+F 2 "" H 9900 850 50  0001 C CNN
+F 3 "" H 9900 850 50  0001 C CNN
+	1    9900 850 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9750 6300 1500 6300
+Wire Wire Line
+	9900 6450 1500 6450
+Text HLabel 1500 6300 0    60   Output ~ 0
+~SDWP
+Text HLabel 1500 6450 0    60   Output ~ 0
+~SDCD
+Wire Wire Line
+	9750 6300 9750 1350
+Wire Wire Line
+	9500 1250 9900 1250
+Wire Wire Line
+	9900 1150 9900 1250
+Connection ~ 9900 1250
+Wire Wire Line
+	9900 1250 9900 6450
+Wire Wire Line
+	9600 1150 9600 1350
+Connection ~ 9600 1350
+Wire Wire Line
+	9600 1350 9750 1350
+Wire Wire Line
+	9600 850  9900 850 
+Connection ~ 9900 850 
+$Comp
+L power:VCC #PWR0142
+U 1 1 5CC2D81F
+P 4750 3350
+F 0 "#PWR0142" H 4750 3200 50  0001 C CNN
+F 1 "VCC" H 4767 3523 50  0000 C CNN
+F 2 "" H 4750 3350 50  0001 C CNN
+F 3 "" H 4750 3350 50  0001 C CNN
+	1    4750 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0143
+U 1 1 5CC2EAFB
+P 4750 4650
+F 0 "#PWR0143" H 4750 4400 50  0001 C CNN
+F 1 "GND" H 4755 4477 50  0000 C CNN
+F 2 "" H 4750 4650 50  0001 C CNN
+F 3 "" H 4750 4650 50  0001 C CNN
+	1    4750 4650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5400 4650 5400 5000
+Wire Wire Line
+	5400 5000 3700 5000
+Wire Wire Line
+	3700 1150 3700 5000
+Wire Wire Line
+	3800 4900 5300 4900
+Wire Wire Line
+	5300 4900 5300 4550
+Wire Wire Line
+	5300 4550 5400 4550
+Wire Wire Line
+	3800 1050 3800 4900
 Wire Bus Line
 	5250 700  5250 1950
 Wire Bus Line
 	6650 700  6650 4250
-Connection ~ 1700 7750
 $EndSCHEMATC

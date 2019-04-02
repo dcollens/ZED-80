@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:z80-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
-Sheet 6 10
+Sheet 6 11
 Title "Timers, Baud Rate Generation"
 Date "2018-07-20"
 Rev "12"
