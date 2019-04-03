@@ -1,13 +1,12 @@
 EESchema Schematic File Version 4
-LIBS:z80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 11
 Title "ZED-80 Personal Computer"
-Date "2018-07-20"
-Rev "12"
+Date "2019-04-03"
+Rev "1"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -539,19 +538,21 @@ U 59D81490
 F0 "PIO" 60
 F1 "PIO.sch" 60
 F2 "D[0..7]" B L 6850 5650 60 
-F3 "~CE" I L 6850 5750 60 
-F4 "~M1" I L 6850 5950 60 
-F5 "~IORQ" I L 6850 6050 60 
-F6 "~RD" I L 6850 6150 60 
-F7 "C/~D" I L 6850 6250 60 
-F8 "B/~A" I L 6850 6350 60 
-F9 "~INT" O L 6850 6450 60 
-F10 "IEI" I R 7650 5650 60 
-F11 "IEO" O R 7650 5750 60 
-F12 "CLK" I L 6850 6550 60 
-F13 "~RESET" I L 6850 5850 60 
-F14 "PIOA6" B R 7650 6450 60 
-F15 "PIOA7" B R 7650 6550 60 
+F3 "~M1" I L 6850 5950 60 
+F4 "~IORQ" I L 6850 6050 60 
+F5 "~RD" I L 6850 6150 60 
+F6 "C/~D" I L 6850 6250 60 
+F7 "B/~A" I L 6850 6350 60 
+F8 "~INT" O L 6850 6450 60 
+F9 "IEI" I R 7650 5650 60 
+F10 "IEO" O R 7650 5750 60 
+F11 "CLK" I L 6850 6550 60 
+F12 "~RESET" I L 6850 5850 60 
+F13 "PIOA6" B R 7650 5900 60 
+F14 "PIOA7" B R 7650 6000 60 
+F15 "PIOB[0..7]" B R 7650 6150 60 
+F16 "~PIOCE" I L 6850 5750 60 
+F17 "~KBDCE" I R 7650 6550 60 
 $EndSheet
 Text Label 6550 5750 0    60   ~ 0
 ~IORQ3
@@ -779,8 +780,8 @@ F3 "~RD" I R 9150 5750 60
 F4 "~WR" I R 9150 5850 60 
 F5 "~CS" I R 9150 5950 60 
 F6 "D/~C" I R 9150 6050 60 
-F7 "~WAIT" O L 8350 6550 60 
-F8 "INT" O L 8350 6450 60 
+F7 "~WAIT" O L 8350 6000 60 
+F8 "INT" O L 8350 5900 60 
 F9 "~RESET" I R 9150 6150 60 
 F10 "BL" I L 8350 5650 60 
 $EndSheet
@@ -1021,7 +1022,7 @@ Wire Wire Line
 Wire Wire Line
 	6850 5200 6550 5200
 Wire Wire Line
-	7650 5200 7700 5200
+	7650 5200 7750 5200
 Wire Wire Line
 	7750 5100 7650 5100
 Wire Wire Line
@@ -1056,9 +1057,9 @@ Wire Wire Line
 Wire Wire Line
 	6850 6350 6550 6350
 Wire Wire Line
-	7700 5200 7700 5650
+	7750 5200 7750 5650
 Wire Wire Line
-	7700 5650 7650 5650
+	7750 5650 7650 5650
 Wire Wire Line
 	3050 2250 2750 2250
 Connection ~ 9550 800 
@@ -1195,9 +1196,9 @@ Wire Wire Line
 Wire Wire Line
 	8350 5200 8300 5200
 Wire Wire Line
-	8350 6450 7650 6450
+	8350 5900 7650 5900
 Wire Wire Line
-	8350 6550 7650 6550
+	8350 6000 7650 6000
 Wire Wire Line
 	700  2800 1250 2800
 Wire Wire Line
@@ -1509,7 +1510,6 @@ Wire Wire Line
 Wire Wire Line
 	6250 4750 6050 4750
 NoConn ~ 2600 7100
-NoConn ~ 2600 7000
 Wire Wire Line
 	2250 7100 2600 7100
 Wire Wire Line
@@ -1524,7 +1524,6 @@ Wire Wire Line
 	2250 6600 2600 6600
 Wire Wire Line
 	2250 6500 2600 6500
-NoConn ~ 2600 6900
 Wire Wire Line
 	2250 6400 2600 6400
 Text Label 950  6250 3    60   ~ 0
@@ -1639,10 +1638,8 @@ F1 "audio.sch" 60
 F2 "ACLK" I L 1250 4600 60 
 F3 "~RESET" I L 1250 4500 60 
 F4 "D[0..7]" B L 1250 4200 60 
-F5 "~CS" I L 1250 4700 60 
-F6 "~RD" I L 1250 4800 60 
-F7 "~WR" I L 1250 4900 60 
-F8 "A0" I L 1250 4350 60 
+F5 "BDIR" I L 1250 4750 60 
+F6 "BC1" I L 1250 4850 60 
 $EndSheet
 Wire Wire Line
 	3050 1850 2650 1850
@@ -1656,34 +1653,38 @@ Text Label 1600 1200 2    60   ~ 0
 CLK2M
 Text Label 4650 1550 2    60   ~ 0
 A0
+Text Label 750  4500 0    60   ~ 0
+~RESET
+Text Label 750  4600 0    60   ~ 0
+CLK2M
+Text Label 750  4200 0    60   ~ 0
+PIOB[0..7]
+Text Label 750  4750 0    60   ~ 0
+BDIR
+Text Label 750  4850 0    60   ~ 0
+BC1
+Text Label 2600 6900 2    60   ~ 0
+BDIR
+Text Label 2600 7000 2    60   ~ 0
+BC1
+Text Label 8150 6150 2    60   ~ 0
+PIOB[0..7]
 Wire Bus Line
-	1250 4200 850  4200
+	7650 6150 8150 6150
 Wire Wire Line
-	1250 4350 850  4350
+	750  4500 1250 4500
 Wire Wire Line
-	1250 4500 850  4500
+	750  4600 1250 4600
+Wire Wire Line
+	750  4750 1250 4750
+Wire Wire Line
+	750  4850 1250 4850
+Wire Bus Line
+	750  4200 1250 4200
+Wire Wire Line
+	7650 6550 8150 6550
+Text Label 8150 6550 2    60   ~ 0
+~IORQ9
 Wire Bus Line
 	4750 3350 4750 4300
-Wire Wire Line
-	1250 4600 850  4600
-Wire Wire Line
-	1250 4700 850  4700
-Wire Wire Line
-	1250 4800 850  4800
-Wire Wire Line
-	1250 4900 850  4900
-Text Label 850  4200 0    60   ~ 0
-D[0..7]
-Text Label 850  4350 0    60   ~ 0
-A0
-Text Label 850  4500 0    60   ~ 0
-~RESET
-Text Label 850  4600 0    60   ~ 0
-CLK2M
-Text Label 850  4700 0    60   ~ 0
-~IORQ9
-Text Label 850  4800 0    60   ~ 0
-~RD
-Text Label 850  4900 0    60   ~ 0
-~WR
 $EndSCHEMATC

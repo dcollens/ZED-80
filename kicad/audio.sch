@@ -1,24 +1,21 @@
 EESchema Schematic File Version 4
-LIBS:z80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 11 11
 Title "Audio"
-Date ""
-Rev ""
+Date "2019-04-03"
+Rev "1"
 Comp ""
 Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Notes 7900 800  0    60   ~ 0
-TODO: WAIT states for IO operations?
-Text HLabel 1500 1300 0    60   Input ~ 0
+Text HLabel 1500 3300 0    60   Input ~ 0
 ACLK
-Text HLabel 1500 1400 0    60   Input ~ 0
+Text HLabel 1500 3200 0    60   Input ~ 0
 ~RESET
 Text HLabel 1500 1600 0    60   BiDi ~ 0
 D[0..7]
@@ -72,186 +69,53 @@ Entry Wire Line
 	5000 1900 5100 2000
 Wire Bus Line
 	1500 1600 5000 1600
-Text HLabel 1400 3350 0    60   Input ~ 0
-~CS
-Text HLabel 1450 4250 0    60   Input ~ 0
-~RD
-Text HLabel 1450 4350 0    60   Input ~ 0
-~WR
-Text HLabel 1400 3650 0    60   Input ~ 0
-A0
-$Comp
-L 74xx:74LS153 U30
-U 1 1 5CAE5B91
-P 4250 3550
-F 0 "U30" H 4000 4400 50  0000 C CNN
-F 1 "74HC153" H 4450 4400 50  0000 C CNN
-F 2 "" H 4250 3550 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74LS153" H 4250 3550 50  0001 C CNN
-	1    4250 3550
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1450 4250 3750 4250
-Wire Wire Line
-	1450 4350 3750 4350
-Wire Wire Line
-	4750 2850 5250 2850
-Wire Wire Line
-	5250 2950 4750 2950
-Wire Wire Line
-	4750 2950 4750 3550
-$Comp
-L power:VCC #PWR0135
-U 1 1 5CAED18F
-P 4250 2550
-F 0 "#PWR0135" H 4250 2400 50  0001 C CNN
-F 1 "VCC" H 4267 2723 50  0000 C CNN
-F 2 "" H 4250 2550 50  0001 C CNN
-F 3 "" H 4250 2550 50  0001 C CNN
-	1    4250 2550
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR0136
-U 1 1 5CAED327
-P 4250 4650
-F 0 "#PWR0136" H 4250 4400 50  0001 C CNN
-F 1 "GND" H 4255 4477 50  0000 C CNN
-F 2 "" H 4250 4650 50  0001 C CNN
-F 3 "" H 4250 4650 50  0001 C CNN
-	1    4250 4650
-	1    0    0    -1  
-$EndComp
-Text Notes 3300 7900 0    60   ~ 0
-~WR~ ~RD~ A0 Meaning           BDIR BC1\n 0   0  0 Impossible           x   x\n 0   0  1 Impossible           x   x\n 0   1  0 Write to addr 0      1   0\n 0   1  1 Write to addr 1      1   1\n 1   0  0 Read from addr 0    0   1\n 1   0  1 Read from addr 1    0   1\n 1   1  0 Idle                  0   0\n 1   1  1 Idle                  0   0\n\nBDIR BC1 Meaning\n   0   0   Idle\n   0   1   Read data\n   1   0   Write data\n   1   1   Write address
-Wire Wire Line
-	3750 2950 3500 2950
-Wire Wire Line
-	3500 2950 3500 2700
-Wire Wire Line
-	3750 2850 3650 2850
-Wire Wire Line
-	3650 2850 3650 3050
-Wire Wire Line
-	3750 3050 3650 3050
-Connection ~ 3650 3050
-Wire Wire Line
-	3650 3050 3650 3150
-$Comp
-L power:GND #PWR0132
-U 1 1 5CAEEEFD
-P 3250 3050
-F 0 "#PWR0132" H 3250 2800 50  0001 C CNN
-F 1 "GND" H 3255 2877 50  0000 C CNN
-F 2 "" H 3250 3050 50  0001 C CNN
-F 3 "" H 3250 3050 50  0001 C CNN
-	1    3250 3050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3750 3150 3650 3150
-$Comp
-L power:VCC #PWR0134
-U 1 1 5CAEF92B
-P 3500 2700
-F 0 "#PWR0134" H 3500 2550 50  0001 C CNN
-F 1 "VCC" H 3517 2873 50  0000 C CNN
-F 2 "" H 3500 2700 50  0001 C CNN
-F 3 "" H 3500 2700 50  0001 C CNN
-	1    3500 2700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1400 3650 3750 3650
-Wire Wire Line
-	3750 3750 3500 3750
-Wire Wire Line
-	3500 3750 3500 2950
-Connection ~ 3500 2950
-Wire Wire Line
-	3750 3550 3650 3550
-Wire Wire Line
-	3650 3550 3650 3850
-Wire Wire Line
-	3650 3850 3750 3850
-$Comp
-L power:GND #PWR0133
-U 1 1 5CAF2901
-P 3250 3800
-F 0 "#PWR0133" H 3250 3550 50  0001 C CNN
-F 1 "GND" H 3255 3627 50  0000 C CNN
-F 2 "" H 3250 3800 50  0001 C CNN
-F 3 "" H 3250 3800 50  0001 C CNN
-	1    3250 3800
-	1    0    0    -1  
-$EndComp
+Text Notes 1450 2650 0    60   ~ 0
+BDIR BC1 Meaning\n   0   0   Idle\n   0   1   Read data\n   1   0   Write data\n   1   1   Write address
 $Comp
 L Device:C C?
 U 1 1 5CBA923A
-P 1000 7550
+P 5900 6100
 AR Path="/5CC65FE6/5CBA923A" Ref="C?"  Part="1" 
 AR Path="/5C9CDFC1/5CBA923A" Ref="C42"  Part="1" 
-F 0 "C42" H 1025 7650 50  0000 L CNN
-F 1 "0.1uF" H 1025 7450 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 1038 7400 50  0001 C CNN
-F 3 "" H 1000 7550 50  0001 C CNN
-	1    1000 7550
+F 0 "C42" H 5925 6200 50  0000 L CNN
+F 1 "0.1uF" H 5925 6000 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 5938 5950 50  0001 C CNN
+F 3 "" H 5900 6100 50  0001 C CNN
+	1    5900 6100
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR?
 U 1 1 5CBA9240
-P 750 7700
+P 5650 6250
 AR Path="/5CC65FE6/5CBA9240" Ref="#PWR?"  Part="1" 
 AR Path="/5C9CDFC1/5CBA9240" Ref="#PWR0131"  Part="1" 
-F 0 "#PWR0131" H 750 7450 50  0001 C CNN
-F 1 "GND" H 750 7550 50  0000 C CNN
-F 2 "" H 750 7700 50  0001 C CNN
-F 3 "" H 750 7700 50  0001 C CNN
-	1    750  7700
+F 0 "#PWR0131" H 5650 6000 50  0001 C CNN
+F 1 "GND" H 5650 6100 50  0000 C CNN
+F 2 "" H 5650 6250 50  0001 C CNN
+F 3 "" H 5650 6250 50  0001 C CNN
+	1    5650 6250
 	1    0    0    -1  
 $EndComp
-Text Notes 950  7350 0    60   ~ 0
+Text Notes 5850 5900 0    60   ~ 0
 Near\nU29
 Wire Wire Line
-	750  7700 1000 7700
+	5650 6250 5900 6250
 Wire Wire Line
-	750  7400 1000 7400
+	5650 5950 5900 5950
 $Comp
 L power:VCC #PWR?
 U 1 1 5CBA9249
-P 750 7400
+P 5650 5950
 AR Path="/5CC65FE6/5CBA9249" Ref="#PWR?"  Part="1" 
 AR Path="/5C9CDFC1/5CBA9249" Ref="#PWR0130"  Part="1" 
-F 0 "#PWR0130" H 750 7250 50  0001 C CNN
-F 1 "VCC" H 767 7573 50  0000 C CNN
-F 2 "" H 750 7400 50  0001 C CNN
-F 3 "" H 750 7400 50  0001 C CNN
-	1    750  7400
+F 0 "#PWR0130" H 5650 5800 50  0001 C CNN
+F 1 "VCC" H 5667 6123 50  0000 C CNN
+F 2 "" H 5650 5950 50  0001 C CNN
+F 3 "" H 5650 5950 50  0001 C CNN
+	1    5650 5950
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C C?
-U 1 1 5CBA924F
-P 1350 7550
-AR Path="/5CC65FE6/5CBA924F" Ref="C?"  Part="1" 
-AR Path="/5C9CDFC1/5CBA924F" Ref="C43"  Part="1" 
-F 0 "C43" H 1375 7650 50  0000 L CNN
-F 1 "0.1uF" H 1375 7450 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 1388 7400 50  0001 C CNN
-F 3 "" H 1350 7550 50  0001 C CNN
-	1    1350 7550
-	1    0    0    -1  
-$EndComp
-Text Notes 1300 7350 0    60   ~ 0
-Near\nU30
-Wire Wire Line
-	1000 7400 1350 7400
-Connection ~ 1000 7400
-Wire Wire Line
-	1350 7700 1000 7700
-Connection ~ 1000 7700
 $Comp
 L Device:R R36
 U 1 1 5CBAD3FD
@@ -355,14 +219,6 @@ NoConn ~ 5250 3950
 NoConn ~ 5250 3850
 NoConn ~ 5250 3750
 NoConn ~ 5250 3650
-Text Label 4950 3200 0    60   ~ 0
-~RESET
-Wire Wire Line
-	4950 3200 5250 3200
-Wire Wire Line
-	5250 3300 4950 3300
-Text Label 4950 3300 0    60   ~ 0
-ACLK
 Connection ~ 7700 1300
 Wire Wire Line
 	5250 3050 4850 3050
@@ -385,40 +241,17 @@ F 3 "" H 5150 4050 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5250 3400 4850 3400
-Connection ~ 4850 3400
-Wire Wire Line
-	4850 3400 4850 3700
 $Comp
 L power:VCC #PWR0125
 U 1 1 5CC7BF12
-P 4950 3700
-F 0 "#PWR0125" H 4950 3550 50  0001 C CNN
-F 1 "VCC" H 4967 3873 50  0000 C CNN
-F 2 "" H 4950 3700 50  0001 C CNN
-F 3 "" H 4950 3700 50  0001 C CNN
-	1    4950 3700
+P 4850 2750
+F 0 "#PWR0125" H 4850 2600 50  0001 C CNN
+F 1 "VCC" H 4867 2923 50  0000 C CNN
+F 2 "" H 4850 2750 50  0001 C CNN
+F 3 "" H 4850 2750 50  0001 C CNN
+	1    4850 2750
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	4850 3700 4950 3700
-Wire Wire Line
-	1400 3350 2900 3350
-Wire Wire Line
-	3650 3050 3250 3050
-Wire Wire Line
-	2900 4050 2900 3350
-Wire Wire Line
-	2900 4050 3750 4050
-Connection ~ 2900 3350
-Wire Wire Line
-	2900 3350 3750 3350
-Wire Wire Line
-	3250 3800 3400 3800
-Wire Wire Line
-	3400 3800 3400 3850
-Wire Wire Line
-	3400 3850 3650 3850
-Connection ~ 3650 3850
 $Comp
 L Connector_Generic:Conn_02x09_Odd_Even J9
 U 1 1 5CC890F9
@@ -579,6 +412,21 @@ Wire Wire Line
 	6450 3850 8900 3850
 Wire Wire Line
 	6450 3950 9000 3950
+Text HLabel 1500 2850 0    60   Input ~ 0
+BDIR
+Text HLabel 1500 2950 0    60   Input ~ 0
+BC1
+Wire Wire Line
+	1500 2850 5250 2850
+Wire Wire Line
+	1500 2950 5250 2950
+Wire Wire Line
+	1500 3300 5250 3300
+Wire Wire Line
+	1500 3200 5250 3200
+Wire Wire Line
+	4850 2750 4850 3050
+Connection ~ 4850 3050
 Wire Bus Line
 	5000 1600 5000 2600
 $EndSCHEMATC

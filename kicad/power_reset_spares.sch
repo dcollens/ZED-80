@@ -1,13 +1,12 @@
 EESchema Schematic File Version 4
-LIBS:z80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 7 11
 Title "Power, reset, and spares"
-Date "2018-07-20"
-Rev "12"
+Date "2019-04-03"
+Rev "1"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -202,42 +201,29 @@ F 3 "" H 6150 1100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Regulator_Linear:MIC5504-3.3YM5 U?
-U 1 1 5CB1CFC4
-P 7850 1050
-AR Path="/5CB1CFC4" Ref="U?"  Part="1" 
-AR Path="/59EFC926/5CB1CFC4" Ref="U20"  Part="1" 
-F 0 "U20" H 7600 1300 50  0000 C CNN
-F 1 "MIC5504-3.3YM5" H 8250 794 50  0000 C CNN
-F 2 "TO_SOT_Packages_SMD:SOT-23-5" H 7850 650 50  0001 C CNN
-F 3 "" H 7850 1250 50  0001 C CNN
-	1    7850 1050
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:+3V3 #PWR?
 U 1 1 5CB1CFCB
-P 8450 950
+P 8750 950
 AR Path="/5CB1CFCB" Ref="#PWR?"  Part="1" 
 AR Path="/59EFC926/5CB1CFCB" Ref="#PWR096"  Part="1" 
-F 0 "#PWR096" H 8450 800 50  0001 C CNN
-F 1 "+3V3" H 8450 1090 50  0000 C CNN
-F 2 "" H 8450 950 50  0001 C CNN
-F 3 "" H 8450 950 50  0001 C CNN
-	1    8450 950 
+F 0 "#PWR096" H 8750 800 50  0001 C CNN
+F 1 "+3V3" H 8750 1090 50  0000 C CNN
+F 2 "" H 8750 950 50  0001 C CNN
+F 3 "" H 8750 950 50  0001 C CNN
+	1    8750 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:C C?
 U 1 1 5CB1CFD1
-P 8650 1200
+P 8950 1200
 AR Path="/5CB1CFD1" Ref="C?"  Part="1" 
 AR Path="/59EFC926/5CB1CFD1" Ref="C30"  Part="1" 
-F 0 "C30" H 8675 1300 50  0000 L CNN
-F 1 "1uF" H 8675 1100 50  0000 L CNN
-F 2 "" H 8688 1050 50  0001 C CNN
-F 3 "" H 8650 1200 50  0001 C CNN
-	1    8650 1200
+F 0 "C30" H 8975 1300 50  0000 L CNN
+F 1 "4.7uF" H 8975 1100 50  0000 L CNN
+F 2 "" H 8988 1050 50  0001 C CNN
+F 3 "" H 8950 1200 50  0001 C CNN
+	1    8950 1200
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -259,17 +245,13 @@ Wire Wire Line
 Connection ~ 6850 1550
 Wire Wire Line
 	7100 1550 7100 1300
-Wire Wire Line
-	7850 1550 7850 1350
 Connection ~ 7100 950 
 Wire Wire Line
-	8650 950  8650 1050
+	8950 950  8950 1050
+Connection ~ 8750 950 
 Wire Wire Line
-	8250 950  8450 950 
-Connection ~ 8450 950 
-Wire Wire Line
-	8650 1550 8650 1350
-Connection ~ 7850 1550
+	8950 1550 8950 1350
+Connection ~ 8150 1550
 Wire Wire Line
 	6000 1550 6550 1550
 Wire Wire Line
@@ -281,17 +263,9 @@ Wire Wire Line
 Wire Wire Line
 	6850 1550 7100 1550
 Wire Wire Line
-	8450 950  8650 950 
+	8750 950  8950 950 
 Wire Wire Line
-	7850 1550 8650 1550
-Wire Wire Line
-	7100 950  7450 950 
-Wire Wire Line
-	7450 1150 7450 950 
-Connection ~ 7450 950 
-Wire Wire Line
-	7100 1550 7850 1550
-Connection ~ 7100 1550
+	8150 1550 8950 1550
 $Comp
 L Switch:SW_Push SW?
 U 1 1 5CB6E60F
@@ -462,8 +436,6 @@ Wire Wire Line
 Connection ~ 3450 1050
 Wire Wire Line
 	3450 1050 3450 1350
-Text Notes 7500 1800 0    60   ~ 0
-TODO: Need larger 3.3V LDO regulator
 $Comp
 L Oscillator:CXO_DIP8 X?
 U 1 1 5CA34C8B
@@ -643,4 +615,47 @@ Connection ~ 6050 5300
 Connection ~ 6050 6300
 Text Notes 5300 5700 0    60   ~ 0
 Near\nU28
+$Comp
+L Regulator_Linear:AP7361C-33E U20
+U 1 1 5CDAFB55
+P 8150 950
+F 0 "U20" H 8000 1100 50  0000 C CNN
+F 1 "AP2114HA-33" H 8450 700 50  0000 C CNN
+F 2 "" H 8150 1175 50  0001 C CIN
+F 3 "" H 8150 900 50  0001 C CNN
+	1    8150 950 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8150 1250 8150 1550
+Wire Wire Line
+	8450 950  8750 950 
+$Comp
+L Device:C C?
+U 1 1 5CDBB06C
+P 7650 1200
+AR Path="/5CDBB06C" Ref="C?"  Part="1" 
+AR Path="/59EFC926/5CDBB06C" Ref="C45"  Part="1" 
+F 0 "C45" H 7675 1300 50  0000 L CNN
+F 1 "4.7uF" H 7675 1100 50  0000 L CNN
+F 2 "" H 7688 1050 50  0001 C CNN
+F 3 "" H 7650 1200 50  0001 C CNN
+	1    7650 1200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7100 950  7650 950 
+Wire Wire Line
+	7100 1550 7650 1550
+Connection ~ 7100 1550
+Wire Wire Line
+	7650 1350 7650 1550
+Connection ~ 7650 1550
+Wire Wire Line
+	7650 1550 8150 1550
+Wire Wire Line
+	7650 1050 7650 950 
+Connection ~ 7650 950 
+Wire Wire Line
+	7650 950  7850 950 
 $EndSCHEMATC

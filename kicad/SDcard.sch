@@ -1,13 +1,12 @@
 EESchema Schematic File Version 4
-LIBS:z80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 9 11
 Title "SD Card Interface"
-Date ""
-Rev ""
+Date "2019-04-03"
+Rev "1"
 Comp ""
 Comment1 ""
 Comment2 ""

@@ -1,13 +1,12 @@
 EESchema Schematic File Version 4
-LIBS:z80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 8 11
 Title "LCD Interface"
-Date "2018-07-20"
-Rev "12"
+Date "2019-04-03"
+Rev "1"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -663,8 +662,8 @@ Connection ~ 6050 2200
 Wire Wire Line
 	6150 2200 6300 2200
 Connection ~ 6150 2200
+Text Notes 2800 1500 0    60   ~ 0
+If neither ~RD~ nor ~WR~ are active,\nthen we must not drive the Z80 data bus. \nAn IORQ interrupt cycle could drive\nthis ~CS~ active, enabling transceiver outputs.\nWe’re okay because ~RD~ will be inactive, so\nDIR will be high, making the A side inputs, and\nthe B side outputs.
 Wire Bus Line
 	5200 1050 5200 1750
-Text Notes 3100 2500 0    60   ~ 0
-TODO: If neither ~RD~ nor ~WR~ are active,\nthen we must not drive the bus here. \nCurrently an IORQ interrupt cycle could decode\nthis ~CS~ and drive the bus inappropriately.
 $EndSCHEMATC
