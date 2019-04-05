@@ -71,7 +71,7 @@ forever:
     in	    a, (PORT_JOY0)	; read joystick 0
     ld	    l, a
     bit	    JOY_IDX_FIRE, l
-    jr	    z, done		; return when fire button pressed
+;    jr	    z, done		; return when fire button pressed
     call    joy_map2seg
     call    seg0_write
 ;    in	    a, (PORT_JOY1)	; read joystick 1

@@ -3,3 +3,6 @@ To assemble one of these programs run:
 
 To program the ROM run:
     minipro -p SST39SF010A -w prog.rom
+
+On Dan's MacBook, you can connect to the serial port with:
+    minicom usbserial

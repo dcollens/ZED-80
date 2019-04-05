@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "ram_test.asm"
-                        ; date: 2018-07-05 23:28:38
+                        ; date: 2019-04-05 16:36:29
                         ; --------------------------------------
 
 
@@ -305,7 +305,7 @@
                         #local
 2000:                   init::
                             ; zero the DATA segment
-2000: 217A20   [10]         ld	    hl, DATA
+2000: 217820   [10]         ld	    hl, DATA
 2003: 010200   [20]         ld	    bc, DATA_size
 2006: CD0D20   [37]         call    bzero
                             ; run the test program
@@ -344,84 +344,84 @@
 2021: DB00     [11]         in	    a, (PORT_JOY0)	; read joystick 0
 2023: 6F       [15]         ld	    l, a
 2024: CB65     [23]         bit	    JOY_IDX_FIRE, l
-2026: 2808     [30|35]      jr	    z, done		; return when fire button pressed
-2028: CD3220   [47]         call    joy_map2seg
-202B: CD7320   [64]         call    seg0_write
+                        ;    jr	    z, done		; return when fire button pressed
+2026: CD3020   [40]         call    joy_map2seg
+2029: CD7120   [57]         call    seg0_write
                         ;    in	    a, (PORT_JOY1)	; read joystick 1
                         ;    ld	    l, a
                         ;    call    joy_map2seg
                         ;    call    seg1_write
-202E: 18F1     [76]         jr	    forever
-2030:                   done:
-2030: E1       [10]         pop	    hl
-2031: C9       [20]         ret
+202C: 18F3     [69]         jr	    forever
+202E:                   done:
+202E: E1       [10]         pop	    hl
+202F: C9       [20]         ret
                         #endlocal
                         
                         ; uint8_t joy_map2seg(uint8_t joy)
                         ; - map the joystick status bits in "joy" to a value suitable for writing to the 7-segment display
                         #local
-2032:                   joy_map2seg::
-2032: AF       [ 4]         xor	    a			; start with no bits on 7-segment display
-2033: CB45     [12]         bit	    JOY_IDX_UP, l	; test for UP
-2035: 2002     [19|24]      jr	    nz, done_up
-2037: CBC7     [27]         set	    SEG_IDX_A, a	; turn on top segment
-2039:                   done_up:
-2039: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; test for DOWN
-203B: 2002     [15|20]      jr	    nz, done_down
-203D: CBDF     [23]         set	    SEG_IDX_D, a	; turn on bottom segment
-203F:                   done_down:
+2030:                   joy_map2seg::
+2030: AF       [ 4]         xor	    a			; start with no bits on 7-segment display
+2031: CB45     [12]         bit	    JOY_IDX_UP, l	; test for UP
+2033: 2002     [19|24]      jr	    nz, done_up
+2035: CBC7     [27]         set	    SEG_IDX_A, a	; turn on top segment
+2037:                   done_up:
+2037: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; test for DOWN
+2039: 2002     [15|20]      jr	    nz, done_down
+203B: CBDF     [23]         set	    SEG_IDX_D, a	; turn on bottom segment
+203D:                   done_down:
                             ; if neither UP nor DOWN are active, activate (clear) both to get both top & bottom side segments
-203F: CB45     [ 8]         bit	    JOY_IDX_UP, l
-2041: 2808     [15|20]      jr	    z, sides
-2043: CB4D     [23]         bit	    JOY_IDX_DOWN, l
-2045: 2804     [30|35]      jr	    z, sides
-2047: CB85     [38]         res	    JOY_IDX_UP, l
-2049: CB8D     [46]         res	    JOY_IDX_DOWN, l
-204B:                   sides:
-204B: CB55     [ 8]         bit	    JOY_IDX_LEFT, l	; test for LEFT
-204D: 200C     [15|20]      jr	    nz, done_left
-204F: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-left segment
-2051: 2002     [30|35]      jr	    nz, no_top_left
-2053: CBEF     [38]         set	    SEG_IDX_F, a
-2055:                   no_top_left:
-2055: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
-2057: 2002     [15|20]      jr	    nz, done_left
-2059: CBE7     [23]         set	    SEG_IDX_E, a
-205B:                   done_left:
-205B: CB5D     [ 8]         bit	    JOY_IDX_RIGHT, l	; test for RIGHT
-205D: 200C     [15|20]      jr	    nz, done_right
-205F: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-right segment
-2061: 2002     [30|35]      jr	    nz, no_top_right
-2063: CBCF     [38]         set	    SEG_IDX_B, a
-2065:                   no_top_right:
-2065: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
-2067: 2002     [15|20]      jr	    nz, done_right
-2069: CBD7     [23]         set	    SEG_IDX_C, a
-206B:                   done_right:
-206B: CB65     [ 8]         bit	    JOY_IDX_FIRE, l	; test for FIRE
-206D: 2002     [15|20]      jr	    nz, done_fire
-206F: CBFF     [23]         set	    SEG_IDX_DP, a
-2071:                   done_fire:
-2071: 6F       [ 4]         ld	    l, a		; return segment mask
-2072: C9       [14]         ret
+203D: CB45     [ 8]         bit	    JOY_IDX_UP, l
+203F: 2808     [15|20]      jr	    z, sides
+2041: CB4D     [23]         bit	    JOY_IDX_DOWN, l
+2043: 2804     [30|35]      jr	    z, sides
+2045: CB85     [38]         res	    JOY_IDX_UP, l
+2047: CB8D     [46]         res	    JOY_IDX_DOWN, l
+2049:                   sides:
+2049: CB55     [ 8]         bit	    JOY_IDX_LEFT, l	; test for LEFT
+204B: 200C     [15|20]      jr	    nz, done_left
+204D: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-left segment
+204F: 2002     [30|35]      jr	    nz, no_top_left
+2051: CBEF     [38]         set	    SEG_IDX_F, a
+2053:                   no_top_left:
+2053: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
+2055: 2002     [15|20]      jr	    nz, done_left
+2057: CBE7     [23]         set	    SEG_IDX_E, a
+2059:                   done_left:
+2059: CB5D     [ 8]         bit	    JOY_IDX_RIGHT, l	; test for RIGHT
+205B: 200C     [15|20]      jr	    nz, done_right
+205D: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-right segment
+205F: 2002     [30|35]      jr	    nz, no_top_right
+2061: CBCF     [38]         set	    SEG_IDX_B, a
+2063:                   no_top_right:
+2063: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
+2065: 2002     [15|20]      jr	    nz, done_right
+2067: CBD7     [23]         set	    SEG_IDX_C, a
+2069:                   done_right:
+2069: CB65     [ 8]         bit	    JOY_IDX_FIRE, l	; test for FIRE
+206B: 2002     [15|20]      jr	    nz, done_fire
+206D: CBFF     [23]         set	    SEG_IDX_DP, a
+206F:                   done_fire:
+206F: 6F       [ 4]         ld	    l, a		; return segment mask
+2070: C9       [14]         ret
                         #endlocal
                         
                         ; void seg0_write(uint8_t bits)
                         ; - write raw bits to first 7-segment display register
-2073:                   seg0_write::
-2073: 7D       [ 4]         ld	    a, l
-2074: 327A20   [17]         ld	    (Seg0_data), a
-2077: D300     [28]         out	    (PORT_SEG0), a
-2079: C9       [38]         ret
+2071:                   seg0_write::
+2071: 7D       [ 4]         ld	    a, l
+2072: 327820   [17]         ld	    (Seg0_data), a
+2075: D300     [28]         out	    (PORT_SEG0), a
+2077: C9       [38]         ret
                         
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                         ; data segment immediately follows code
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-207A:                   #data DATA,TEXT_end
+2078:                   #data DATA,TEXT_end
                         ; define static variables here
-207A: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
-207B: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
+2078: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
+2079: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
 
 
-total time: 0.0081 sec.
+total time: 0.0057 sec.
 no errors
