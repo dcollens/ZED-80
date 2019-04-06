@@ -35,6 +35,7 @@ init::
     ld	    hl, DATA
     ld	    bc, DATA_size
     call    bzero
+    call    seg_init
     ; run the test program
     call    joy_test
     ret
@@ -70,14 +71,16 @@ joy_test::
 forever:
     in	    a, (PORT_JOY0)	; read joystick 0
     ld	    l, a
-    bit	    JOY_IDX_FIRE, l
-;    jr	    z, done		; return when fire button pressed
     call    joy_map2seg
+    ld	    a, l
     call    seg0_write
-;    in	    a, (PORT_JOY1)	; read joystick 1
-;    ld	    l, a
-;    call    joy_map2seg
-;    call    seg1_write
+    in	    a, (PORT_JOY1)	; read joystick 1
+    ld	    l, a
+    bit	    JOY_IDX_FIRE, l
+    jr	    z, done		; return when joystick 1 fire button pressed
+    call    joy_map2seg
+    ld	    a, l
+    call    seg1_write
     jr	    forever
 done:
     pop	    hl
@@ -133,12 +136,27 @@ done_fire:
     ret
 #endlocal
 
+; void seg_init()
+seg_init::
+    xor	    a
+    call    seg0_write
+    call    seg1_write
+    ret
+
 ; void seg0_write(uint8_t bits)
+; - parameter passed in A
 ; - write raw bits to first 7-segment display register
 seg0_write::
-    ld	    a, l
     ld	    (Seg0_data), a
     out	    (PORT_SEG0), a
+    ret
+
+; void seg1_write(uint8_t bits)
+; - parameter passed in A
+; - write raw bits to second 7-segment display register
+seg1_write::
+    ld	    (Seg1_data), a
+    out	    (PORT_SEG1), a
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

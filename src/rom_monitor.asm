@@ -39,7 +39,10 @@ M_sio_putc  macro ch
 ; The first 8KB is shadowed by the EPROM.
 ; The next 56KB is mapped from 0x2000-0xFFFF.
 ; The top 64KB is not addressable (A16 tied low).
-#data RAM, 0x2000, 0xE000
+
+; We map our RAM area high so that our data fields don't clobber low memory where we're
+; likely to be loading programs.
+#data RAM, 0xFC00, 0x400
 ; define static variables here
 Seg0_data:: defs 1	; current value of first 7-segment display byte
 Seg1_data:: defs 1	; current value of second 7-segment display byte
@@ -123,9 +126,7 @@ init::
     im	    2		    ; select interrupt mode 2
     ei
     ; clear 7-segment display
-    ld	    l, 0
-    call    seg0_write
-    call    seg1_write
+    call    seg_init
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
     call    sio_init
@@ -150,6 +151,18 @@ ctc_init::
     out	    (PORT_CTC1), a
     ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x16 gives 38400 baud)
     out	    (PORT_CTC1), a
+    call    ctc_tick_on
+    ret
+#endlocal
+
+; void ctc_tick_off()
+ctc_tick_off::
+    ld	    a, CTC_CONTROL | CTC_INTDIS
+    out	    (PORT_CTC3), a
+    ret
+
+; void ctc_tick_on()
+ctc_tick_on::
     ; channel 2 is used as a timer to divide down the system clock for channel 3
     ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
     out	    (PORT_CTC2), a
@@ -161,7 +174,6 @@ ctc_init::
     ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
     out	    (PORT_CTC3), a
     ret
-#endlocal
 
 ; CTC channel 3 ISR
 ; - do not to modify ix or iy, or call any routine that does, as they aren't saved/restored!
@@ -364,8 +376,11 @@ doCall:
     ; save/restore ix, iy too
     push    ix
     push    iy
+    call    ctc_tick_off
     ; call bc
     call    jp_bc
+    call    seg_init
+    call    ctc_tick_on
     pop	    iy
     pop	    ix
     jr	    done
@@ -690,6 +705,13 @@ sio_puthex8::
     pop	    hl
     ret
 
+; void seg_init()
+seg_init::
+    xor	    a
+    call    seg0_write
+    call    seg1_write
+    ret
+
 ; void seg_writehex(uint8_t val)
 ; - write the two hex digits of "val" to the 7-segment displays
 seg_writehex::
@@ -718,8 +740,7 @@ seg0_writehex::
     add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
     ld	    a, (Seg0_data)
     and	    SEG_DP
-    or	    (hl)
-    ld	    l, a    ; l = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
+    or	    (hl)    ; a = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
     call    seg0_write
     pop	    bc
     pop	    hl
@@ -738,8 +759,7 @@ seg1_writehex::
     add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
     ld	    a, (Seg1_data)
     and	    SEG_DP
-    or	    (hl)
-    ld	    l, a    ; l = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
+    or	    (hl)    ; a = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
     call    seg1_write
     pop	    bc
     pop	    hl
@@ -782,37 +802,31 @@ hex2seg_table::
 ; void seg0_toggle(uint8_t bits)
 ; - toggle specified bits of first 7-segment display register
 seg0_toggle::
-    push    hl
     ld	    a, (Seg0_data)
     xor	    l
-    ld	    l, a
     call    seg0_write
-    pop	    hl
     ret
 
 ; void seg1_toggle(uint8_t bits)
 ; - toggle specified bits of second 7-segment display register
 seg1_toggle::
-    push    hl
     ld	    a, (Seg1_data)
     xor	    l
-    ld	    l, a
     call    seg1_write
-    pop	    hl
     ret
 
 ; void seg0_write(uint8_t bits)
+; - parameter passed in A
 ; - write raw bits to first 7-segment display register
 seg0_write::
-    ld	    a, l
     ld	    (Seg0_data), a
     out	    (PORT_SEG0), a
     ret
 
 ; void seg1_write(uint8_t bits)
+; - parameter passed in A
 ; - write raw bits to second 7-segment display register
 seg1_write::
-    ld	    a, l
     ld	    (Seg1_data), a
     out	    (PORT_SEG1), a
     ret
