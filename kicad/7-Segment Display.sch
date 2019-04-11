@@ -1,11 +1,12 @@
 EESchema Schematic File Version 4
+LIBS:zed-80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 3 11
 Title "7-Segment Display"
-Date "2019-04-03"
+Date "2019-04-11"
 Rev "1"
 Comp ""
 Comment1 ""

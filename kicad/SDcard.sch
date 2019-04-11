@@ -1,11 +1,12 @@
 EESchema Schematic File Version 4
+LIBS:zed-80-cache
 EELAYER 29 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 9 11
 Title "SD Card Interface"
-Date "2019-04-03"
+Date "2019-04-11"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -19,7 +20,7 @@ U 1 1 5CC6C3AB
 P 8600 1450
 F 0 "J7" H 8600 2115 50  0000 C CNN
 F 1 "SD_Card" H 8600 2024 50  0000 C CNN
-F 2 "" H 8600 1450 50  0001 C CNN
+F 2 "z80_footprints:101-00405" H 8600 1450 50  0001 C CNN
 F 3 "http://portal.fciconnect.com/Comergent//fci/drawing/10067847.pdf" H 8600 1450 50  0001 C CNN
 	1    8600 1450
 	1    0    0    -1  
