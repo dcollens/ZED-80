@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 4 11
 Title "Serial Ports"
-Date "2019-04-11"
+Date "2019-04-15"
 Rev "1"
 Comp ""
 Comment1 ""

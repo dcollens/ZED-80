@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 3 11
 Title "7-Segment Display"
-Date "2019-04-11"
+Date "2019-04-15"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -387,8 +387,6 @@ Text Notes 5700 1200 0    60   ~ 0
 Near\nU8
 Connection ~ 5450 1250
 Connection ~ 5450 1550
-Connection ~ 5750 1250
-Connection ~ 5750 1550
 Wire Wire Line
 	5200 1550 5450 1550
 Wire Wire Line
@@ -419,29 +417,12 @@ F 3 "" H 3500 4900 50  0001 C CNN
 	2    3500 4900
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C C20
-U 1 1 59EFD5EA
-P 6050 1400
-F 0 "C20" H 6075 1500 50  0000 L CNN
-F 1 "0.1uF" H 6075 1300 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 6088 1250 50  0001 C CNN
-F 3 "" H 6050 1400 50  0001 C CNN
-	1    6050 1400
-	1    0    0    -1  
-$EndComp
-Text Notes 6000 1200 0    60   ~ 0
-Near\nU9
 Wire Wire Line
 	2050 3500 3200 3500
 Wire Wire Line
 	5450 1250 5750 1250
 Wire Wire Line
 	5450 1550 5750 1550
-Wire Wire Line
-	5750 1250 6050 1250
-Wire Wire Line
-	5750 1550 6050 1550
 Wire Wire Line
 	4600 2700 4950 2700
 Wire Wire Line

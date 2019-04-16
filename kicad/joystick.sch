@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 2 11
 Title "Joystick Ports"
-Date "2019-04-11"
+Date "2019-04-15"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -368,16 +368,14 @@ Wire Wire Line
 $Comp
 L power:GND #PWR028
 U 1 1 59D6AB9F
-P 5500 4700
-F 0 "#PWR028" H 5500 4450 50  0001 C CNN
-F 1 "GND" H 5500 4550 50  0000 C CNN
-F 2 "" H 5500 4700 50  0001 C CNN
-F 3 "" H 5500 4700 50  0001 C CNN
-	1    5500 4700
+P 5350 4900
+F 0 "#PWR028" H 5350 4650 50  0001 C CNN
+F 1 "GND" H 5350 4750 50  0000 C CNN
+F 2 "" H 5350 4900 50  0001 C CNN
+F 3 "" H 5350 4900 50  0001 C CNN
+	1    5350 4900
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	5350 4700 5500 4700
 Wire Wire Line
 	6750 4850 6500 4850
 Wire Wire Line
@@ -434,7 +432,7 @@ Text HLabel 2850 5900 0    60   Input ~ 0
 ~RD
 Wire Wire Line
 	2850 5900 5750 5900
-Text HLabel 2850 6000 0    60   Input ~ 0
+Text HLabel 2850 6250 0    60   Input ~ 0
 ~IORQ0
 Text HLabel 2850 5800 0    60   Input ~ 0
 ~IORQ1
@@ -533,12 +531,6 @@ Wire Wire Line
 Wire Wire Line
 	5400 7550 5700 7550
 Wire Wire Line
-	5350 4900 5350 4800
-Wire Wire Line
-	5350 4800 5350 4700
-Connection ~ 5350 4800
-Connection ~ 5350 4700
-Wire Wire Line
 	3800 2150 4350 2150
 Wire Wire Line
 	3800 2250 4350 2250
@@ -623,37 +615,35 @@ $EndComp
 Wire Wire Line
 	5400 2850 5350 2850
 Wire Wire Line
-	2850 6000 7400 6000
+	2850 6250 7400 6250
 Wire Wire Line
 	5350 3150 5350 3550
 Wire Wire Line
 	5350 3550 7400 3550
 Wire Wire Line
-	7400 3550 7400 6000
+	7400 3550 7400 6250
 Wire Wire Line
-	5350 2750 5800 2750
+	5850 6000 2850 6000
 Wire Wire Line
-	5800 2750 5800 3450
-Wire Wire Line
-	5800 3450 7500 3450
-Wire Wire Line
-	7500 3450 7500 6100
-Wire Wire Line
-	7500 6100 2850 6100
-Wire Wire Line
-	5350 2650 5900 2650
-Wire Wire Line
-	5900 2650 5900 3350
-Wire Wire Line
-	5900 3350 7600 3350
-Wire Wire Line
-	7600 3350 7600 6200
-Wire Wire Line
-	7600 6200 2850 6200
-Text HLabel 2850 6100 0    60   Input ~ 0
+	5950 6100 2850 6100
+Text HLabel 2850 6000 0    60   Input ~ 0
 ~SDCD
-Text HLabel 2850 6200 0    60   Input ~ 0
+Text HLabel 2850 6100 0    60   Input ~ 0
 ~SDWP
+Wire Wire Line
+	5350 2650 5350 2750
+Wire Wire Line
+	5350 2750 5350 2850
+Connection ~ 5350 2750
+Connection ~ 5350 2850
+Wire Wire Line
+	5850 6000 5850 4800
+Wire Wire Line
+	5850 4800 5350 4800
+Wire Wire Line
+	5950 6100 5950 4700
+Wire Wire Line
+	5950 4700 5350 4700
 Wire Bus Line
 	3700 2250 3700 5100
 $EndSCHEMATC

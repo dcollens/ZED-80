@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 11
 Title "ZED-80 Personal Computer"
-Date "2019-04-11"
+Date "2019-04-15"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -39,34 +39,23 @@ $EndComp
 $Comp
 L Device:C C2
 U 1 1 59B5B988
-P 8050 950
-F 0 "C2" H 8075 1050 50  0000 L CNN
-F 1 "0.1uF" H 8075 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 8088 800 50  0001 C CNN
-F 3 "" H 8050 950 50  0001 C CNN
-	1    8050 950 
+P 9000 950
+F 0 "C2" H 9025 1050 50  0000 L CNN
+F 1 "0.1uF" H 9025 850 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9038 800 50  0001 C CNN
+F 3 "" H 9000 950 50  0001 C CNN
+	1    9000 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR04
 U 1 1 59B5BA03
-P 7800 1100
-F 0 "#PWR04" H 7800 850 50  0001 C CNN
-F 1 "GND" H 7800 950 50  0000 C CNN
-F 2 "" H 7800 1100 50  0001 C CNN
-F 3 "" H 7800 1100 50  0001 C CNN
-	1    7800 1100
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C3
-U 1 1 59B5BAAA
-P 8350 950
-F 0 "C3" H 8375 1050 50  0000 L CNN
-F 1 "0.1uF" H 8375 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 8388 800 50  0001 C CNN
-F 3 "" H 8350 950 50  0001 C CNN
-	1    8350 950 
+P 8750 1100
+F 0 "#PWR04" H 8750 850 50  0001 C CNN
+F 1 "GND" H 8750 950 50  0000 C CNN
+F 2 "" H 8750 1100 50  0001 C CNN
+F 3 "" H 8750 1100 50  0001 C CNN
+	1    8750 1100
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -83,12 +72,12 @@ $EndComp
 $Comp
 L power:VCC #PWR08
 U 1 1 59B5E4D7
-P 7800 800
-F 0 "#PWR08" H 7800 650 50  0001 C CNN
-F 1 "VCC" H 7800 950 50  0000 C CNN
-F 2 "" H 7800 800 50  0001 C CNN
-F 3 "" H 7800 800 50  0001 C CNN
-	1    7800 800 
+P 8750 800
+F 0 "#PWR08" H 8750 650 50  0001 C CNN
+F 1 "VCC" H 8750 950 50  0000 C CNN
+F 2 "" H 8750 800 50  0001 C CNN
+F 3 "" H 8750 800 50  0001 C CNN
+	1    8750 800 
 	1    0    0    -1  
 $EndComp
 NoConn ~ 3050 3950
@@ -260,19 +249,17 @@ D7
 $Comp
 L Device:C C4
 U 1 1 59B7EC1B
-P 8650 950
-F 0 "C4" H 8675 1050 50  0000 L CNN
-F 1 "0.1uF" H 8675 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 8688 800 50  0001 C CNN
-F 3 "" H 8650 950 50  0001 C CNN
-	1    8650 950 
+P 9300 950
+F 0 "C4" H 9325 1050 50  0000 L CNN
+F 1 "0.1uF" H 9325 850 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9338 800 50  0001 C CNN
+F 3 "" H 9300 950 50  0001 C CNN
+	1    9300 950 
 	1    0    0    -1  
 $EndComp
-Text Notes 8000 750  0    60   ~ 0
+Text Notes 8950 750  0    60   ~ 0
 Near\nU1
-Text Notes 8300 750  0    60   ~ 0
-Near\nU2
-Text Notes 8600 750  0    60   ~ 0
+Text Notes 9250 750  0    60   ~ 0
 Near\nU3
 Text Label 2750 3250 0    60   ~ 0
 ~RD
@@ -286,19 +273,6 @@ Text Label 7050 750  2    60   ~ 0
 ~MREQ
 Text Label 5200 3850 0    60   ~ 0
 ~RD
-$Comp
-L Device:C C5
-U 1 1 59B7FF72
-P 8950 950
-F 0 "C5" H 8975 1050 50  0000 L CNN
-F 1 "0.1uF" H 8975 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 8988 800 50  0001 C CNN
-F 3 "" H 8950 950 50  0001 C CNN
-	1    8950 950 
-	1    0    0    -1  
-$EndComp
-Text Notes 8900 750  0    60   ~ 0
-Near\nU4
 $Comp
 L 74xx:74LS32 U4
 U 2 1 59B802F5
@@ -404,15 +378,15 @@ NoConn ~ 8600 2950
 $Comp
 L Device:C C6
 U 1 1 59B8393A
-P 9250 950
-F 0 "C6" H 9275 1050 50  0000 L CNN
-F 1 "0.1uF" H 9275 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9288 800 50  0001 C CNN
-F 3 "" H 9250 950 50  0001 C CNN
-	1    9250 950 
+P 9600 950
+F 0 "C6" H 9625 1050 50  0000 L CNN
+F 1 "0.1uF" H 9625 850 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9638 800 50  0001 C CNN
+F 3 "" H 9600 950 50  0001 C CNN
+	1    9600 950 
 	1    0    0    -1  
 $EndComp
-Text Notes 9200 750  0    60   ~ 0
+Text Notes 9550 750  0    60   ~ 0
 Near\nU5
 Text Label 8850 2750 2    60   ~ 0
 ~MREQ
@@ -421,15 +395,15 @@ Text Label 2750 5550 0    60   ~ 0
 $Comp
 L Device:C C7
 U 1 1 59B8A7DC
-P 9550 950
-F 0 "C7" H 9575 1050 50  0000 L CNN
-F 1 "0.1uF" H 9575 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9588 800 50  0001 C CNN
-F 3 "" H 9550 950 50  0001 C CNN
-	1    9550 950 
+P 9900 950
+F 0 "C7" H 9925 1050 50  0000 L CNN
+F 1 "0.1uF" H 9925 850 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9938 800 50  0001 C CNN
+F 3 "" H 9900 950 50  0001 C CNN
+	1    9900 950 
 	1    0    0    -1  
 $EndComp
-Text Notes 9500 750  0    60   ~ 0
+Text Notes 9850 750  0    60   ~ 0
 Near\nU6
 Text Label 2850 5050 0    60   ~ 0
 A4
@@ -595,19 +569,6 @@ F 3 "" H 2450 2250 50  0001 C CNN
 	1    2450 2250
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C C26
-U 1 1 59D876BD
-P 9850 950
-F 0 "C26" H 9875 1050 50  0000 L CNN
-F 1 "0.1uF" H 9875 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 9888 800 50  0001 C CNN
-F 3 "" H 9850 950 50  0001 C CNN
-	1    9850 950 
-	1    0    0    -1  
-$EndComp
-Text Notes 9800 750  0    60   ~ 0
-Near\nU16
 $Sheet
 S 8350 4200 800  1100
 U 59D91F17
@@ -814,8 +775,6 @@ Text Label 700  3450 0    60   ~ 0
 ~IORQ6
 Text Label 700  3300 0    60   ~ 0
 PA[14..17]
-Connection ~ 8050 800 
-Connection ~ 8050 1100
 Wire Wire Line
 	2950 3850 3050 3850
 Wire Wire Line
@@ -918,8 +877,6 @@ Wire Wire Line
 	6600 2150 6750 2150
 Wire Wire Line
 	6600 2250 6750 2250
-Connection ~ 8350 800 
-Connection ~ 8350 1100
 Wire Wire Line
 	2750 3250 3050 3250
 Wire Wire Line
@@ -930,8 +887,6 @@ Wire Wire Line
 	2750 3550 3050 3550
 Wire Wire Line
 	5400 3850 5200 3850
-Connection ~ 8650 800 
-Connection ~ 8650 1100
 Wire Wire Line
 	5000 3750 5400 3750
 Wire Wire Line
@@ -976,10 +931,6 @@ Wire Wire Line
 	5400 2950 5200 2950
 Wire Wire Line
 	5400 3050 5200 3050
-Connection ~ 8950 800 
-Connection ~ 8950 1100
-Connection ~ 9250 800 
-Connection ~ 9250 1100
 Wire Wire Line
 	2950 5050 2850 5050
 Wire Wire Line
@@ -1031,9 +982,9 @@ Wire Wire Line
 Wire Wire Line
 	6850 5000 6550 5000
 Wire Wire Line
-	7800 800  8050 800 
+	8750 800  9000 800 
 Wire Wire Line
-	7800 1100 8050 1100
+	8750 1100 9000 1100
 Wire Bus Line
 	6350 5650 6850 5650
 Wire Bus Line
@@ -1063,8 +1014,6 @@ Wire Wire Line
 	7750 5650 7650 5650
 Wire Wire Line
 	3050 2250 2750 2250
-Connection ~ 9550 800 
-Connection ~ 9550 1100
 Wire Wire Line
 	9150 4400 9450 4400
 Wire Wire Line
@@ -1225,26 +1174,6 @@ PA17
 Text Label 7050 950  2    60   ~ 0
 PA17
 Wire Wire Line
-	8050 800  8350 800 
-Wire Wire Line
-	8050 1100 8350 1100
-Wire Wire Line
-	8350 800  8650 800 
-Wire Wire Line
-	8350 1100 8650 1100
-Wire Wire Line
-	8650 800  8950 800 
-Wire Wire Line
-	8650 1100 8950 1100
-Wire Wire Line
-	8950 800  9250 800 
-Wire Wire Line
-	8950 1100 9250 1100
-Wire Wire Line
-	9250 800  9550 800 
-Wire Wire Line
-	9250 1100 9550 1100
-Wire Wire Line
 	4650 5050 5050 5050
 Wire Bus Line
 	4750 4750 4750 5650
@@ -1254,10 +1183,6 @@ Wire Bus Line
 	6350 4300 6850 4300
 Wire Bus Line
 	6350 4300 6350 5650
-Wire Wire Line
-	9550 800  9850 800 
-Wire Wire Line
-	9550 1100 9850 1100
 Wire Bus Line
 	9650 4300 9650 5650
 Wire Wire Line
@@ -1418,22 +1343,16 @@ MMUEN
 $Comp
 L Device:C C38
 U 1 1 5C71221D
-P 10150 950
-F 0 "C38" H 10175 1050 50  0000 L CNN
-F 1 "0.1uF" H 10175 850 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 10188 800 50  0001 C CNN
-F 3 "" H 10150 950 50  0001 C CNN
-	1    10150 950 
+P 10200 950
+F 0 "C38" H 10225 1050 50  0000 L CNN
+F 1 "0.1uF" H 10225 850 50  0000 L CNN
+F 2 "Capacitors_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm" H 10238 800 50  0001 C CNN
+F 3 "" H 10200 950 50  0001 C CNN
+	1    10200 950 
 	1    0    0    -1  
 $EndComp
-Text Notes 10100 750  0    60   ~ 0
+Text Notes 10150 750  0    60   ~ 0
 Near\nU23
-Wire Wire Line
-	9850 800  10150 800 
-Wire Wire Line
-	9850 1100 10150 1100
-Connection ~ 9850 800 
-Connection ~ 9850 1100
 Text Label 4750 6150 0    60   ~ 0
 ~RESET
 Wire Wire Line
@@ -1686,6 +1605,30 @@ Wire Wire Line
 	7650 6550 8150 6550
 Text Label 8150 6550 2    60   ~ 0
 ~IORQ9
+Wire Wire Line
+	9000 800  9300 800 
+Connection ~ 9000 800 
+Connection ~ 9300 800 
+Wire Wire Line
+	9300 800  9600 800 
+Connection ~ 9600 800 
+Wire Wire Line
+	9600 800  9900 800 
+Connection ~ 9900 800 
+Wire Wire Line
+	9900 800  10200 800 
+Wire Wire Line
+	9000 1100 9300 1100
+Connection ~ 9000 1100
+Connection ~ 9300 1100
+Wire Wire Line
+	9300 1100 9600 1100
+Connection ~ 9600 1100
+Wire Wire Line
+	9600 1100 9900 1100
+Connection ~ 9900 1100
+Wire Wire Line
+	9900 1100 10200 1100
 Wire Bus Line
 	4750 3350 4750 4300
 $EndSCHEMATC
