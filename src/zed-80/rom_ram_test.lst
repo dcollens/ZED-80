@@ -1,0 +1,1120 @@
+                        ; --------------------------------------
+                        ; zasm: assemble "rom_ram_test.asm"
+                        ; date: 2019-04-29 14:29:17
+                        ; --------------------------------------
+
+
+                        ; Calling convention used in this file
+                        ; ------------------------------------
+                        ;
+                        ; Unless otherwise noted, the first parameter, and the return value are stored as follows:
+                        ; 8 bits: L
+                        ; 16 bits: HL
+                        ; 32 bits: DEHL
+                        ;
+                        ; Additional parameters are passed on the stack, left-to-right.
+                        ; Parameters and return values larger than 32 bits are passed on the stack (return value
+                        ; space set up by caller as a hidden first argument).
+                        ; Callee saves/restores any modified registers.
+                        ; Caller pops arguments after call returns.
+                        ; AF registers are scratch (caller preserves, if needed).
+                        
+                        ; same as 'bin', except that the default fill byte for 'defs' etc. is 0xff
+                        #target rom
+                        
+                        #include "sysreg.inc"
+0070:                   PORT_SYSREG	    equ 0x70		; port address for system control register (U23)
+                        
+                        ; These values are the bit masks.
+0001:                   SYS_MMUEN	    equ 0x01		; MMU enable
+0002:                   SYS_SDCLK	    equ 0x02		; SD card input register & card clock
+0004:                   SYS_SDCS	    equ 0x04		; SD card chip select (active low)
+0008:                   SYS_SDICLR	    equ 0x08		; SD card input register clear (active low)
+0010:                   SYS_SDOCLK	    equ 0x10		; SD card output register clock
+0020:                   SYS_BDIR	    equ 0x20		; Audio chip BDIR line (bus direction)
+0040:                   SYS_BC1		    equ 0x40		; Audio chip BC1 line (bus control 1)
+0080:                   SYS_RESERVED	    equ 0x80		; Reserved for future use
+                        
+                        ; These are the bit numbers (usefil for bit, set, and res instructions).
+0000:                   SYS_IDX_MMUEN	    equ 0
+0001:                   SYS_IDX_SDCLK	    equ 1
+0002:                   SYS_IDX_SDCS	    equ 2
+0003:                   SYS_IDX_SDICLR	    equ 3
+0004:                   SYS_IDX_SDOCLK	    equ 4
+0005:                   SYS_IDX_BDIR	    equ 5
+0006:                   SYS_IDX_BC1	    equ 6
+0007:                   SYS_IDX_RESERVED    equ 7
+                        #include "mmu.inc"
+                        ; The MMU consists of four 16KB page frames in the Z80's address space.
+                        ; Each page frame has its own 4-bit-wide register, which defines which physical
+                        ; page is mapped into that frame. There are 16 physical pages, each 16KB in size,
+                        ; for a total of 256KB of physical address space.
+                        ; The physical memory map is:
+                        ; 0x00000-0x7FFFF: Flash RAM
+                        ; 0x80000-0xFFFFF: RAM
+                        
+0060:                   PORT_MMUBASE	equ 0x60		; base port address for MMU register
+0060:                   PORT_MMUPG0	equ PORT_MMUBASE	; port address for MMU page 0 register
+0061:                   PORT_MMUPG1	equ PORT_MMUBASE + 1	; port address for MMU page 1 register
+0062:                   PORT_MMUPG2	equ PORT_MMUBASE + 2	; port address for MMU page 2 register
+0063:                   PORT_MMUPG3	equ PORT_MMUBASE + 3	; port address for MMU page 3 register
+                        
+0000:                   MMU_ROM_BASE	equ 0			; ROM starts at physical page 0
+0008:                   MMU_RAM_BASE	equ 8			; RAM starts at physical page 8
+                        #include "7segdisp.inc"
+0000:                   PORT_SEG0	equ 0x00	    ; port address for first 7-segment display element
+0010:                   PORT_SEG1	equ 0x10	    ; port address for second 7-segment display element
+                        
+                        ; 7-segment display map
+                        ;      A
+                        ;  +-------+
+                        ;  |       |
+                        ; F|       |B
+                        ;  |   G   |
+                        ;  +-------+
+                        ;  |       |
+                        ; E|       |C
+                        ;  |   D   |
+                        ;  +-------+  .DP
+                        
+                        ; These values are the bit masks.
+0001:                   SEG_A		equ 0x01	; segment A
+0002:                   SEG_B		equ 0x02	; segment B
+0004:                   SEG_C		equ 0x04	; segment C
+0008:                   SEG_D		equ 0x08	; segment D
+0010:                   SEG_E		equ 0x10	; segment E
+0020:                   SEG_F		equ 0x20	; segment F
+0040:                   SEG_G		equ 0x40	; segment G
+0080:                   SEG_DP		equ 0x80	; decimal point
+                        
+                        ; These are the bit numbers (useful for bit, set, and res instructions).
+0000:                   SEG_IDX_A	equ 0
+0001:                   SEG_IDX_B	equ 1
+0002:                   SEG_IDX_C	equ 2
+0003:                   SEG_IDX_D	equ 3
+0004:                   SEG_IDX_E	equ 4
+0005:                   SEG_IDX_F	equ 5
+0006:                   SEG_IDX_G	equ 6
+0007:                   SEG_IDX_DP	equ 7
+                        #include "joystick.inc"
+0000:                   PORT_JOY0	equ 0x00	    ; port address for first joystick (read-only)
+0010:                   PORT_JOY1	equ 0x10	    ; port address for second joystick (read-only)
+                        
+                        ; Bit masks for the values in the joystick status register.
+                        ; These bits are active-low (normally high).
+0001:                   JOY_UP		equ 0x01
+0002:                   JOY_DOWN	equ 0x02
+0004:                   JOY_LEFT	equ 0x04
+0008:                   JOY_RIGHT	equ 0x08
+0010:                   JOY_FIRE	equ 0x10
+0020:                   JOY_SDWP	equ 0x20	    ; only on PORT_JOY1 (second port)
+0040:                   JOY_SDCD	equ 0x40	    ; only on PORT_JOY1 (second port)
+0080:                   JOY_RESERVED	equ 0x80
+                        
+                        ; The bit numbers (useful for bit, set, and res instructions).
+0000:                   JOY_IDX_UP	equ 0
+0001:                   JOY_IDX_DOWN	equ 1
+0002:                   JOY_IDX_LEFT	equ 2
+0003:                   JOY_IDX_RIGHT	equ 3
+0004:                   JOY_IDX_FIRE	equ 4
+0005:                   JOY_IDX_SDWP	equ 5
+0006:                   JOY_IDX_SDCD	equ 6
+                        #include "keyboard.inc"
+0090:                   PORT_KBD	equ 0x90	    ; port address for keyboard byte input
+                        #include "sound.inc"
+                        #include "sysreg.inc"
+0070:                   PORT_SYSREG	    equ 0x70		; port address for system control register (U23)
+                        
+                        ; These values are the bit masks.
+0001:                   SYS_MMUEN	    equ 0x01		; MMU enable
+0002:                   SYS_SDCLK	    equ 0x02		; SD card input register & card clock
+0004:                   SYS_SDCS	    equ 0x04		; SD card chip select (active low)
+0008:                   SYS_SDICLR	    equ 0x08		; SD card input register clear (active low)
+0010:                   SYS_SDOCLK	    equ 0x10		; SD card output register clock
+0020:                   SYS_BDIR	    equ 0x20		; Audio chip BDIR line (bus direction)
+0040:                   SYS_BC1		    equ 0x40		; Audio chip BC1 line (bus control 1)
+0080:                   SYS_RESERVED	    equ 0x80		; Reserved for future use
+                        
+                        ; These are the bit numbers (usefil for bit, set, and res instructions).
+0000:                   SYS_IDX_MMUEN	    equ 0
+0001:                   SYS_IDX_SDCLK	    equ 1
+0002:                   SYS_IDX_SDCS	    equ 2
+0003:                   SYS_IDX_SDICLR	    equ 3
+0004:                   SYS_IDX_SDOCLK	    equ 4
+0005:                   SYS_IDX_BDIR	    equ 5
+0006:                   SYS_IDX_BC1	    equ 6
+0007:                   SYS_IDX_RESERVED    equ 7
+                        
+                        ; Bus control states
+0000:                   SNDBUS_IDLE	    equ 0
+0040:                   SNDBUS_READ	    equ SYS_BC1
+0020:                   SNDBUS_WRITE	    equ SYS_BDIR
+0060:                   SNDBUS_ADDR	    equ SYS_BDIR | SYS_BC1
+                        
+                        ; Register names and numbers
+0000:                   SNDREG_ATPF	    equ 0		; channel A tone period, fine
+0001:                   SNDREG_ATPC	    equ 1		; channel A tone period, coarse
+0002:                   SNDREG_BTPF	    equ 2		; channel B tone period, fine
+0003:                   SNDREG_BTPC	    equ 3		; channel B tone period, coarse
+0004:                   SNDREG_CTPF	    equ 4		; channel C tone period, fine
+0005:                   SNDREG_CTPC	    equ 5		; channel C tone period, coarse
+0006:                   SNDREG_NOISE	    equ 6		; noise period
+0007:                   SNDREG_ENABLE	    equ 7		; enables and IO directions
+000A:                   SNDREG_AAMP	    equ 10		; channel A amplitude
+000B:                   SNDREG_BAMP	    equ 11		; channel B amplitude
+000C:                   SNDREG_CAMP	    equ 12		; channel C amplitude
+000D:                   SNDREG_ENVF	    equ 13		; envelope period, fine
+000E:                   SNDREG_ENVC	    equ 14		; envelope period, coarse
+000F:                   SNDREG_ENVS	    equ 15		; envelope shape & cycle
+0010:                   SNDREG_PORTA	    equ 16		; IO port A data
+0011:                   SNDREG_PORTB	    equ 17		; IO port B data
+                        
+                        ; SNDREG_ENABLE fields
+0001:                   SNDENA_ATONE	    equ 0x01		; ~ channel A tone enable
+0002:                   SNDENA_BTONE	    equ 0x02		; ~ channel B tone enable
+0004:                   SNDENA_CTONE	    equ 0x04		; ~ channel C tone enable
+0008:                   SNDENA_ANOISE	    equ	0x08		; ~ channel A noise enable
+0010:                   SNDENA_BNOISE	    equ 0x10		; ~ channel B noise enable
+0020:                   SNDENA_CNOISE	    equ 0x20		; ~ channel C noise enable
+0040:                   SNDENA_AIODIR	    equ 0x40		; IO port A direction (0=in, 1=out)
+0080:                   SNDENA_BIODIR	    equ 0x80		; IO port B direction (0=in, 1=out)
+                        #include "z84c20.inc"
+                        ; The Z84C20 is the Z80's PIO peripheral. See um0081.pdf for documentation.
+                        
+0030:                   PORT_PIOBASE	equ 0x30		; base port address for PIO chip
+0030:                   PORT_PIOADAT	equ PORT_PIOBASE	; port address for PIO port A, data register
+0031:                   PORT_PIOBDAT	equ PORT_PIOBASE + 1    ; port address for PIO port B, data register
+0032:                   PORT_PIOACTL	equ PORT_PIOBASE + 2    ; port address for PIO port A, control register
+0033:                   PORT_PIOBCTL	equ PORT_PIOBASE + 3    ; port address for PIO port B, control register
+                        
+                        ; PIO Control Register commands
+0000:                   PIOC_IVEC	equ 0x00	; OR in the high 7 bits of the interrupt vector
+000F:                   PIOC_MODE	equ 0x0F	; OR in the desired PIOMODE_xxx setting
+0007:                   PIOC_ICTL	equ 0x07	; OR in the desired PIOICTL_xxx settings
+                        
+                        ; PIOC_MODE values
+0000:                   PIOMODE_OUTPUT	equ 0x00
+0040:                   PIOMODE_INPUT	equ 0x40
+0080:                   PIOMODE_BIDIREC	equ 0x80
+00C0:                   PIOMODE_CONTROL	equ 0xC0	; next control byte written must be the IO direction byte
+                        				; 1 = input, 0 = output
+                        
+                        ; PIOC_ICTL values
+0080:                   PIOICTL_INTENA	equ 0x80	; enable interrupts
+0000:                   PIOICTL_INTDIS	equ 0x00	; disable interrupts
+0040:                   PIOICTL_AND	equ 0x40	; AND inputs together for port monitoring interrupt
+0000:                   PIOICTL_OR	equ 0x00	; OR inputs together for port monitoring interrupt
+0020:                   PIOICTL_HIGH	equ 0x20	; interrupt on high (1) inputs
+0000:                   PIOICTL_LOW	equ 0x00	; interrupt on low (0) inputs
+0010:                   PIOICTL_MASKNXT equ 0x10	; next control byte written must be the input interrupt mask
+                        				; 1 = input masked, 0 = input enabled
+                        
+                        M_pio_reset	macro
+                            ld	    a, PIOC_MODE | PIOMODE_INPUT
+                            out	    (PORT_PIOACTL), a
+                            out	    (PORT_PIOBCTL), a
+                            ld	    a, PIOC_ICTL | PIOICTL_INTDIS
+                            out	    (PORT_PIOACTL), a
+                            out	    (PORT_PIOBCTL), a
+                            endm
+                        #include "z84c30.inc"
+                        ; The Z84C30 is the Z80's CTC peripheral. See um0081.pdf for documentation.
+                        
+0040:                   PORT_CTCBASE	equ 0x40		; base port address for CTC chip
+0040:                   PORT_CTCIVEC	equ PORT_CTCBASE	; port address for Interrupt Vector Register
+0040:                   PORT_CTC0	equ PORT_CTCBASE	; port address for CTC channel 0
+0041:                   PORT_CTC1	equ PORT_CTCBASE + 1	; port address for CTC channel 1
+0042:                   PORT_CTC2	equ PORT_CTCBASE + 2	; port address for CTC channel 2
+0043:                   PORT_CTC3	equ PORT_CTCBASE + 3	; port address for CTC channel 3
+                        
+                        ; CTC Channel Control Word bits
+0080:                   CTC_INTENA	equ 0x80		; enable interrupts
+0000:                   CTC_INTDIS	equ 0x00		; disable interrupts
+0040:                   CTC_MODECTR	equ 0x40		; COUNTER mode
+0000:                   CTC_MODETMR	equ 0x00		; TIMER mode
+0020:                   CTC_SCALE256	equ 0x20		; prescale by 256
+0000:                   CTC_SCALE16	equ 0x00		; prescale by 16
+0010:                   CTC_RISING	equ 0x10		; CLK/TRG on rising edges
+0000:                   CTC_FALLING	equ 0x00		; CLK/TRG on falling edges
+0008:                   CTC_CLKTRG	equ 0x08		; CLK/TRG pulse starts timer
+0000:                   CTC_AUTO	equ 0x00		; automatic timer start after loading time constant
+0004:                   CTC_TIMENXT	equ 0x04		; next control byte written is the time constant
+0002:                   CTC_RESET	equ 0x02		; software reset
+0001:                   CTC_CONTROL	equ 0x01		; always set to indicate this is a control word, not IVEC 
+                        
+                        M_ctc_reset	macro
+                            ld	    a, CTC_CONTROL | CTC_RESET | CTC_INTDIS
+                            out	    (PORT_CTC0), a
+                            out	    (PORT_CTC1), a
+                            out	    (PORT_CTC2), a
+                            out	    (PORT_CTC3), a
+                            endm
+                        #include "z84c40.inc"
+                        ; The Z84C40 is the Z80's SIO peripheral. See um0081.pdf for documentation.
+                        
+0020:                   PORT_SIOBASE	    equ 0x20		    ; base port address for SIO chip
+0020:                   PORT_SIOADAT	    equ PORT_SIOBASE	    ; port address for SIO port A, data register
+0021:                   PORT_SIOBDAT	    equ PORT_SIOBASE + 1    ; port address for SIO port B, data register
+0022:                   PORT_SIOACTL	    equ PORT_SIOBASE + 2    ; port address for SIO port A, control register
+0023:                   PORT_SIOBCTL	    equ PORT_SIOBASE + 3    ; port address for SIO port B, control register
+                        
+                        ; WR0 "CRC Reset Code" values (bits 7-6)
+0000:                   SIOWR0_CRC_NOP		equ 0x00	    ; no CRC reset code
+0040:                   SIOWR0_CRC_RST_RX_CHK	equ 1 << 6	    ; reset RX CRC checker
+0080:                   SIOWR0_CRC_RST_TX_GEN	equ 2 << 6	    ; reset TX CRC generator
+00C0:                   SIOWR0_CRC_RST_TX_UNDR  equ 3 << 6	    ; reset TX underrun/EOM latch
+                        
+                        ; WR0 "Command" values (bits 5-3)
+0000:                   SIOWR0_CMD_NOP		equ 0x00	    ; no command
+0008:                   SIOWR0_CMD_SND_ABRT	equ 1 << 3	    ; send abort (SDLC only)
+0010:                   SIOWR0_CMD_RST_EXTINT	equ 2 << 3	    ; reset external/status interrupts
+0018:                   SIOWR0_CMD_RST_CHAN	equ 3 << 3	    ; reset channel
+0020:                   SIOWR0_CMD_INTENA_NXTRX	equ 4 << 3	    ; enable interrupt on next receive character
+0028:                   SIOWR0_CMD_RST_TXINTPND equ 5 << 3	    ; reset TX interrupt pending
+0030:                   SIOWR0_CMD_RST_ERR	equ 6 << 3	    ; reset error latches
+0038:                   SIOWR0_CMD_INTRETN	equ 7 << 3	    ; return from interrupt (not needed with Z80)
+                        
+                        ; WR0 "Pointer" values (bits 2-0)
+0000:                   SIOWR0_PTR_R0		equ 0x00	    ; set pointer to register 0
+0001:                   SIOWR0_PTR_R1		equ 0x01	    ; set pointer to register 1
+0002:                   SIOWR0_PTR_R2		equ 0x02	    ; set pointer to register 2
+0003:                   SIOWR0_PTR_R3		equ 0x03	    ; set pointer to register 3
+0004:                   SIOWR0_PTR_R4		equ 0x04	    ; set pointer to register 4
+0005:                   SIOWR0_PTR_R5		equ 0x05	    ; set pointer to register 5
+0006:                   SIOWR0_PTR_R6		equ 0x06	    ; set pointer to register 6
+0007:                   SIOWR0_PTR_R7		equ 0x07	    ; set pointer to register 7
+                        
+                        ; WR1 interrupt & wait/ready control bits
+0001:                   SIOWR1_EXTINTENA	equ 0x01	    ; external/status interrupt enable
+0002:                   SIOWR1_TXINTENA		equ 0x02	    ; TX interrupt enable
+0004:                   SIOWR1_STATIVEC		equ 0x04	    ; status affects interrupt vector (set in ch. B only)
+0000:                   SIOWR1_RXINT_DISABLE	equ 0 << 3	    ; RX interrupts disabled
+0008:                   SIOWR1_RXINT_FIRST	equ 1 << 3	    ; RX interrupt on first character
+0010:                   SIOWR1_RXINT_ALLPRTY	equ 2 << 3	    ; RX interrupt on all characters, parity err is SR cond
+0018:                   SIOWR1_RXINT_ALLNPRTY	equ 3 << 3	    ; RX interrupt on all characters, parity err no intr
+                        ; bits 7-5 are for WAIT/READY functions, which we don't use (always write as 0)
+                        
+                        ; WR2 is the interrupt vector register (set in channel B only)
+                        
+                        ; WR3 receiver logic control bits
+0001:                   SIOWR3_RXENA		equ 0x01	    ; receiver enable
+0002:                   SIOWR3_SYNC_INHIBIT	equ 0x02	    ; sync character load inhibit
+0004:                   SIOWR3_ADDR_SRCHMODE	equ 0x04	    ; address search mode
+0008:                   SIOWR3_RXCRCENA		equ 0x08	    ; receiver CRC enable
+0010:                   SIOWR3_ENTER_HUNT	equ 0x10	    ; enter hunt phase
+0020:                   SIOWR3_AUTO_ENABLES	equ 0x20	    ; auto enables (DCD/CTS are RX/TX enables)
+0000:                   SIOWR3_RX_5_BITS	equ 0 << 6	    ; receive 5 bits/character
+0040:                   SIOWR3_RX_7_BITS	equ 1 << 6	    ; receive 7 bits/character
+0080:                   SIOWR3_RX_6_BITS	equ 2 << 6	    ; receive 6 bits/character
+00C0:                   SIOWR3_RX_8_BITS	equ 3 << 6	    ; receive 8 bits/character
+                        
+                        ; WR4 RX/TX configuration (set first before WR1, WR3, WR5, WR6, and WR7)
+0001:                   SIOWR4_PARITY		equ 0x01	    ; parity on/off
+0002:                   SIOWR4_PRTY_EVEN	equ 0x02	    ; even parity
+0000:                   SIOWR4_PRTY_ODD		equ 0x00	    ; odd parity
+0000:                   SIOWR4_TXSTOP_SYNC	equ 0 << 2	    ; synchronous mode (no TX stop bits)
+0004:                   SIOWR4_TXSTOP_1		equ 1 << 2	    ; 1 TX stop bit
+0008:                   SIOWR4_TXSTOP_1_5	equ 2 << 2	    ; 1.5 TX stop bits
+000C:                   SIOWR4_TXSTOP_2		equ 3 << 2	    ; 2 TX stop bits
+                        ; bits 5-4 set the sync modes, which we don't use (always write as 0)
+0000:                   SIOWR4_CLK_x1		equ 0 << 6	    ; data rate x1 = clock rate
+0040:                   SIOWR4_CLK_x16		equ 1 << 6	    ; data rate x16 = clock rate
+0080:                   SIOWR4_CLK_x32		equ 2 << 6	    ; data rate x32 = clock rate
+00C0:                   SIOWR4_CLK_x64		equ 3 << 6	    ; data rate x64 = clock rate
+                        
+                        ; WR5 transmitter logic control bits
+0001:                   SIOWR5_TXCRCENA		equ 0x01	    ; transmitter CRC enable
+0002:                   SIOWR5_RTS		equ 0x02	    ; request to send
+0004:                   SIOWR5_CRC16_SDLC	equ 0x04	    ; CRC-16 vs. SDLC polynomial
+0008:                   SIOWR5_TXENA		equ 0x08	    ; transmitter enable
+0010:                   SIOWR5_SND_BRK		equ 0x10	    ; send break
+0000:                   SIOWR5_TX_5_BITS	equ 0 << 5	    ; transmit 5 bits/character
+0020:                   SIOWR5_TX_7_BITS	equ 1 << 5	    ; transmit 7 bits/character
+0040:                   SIOWR5_TX_6_BITS	equ 2 << 5	    ; transmit 6 bits/character
+0060:                   SIOWR5_TX_8_BITS	equ 3 << 5	    ; transmit 8 bits/character
+0080:                   SIOWR5_DTR		equ 0x80	    ; data terminal ready
+                        
+                        ; WR6 transmitter sync register for use in synchronous modes, which we don't use
+                        ; WR7 receiver sync register for use in synchronous modes, which we don't use
+                        
+                        ; RR0 status bits (mostly normal operation)
+0001:                   SIORR0_RCA		equ 0x01	    ; RX character available
+0002:                   SIORR0_INTPND		equ 0x02	    ; interrupt pending (channel A only)
+0004:                   SIORR0_TBE		equ 0x04	    ; TX buffer empty
+0008:                   SIORR0_DCD		equ 0x08	    ; latched DCD input bit
+0010:                   SIORR0_SYNC		equ 0x10	    ; latched SYNC input bit (hunt in SDLC)
+0020:                   SIORR0_CTS		equ 0x20	    ; latched CTS input bit
+0040:                   SIORR0_TX_UNDR		equ 0x40	    ; TX underrun / end of message
+0080:                   SIORR0_BRK_ABRT		equ 0x80	    ; break/abort detected
+                        ; As bit numbers, useful for the "bit" instruction, to test individual bit flags
+0000:                   SIORR0_IDX_RCA		equ 0
+0001:                   SIORR0_IDX_INTPND	equ 1
+0002:                   SIORR0_IDX_TBE		equ 2
+0003:                   SIORR0_IDX_DCD		equ 3
+0004:                   SIORR0_IDX_SYNC		equ 4
+0005:                   SIORR0_IDX_CTS		equ 5
+0006:                   SIORR0_IDX_TX_UNDR	equ 6
+0007:                   SIORR0_IDX_BRK_ABRT	equ 7
+                        
+                        ; RR1 status bits (mostly errors)
+0001:                   SIORR1_ALLSENT		equ 0x01	    ; all characters fully sent
+                        ; bits 3-1 are SDLC-only
+0010:                   SIORR1_PRTYERR		equ 0x10	    ; parity error
+0020:                   SIORR1_ROE		equ 0x20	    ; RX overrun error
+0040:                   SIORR1_CRCFRMERR	equ 0x40	    ; CRC/framing error
+                        ; bit 7 is SDLC-only
+                        
+                        ; RR2 is the interrupt vector register (read from channel B only)
+                        ; - if "Status Affects Vector" bit is set, this will be the current vector value,
+                        ;   modified by whatever interrupt conditions are pending
+                        
+                        M_sio_reset	macro
+                            ld	    a, SIOWR0_CMD_RST_CHAN
+                            out	    (PORT_SIOACTL), a
+                            out	    (PORT_SIOBCTL), a
+                            endm
+                        
+                        ; We set up the MMU so the Z80's memory map is as follows:
+                        ; PG0: 0x0000-0x3FFF ROM physical page 0 (ROM page 0)
+                        ; PG1: 0x4000-0x7FFF RAM physical page 8 (RAM page 0)
+                        ; PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)
+                        ; PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
+                        
+4000:                   #data RAM, 0x4000, 0xC000
+                        ; define static variables here
+4000: 00                Sysreg::    defs 1	; current value of SYSREG
+4001: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
+4002: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
+                        
+0000:                   #code ROM, 0, 0x4000
+                        
+                        ; reset vector
+0000:                   RST0::
+0000: F3       [ 4]         di
+0001: C38800   [14]         jp	    init
+0004: FFFFFFFF              defs    0x08-$
+                        
+0008:                   RST1::
+0008: ED4D     [14]         reti
+000A: FFFFFFFF              defs    0x10-$
+000E: FFFF              
+                        
+0010:                   RST2::
+0010: ED4D     [14]         reti
+0012: FFFFFFFF              defs    0x18-$
+0016: FFFF              
+                        
+0018:                   RST3::
+0018: ED4D     [14]         reti
+001A: FFFFFFFF              defs    0x20-$
+001E: FFFF              
+                        
+0020:                   RST4::
+0020: ED4D     [14]         reti
+0022: FFFFFFFF              defs    0x28-$
+0026: FFFF              
+                        
+0028:                   RST5::
+0028: ED4D     [14]         reti
+002A: FFFFFFFF              defs    0x30-$
+002E: FFFF              
+                        
+0030:                   RST6::
+0030: ED4D     [14]         reti
+0032: FFFFFFFF              defs    0x38-$
+0036: FFFF              
+                        
+                        ; maskable interrupt handler in interrupt mode 1:
+0038:                   RST7::
+0038: ED4D     [14]         reti
+                        
+                        ; non maskable interrupt:
+                        ; e.g. call debugger and on exit resume.
+003A: FFFFFFFF              defs    0x66-$
+003E: FF...             
+0066:                   NMI::
+0066: ED45     [14]         retn
+                        
+                        ; Empty ISR for interrupts we want to ignore
+0068:                   ISR_nop::
+0068: FB       [ 4]         ei
+0069: ED4D     [18]         reti
+                        
+006B: FFFFFFFF              defs    0x80-$
+006F: FF...             
+                        ; Interrupt Vector Table
+0080:                   IVT::
+                        ; Table starts at 0x0080
+                        ; CTC has first 4 slots, so CTC Interrupt Vector register should be 0x80
+0080: 6800                  .word   ISR_nop	    ; CTC channel 0
+0082: 6800                  .word   ISR_nop	    ; CTC channel 1
+0084: 6800                  .word   ISR_nop	    ; CTC channel 2
+0086: A301                  .word   ISR_ctc3	    ; CTC channel 3
+                        ; TODO: ISRs for PIO & SIO
+                        
+                        ; Set the mode for PIO port B. 'mode' is one of the PIOMODE_xxx constants.
+                        M_pio_set_portB_mode	macro mode
+                            ld	    a, PIOC_MODE | &mode
+                            out	    (PORT_PIOBCTL), a
+                            endm
+                        
+                        ; void init()
+0088:                   init::
+                            ; Need to initialize MMU without use of RAM, so be careful here
+0088: AF       [ 4]         xor	    a
+0089: D360     [15]         out	    (PORT_MMUPG0), a	; map frame 0 to 1st page of ROM
+008B: 3E08     [22]         ld	    a, MMU_RAM_BASE
+008D: D361     [33]         out	    (PORT_MMUPG1), a	; map frame 1 to 1st page of RAM
+008F: 3E09     [40]         ld	    a, MMU_RAM_BASE + 1
+0091: D362     [51]         out	    (PORT_MMUPG2), a	; map frame 2 to 2nd page of RAM
+0093: 3E0A     [58]         ld	    a, MMU_RAM_BASE + 2
+0095: D363     [69]         out	    (PORT_MMUPG3), a	; map frame 3 to 3rd page of RAM
+0097: 3E0D     [76]         ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
+0099: D370     [87]         out	    (PORT_SYSREG), a	; enable MMU
+009B: 320040   [100]        ld	    (Sysreg), a
+                            ; set up a stack
+009E: 31FFFF   [110]        ld	    sp, RAM_end-1
+                            ; set up interrupts
+00A1: 3E00     [117]        ld	    a, hi(IVT)
+00A3: ED47     [126]        ld	    i, a	    ; I gets high byte of IVT address
+00A5: ED5E     [134]        im	    2		    ; select interrupt mode 2
+00A7: FB       [138]        ei
+                            ; clear 7-segment display
+00A8: 2E00     [145]        ld	    l, 0
+00AA: CD1A03   [162]        call    seg0_write
+00AD: CD2103   [179]        call    seg1_write
+00B0: CDAF01   [196]        call    snd_test	    ; boot sound
+00B3: CD7E01   [213]        call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
+00B6: CD3201   [230]        call    sio_test
+                        ;    call    figure8
+                        ;    call    countup
+                        ;    call    pio_test
+00B9: CD3202   [247]        call    joy_test	    ; may as well run the joystick test if we get here
+00BC: 18FE     [259]        jr	    $		    ; loop forever
+                        
+                        ; void countup()
+                        #local
+00BE:                   countup::
+00BE: E5       [11]         push    hl
+00BF: 2600     [18]         ld	    h, 0	; counter in h
+                        ; increment count every 500ms and toggle DP
+00C1:                   forever:
+00C1: 6C       [ 4]         ld	    l, h
+00C2: CD9602   [21]         call    seg_writehex    ; display counter
+00C5: 2E80     [28]         ld	    l, SEG_DP
+00C7: CD0403   [45]         call    seg0_toggle	    ; toggle DP
+00CA: 2EFA     [52]         ld	    l, 250
+00CC: CD2803   [69]         call    delay_ms	    ; delay 250ms
+00CF: CD2803   [86]         call    delay_ms	    ; delay 250ms
+00D2: 24       [90]         inc	    h
+00D3: 18EC     [102]        jr	    forever
+00D5: E1       [112]        pop	    hl
+00D6: C9       [122]        ret
+                        #endlocal
+                        
+                        ; void figure8()
+                        #local
+00D7:                   figure8::
+00D7: E5       [11]         push    hl
+00D8: C5       [22]         push    bc
+                        ; step fig8 every 125ms; toggle DP every 1s
+00D9:                   forever:
+00D9: 0607     [ 7]         ld	    b, 7
+00DB:                   fig8_loop:
+00DB: 68       [ 4]         ld	    l, b
+00DC: CDE702   [21]         call    seg0_fig8
+00DF: 2E7D     [28]         ld	    l, 125
+00E1: CD2803   [45]         call    delay_ms
+00E4: 05       [49]         dec	    b
+00E5: F2DB00   [59|59]      jp	    p, fig8_loop
+00E8: 2E80     [66]         ld	    l, SEG_DP
+00EA: CD0403   [83]         call    seg0_toggle
+00ED: 18EA     [95]         jr	    forever
+00EF: C1       [105]        pop	    bc
+00F0: E1       [115]        pop	    hl
+00F1: C9       [125]        ret
+                        #endlocal
+                        
+                        ; void pio_test()
+                        #local
+00F2:                   pio_test::
+00F2: E5       [11]         push    hl
+00F3: C5       [22]         push    bc
+                            ; configure PIO ports A and B
+00F4: 013204   [32]         ld	    bc, 0x0400 | PORT_PIOACTL
+00F7: 212301   [42]         ld	    hl, pioA_cfg
+00FA: EDB3     [58|21]      otir
+                        ; Don't configure port B here -- it's used for the audio chip
+                        ;    ld	    bc, 0x0300 | PORT_PIOBCTL
+                            ; HL already points to pioB_cfg
+                        ;    otir
+00FC: CD2A01   [75]         call    pio_srclr		; clear shift register at startup
+00FF:                   forever:
+00FF: 2E80     [ 7]         ld	    l, SEG_DP
+0101: CD0F03   [24]         call    seg1_toggle
+0104: DB30     [35]         in	    a, (PORT_PIOADAT)	; read PIO port A
+0106: 2F       [39]         cpl				; invert SRPRTY and SRSTRT signals
+0107: CB6F     [47]         bit	    5, a		; if SRSTRT is high, keep polling
+0109: 20F4     [54|59]      jr	    nz, forever
+                            ; put SRPRTY onto segment 0's DP
+010B: E610     [61]         and	    0x10		; mask off other bits
+010D: 87       [65]         add	    a, a
+010E: 87       [69]         add	    a, a
+010F: 87       [73]         add	    a, a		; shift SRPRTY left 3 bits to bit 7 (SEG_DP)
+0110: 6F       [77]         ld	    l, a
+0111: CD1A03   [94]         call    seg0_write
+                            ; read keyboard latch, displaying hex value after inverting
+0114: DB90     [105]        in	    a, (PORT_KBD)
+0116: 2F       [109]        cpl
+0117: 6F       [113]        ld	    l, a
+0118: CD2A01   [130]        call    pio_srclr		; clear shift register to prepare for next byte
+011B: CD9602   [147]        call    seg_writehex
+011E: 18DF     [159]        jr	    forever
+0120: C1       [169]        pop	    bc
+0121: E1       [179]        pop	    hl
+0122: C9       [189]        ret
+0123:                   pioA_cfg:
+0123: CF                    .byte PIOC_MODE | PIOMODE_CONTROL
+0124: F7                    .byte 0xF7	    ; A3 is an output (~SRCLR), everything else is an input
+0125: 37                    .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH | PIOICTL_MASKNXT
+0126: DF                    .byte 0xDF	    ; interrupt on A5 only (SRSTRT)
+0127:                   pioB_cfg:
+0127: CF                    .byte PIOC_MODE | PIOMODE_CONTROL
+0128: FF                    .byte 0xFF	    ; everything is an input
+0129: 27                    .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH
+                        #endlocal
+                        
+                        ; void pio_srclr()
+                        ; - clear shift register by toggling ~SRCLR line, leaving it HIGH
+                        #local
+012A:                   pio_srclr::
+012A: AF       [ 4]         xor	    a
+012B: D330     [15]         out	    (PORT_PIOADAT), a
+012D: 3E08     [22]         ld	    a, 0x08	; bit 3
+012F: D330     [33]         out	    (PORT_PIOADAT), a
+0131: C9       [43]         ret
+                        #endlocal
+                        
+                        ; void sio_test()
+                        #local
+0132:                   sio_test::
+0132: E5       [11]         push    hl
+0133: C5       [22]         push    bc
+                            ; configure SIO port A
+0134: 012207   [32]         ld	    bc, 0x0700 | PORT_SIOACTL
+0137: 217701   [42]         ld	    hl, sioA_cfg
+013A: EDB3     [58|21]      otir
+                            ; configure SIO port B
+013C: 012307   [68]         ld	    bc, 0x0700 | PORT_SIOBCTL
+013F: 217701   [78]         ld	    hl, sioA_cfg
+0142: EDB3     [94|21]      otir
+0144:                   forever:
+                            ; wait for an input character
+0144:                   waitRX:
+0144: DB22     [11]         in	    a, (PORT_SIOACTL)
+0146: CB47     [19]         bit	    SIORR0_IDX_RCA, a
+0148: 2014     [26|31]      jr	    nz, doRXA
+014A: DB23     [37]         in	    a, (PORT_SIOBCTL)
+014C: CB47     [45]         bit	    SIORR0_IDX_RCA, a
+014E: 28F4     [52|57]      jr	    z, waitRX
+0150:                   doRXB:
+                            ; read input character
+0150: DB21     [11]         in	    a, (PORT_SIOBDAT)
+0152: 6F       [15]         ld	    l, a
+0153:                   waitTXB:
+                            ; wait until transmitter is idle
+0153: DB23     [11]         in	    a, (PORT_SIOBCTL)
+0155: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0157: 28FA     [26|31]      jr	    z, waitTXB
+                            ; write output character
+0159: 7D       [30]         ld	    a, l
+015A: D321     [41]         out	    (PORT_SIOBDAT), a	; send byte out serial port
+015C: 180C     [53]         jr	    writeSeg
+015E:                   doRXA:
+                            ; read input character
+015E: DB20     [11]         in	    a, (PORT_SIOADAT)
+0160: 6F       [15]         ld	    l, a
+0161:                   waitTXA:
+                            ; wait until transmitter is idle
+0161: DB22     [11]         in	    a, (PORT_SIOACTL)
+0163: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+0165: 28FA     [26|31]      jr	    z, waitTXA
+                            ; write output character
+0167: 7D       [30]         ld	    a, l
+0168: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+016A:                   writeSeg:
+                            ; write it to the 7-segment display
+016A: CD9602   [17]         call    seg_writehex
+016D: 2E80     [24]         ld	    l, SEG_DP		; toggle DP on segment 0
+016F: CD0403   [41]         call    seg0_toggle
+                            ; repeat
+0172: 18D0     [53]         jr	    forever
+0174: C1       [63]         pop	    bc
+0175: E1       [73]         pop	    hl
+0176: C9       [83]         ret
+0177:                   sioA_cfg:
+0177: 18                    .byte SIOWR0_CMD_RST_CHAN
+0178: 04                    .byte SIOWR0_PTR_R4
+0179: 44                    .byte SIOWR4_TXSTOP_1 | SIOWR4_CLK_x16	; x16=38400bps, x64=9600bps
+                            ; No need to set up WR1/WR2, as they are only used for interrupts
+017A: 03                    .byte SIOWR0_PTR_R3
+017B: C1                    .byte SIOWR3_RXENA | SIOWR3_RX_8_BITS
+017C: 05                    .byte SIOWR0_PTR_R5
+017D: EA                    .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+                            ; No need to set up WR6/WR7, as they are only used for synchronous modes
+                        #endlocal
+                        
+                        ; void ctc_test()
+                        #local
+017E:                   ctc_test::
+                            ; load CTC Interrupt Vector Register
+017E: 3E80     [ 7]         ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
+0180: D340     [18]         out	    (PORT_CTCIVEC), a
+                            ; channel 0 is the baud rate generator for serial 0
+0182: 3E57     [25]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+0184: D340     [36]         out	    (PORT_CTC0), a
+0186: 3E03     [43]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+0188: D340     [54]         out	    (PORT_CTC0), a
+                            ; channel 1 is the baud rate generator for serial 1
+018A: 3E57     [61]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
+018C: D341     [72]         out	    (PORT_CTC1), a
+018E: 3E03     [79]         ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x64 gives 9600 baud)
+0190: D341     [90]         out	    (PORT_CTC1), a
+                            ; channel 2 is used as a timer to divide down the system clock for channel 3
+0192: 3E17     [97]         ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
+0194: D342     [108]        out	    (PORT_CTC2), a
+0196: 3EFA     [115]        ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
+0198: D342     [126]        out	    (PORT_CTC2), a
+                            ; channel 3 is used as a counter on the 2.5kHz signal from channel 2
+019A: 3ED7     [133]        ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
+019C: D343     [144]        out	    (PORT_CTC3), a
+019E: 3EFA     [151]        ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
+01A0: D343     [162]        out	    (PORT_CTC3), a
+01A2: C9       [172]        ret
+                        #endlocal
+                        
+                        ; CTC channel 3 ISR
+01A3:                   ISR_ctc3::
+01A3: 08       [ 4]         ex	    af, af'
+01A4: D9       [ 8]         exx
+01A5: 2E80     [15]         ld	    l, SEG_DP
+01A7: CD0F03   [32]         call    seg1_toggle
+01AA: D9       [36]         exx
+01AB: 08       [40]         ex	    af, af'
+01AC: FB       [44]         ei
+01AD: ED4D     [58]         reti
+                        
+                        ; void snd_test()
+                        ; Bart's Alice 3 boot sound:
+                        ; E2, B2, G#3, all 3 channels tone/no noise, all 3 channels on envelope, ~1.3s envelope, rampdown
+                        ;     $7B, $01, $FD, $00, $96, $00, $00, $38, $10,$10,$10, $A1,$13, $09, $00,$00
+                        ; With IO ports set to output mode, and a test pattern on the outputs:
+                        ;     $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
+                        #local
+01AF:                   snd_test::
+01AF: E5       [11]         push    hl
+                        ;    ld	    hl, 0xFF00 | SNDREG_ENABLE
+                        ;    call    snd_write		; set ports A and B to output mode, disable all channels
+                        ;    ld	    hl, 0xA500 | SNDREG_PORTA
+                        ;    call    snd_write
+                        ;    ld	    hl, 0x5A00 | SNDREG_PORTB
+                        ;    call    snd_write
+01B0: 21B801   [21]         ld	    hl, boot_sound
+01B3: CD1202   [38]         call    snd_writeall
+01B6: E1       [48]         pop	    hl
+01B7: C9       [58]         ret
+01B8:                   boot_sound:
+01B8: 7B01FD00              .byte $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
+01BC: 960000F8          
+01C0: 101010A1          
+01C4: 1309A55A          
+                        #endlocal
+                        
+                        ; void snd_setaddr(uint8_t address)
+                        ; - set the audio chip's internal register address to 'address'
+                        ; - assumes audio chip's bus control lines are set IDLE at entry
+                        ; TODO: This can probably be carefully open-coded to be more efficient
+                        #local
+01C8:                   snd_setaddr::
+01C8: E5       [11]         push    hl
+                            M_pio_set_portB_mode PIOMODE_OUTPUT
+01C9: 3E0F     [18]         ld	    a, PIOC_MODE | PIOMODE_OUTPUT
+01CB: D333     [29]         out	    (PORT_PIOBCTL), a
+01CD: 7D       [33]         ld	    a, l
+01CE: D331     [44]         out	    (PORT_PIOBDAT), a	; write address to PIO port B
+01D0: 2E60     [51]         ld	    l, SNDBUS_ADDR
+01D2: CD8A02   [68]         call    sysreg_sndbus	; set SYSREG bus control lines to write address (1,1)
+01D5: 2E00     [75]         ld	    l, SNDBUS_IDLE
+01D7: CD8A02   [92]         call    sysreg_sndbus	; set SYSREG bus control lines to idle (0,0)
+01DA: E1       [102]        pop	    hl
+01DB: C9       [112]        ret
+                        #endlocal
+                        
+                        ; void snd_put(uint8_t data)
+                        ; - set the audio chip's currently-addressed register to 'data'
+                        ; - assumes audio chip's bus control lines are set IDLE at entry
+                        ; TODO: This can probably be carefully open-coded to be more efficient
+                        #local
+01DC:                   snd_put::
+01DC: E5       [11]         push    hl
+                            M_pio_set_portB_mode PIOMODE_OUTPUT
+01DD: 3E0F     [18]         ld	    a, PIOC_MODE | PIOMODE_OUTPUT
+01DF: D333     [29]         out	    (PORT_PIOBCTL), a
+01E1: 7D       [33]         ld	    a, l
+01E2: D331     [44]         out	    (PORT_PIOBDAT), a	; write data to PIO port B
+01E4: 2E20     [51]         ld	    l, SNDBUS_WRITE
+01E6: CD8A02   [68]         call    sysreg_sndbus	; set SYSREG bus control lines to write data (1,0)
+01E9: 2E00     [75]         ld	    l, SNDBUS_IDLE
+01EB: CD8A02   [92]         call    sysreg_sndbus	; set SYSREG bus control lines to idle (0,0)
+01EE: E1       [102]        pop	    hl
+01EF: C9       [112]        ret
+                        #endlocal
+                        
+                        ; uint8_t snd_read(uint8_t addr)
+                        ; - read value from 'addr' on the sound chip
+01F0:                   snd_read::
+01F0: CDC801   [17]         call    snd_setaddr
+                            ; FALLING THROUGH!!!
+                        ; uint8_t snd_get()
+                        ; - return the contents of the audio chip's currently-addressed register
+                        ; - assumes audio chip's bus control lines are set IDLE at entry
+                        ; TODO: This can probably be carefully open-coded to be more efficient
+                        #local
+01F3:                   snd_get::
+01F3: C5       [11]         push    bc
+                            M_pio_set_portB_mode PIOMODE_INPUT
+01F4: 3E4F     [18]         ld	    a, PIOC_MODE | PIOMODE_INPUT
+01F6: D333     [29]         out	    (PORT_PIOBCTL), a
+01F8: 2E40     [36]         ld	    l, SNDBUS_READ
+01FA: CD8A02   [53]         call    sysreg_sndbus	; set SYSREG bus control lines to read data (0,1)
+01FD: DB31     [64]         in	    a, (PORT_PIOBDAT)	; read from PIO port B
+01FF: 47       [68]         ld	    b, a		; save audio register value in B
+0200: 2E00     [75]         ld	    l, SNDBUS_IDLE
+0202: CD8A02   [92]         call    sysreg_sndbus	; set SYSREG bus control lines to idle (0,0)
+0205: 68       [96]         ld	    l, b		; return B
+0206: C1       [106]        pop	    bc
+0207: C9       [116]        ret
+                        #endlocal
+                        
+                        ; void snd_write(uint8_t addr, uint8_t data)
+                        ; - write 'data' to 'addr' on the sound chip
+                        ; - 'addr' in L, 'data' in H
+                        #local
+0208:                   snd_write::
+0208: E5       [11]         push    hl
+0209: CDC801   [28]         call    snd_setaddr
+020C: 6C       [32]         ld	    l, h
+020D: CDDC01   [49]         call    snd_put
+0210: E1       [59]         pop	    hl
+0211: C9       [69]         ret
+                        #endlocal
+                        
+                        ; void snd_writeall(uint8_t *data)
+                        ; - write 16 byte values from 'data' to the 16 registers of the sound chip
+                        #local
+0212:                   snd_writeall::
+0212: C5       [11]         push    bc
+0213: D5       [22]         push    de
+0214: E5       [33]         push    hl
+0215: EB       [37]         ex	    de, hl		; DE = data
+0216: 2E00     [44]         ld	    l, 0		; L = regnum
+0218: 0608     [51]         ld	    b, 8		; B = loop count
+021A:                   write8:
+021A: 1A       [ 7]         ld	    a, (de)		; A = *data
+021B: 67       [11]         ld	    h, a
+021C: CD0802   [28]         call    snd_write		; snd_write(regnum, *data)
+021F: 2C       [32]         inc	    l			; ++regnum
+0220: 13       [38]         inc	    de			; ++data
+0221: 10F7     [46|51]      djnz    write8
+0223: 3E12     [53]         ld	    a, 18
+0225: BD       [57]         cp	    l
+0226: 2806     [64|69]      jr	    z, done
+0228: 2E0A     [71]         ld	    l, 10		; next bank of registers starts at 10
+022A: 0608     [78]         ld	    b, 8		; set up loop for second time
+022C: 18EC     [90]         jr	    write8
+022E:                   done:
+022E: E1       [10]         pop	    hl
+022F: D1       [20]         pop	    de
+0230: C1       [30]         pop	    bc
+0231: C9       [40]         ret
+                        #endlocal
+                        
+                        ; void joy_test()
+                        #local
+0232:                   joy_test::
+0232: E5       [11]         push    hl
+0233:                   forever:
+0233: DB00     [11]         in	    a, (PORT_JOY0)	; read joystick 0
+0235: 6F       [15]         ld	    l, a
+0236: CD4902   [32]         call    joy_map2seg
+0239: CD1A03   [49]         call    seg0_write
+023C: DB10     [60]         in	    a, (PORT_JOY1)	; read joystick 1
+023E: 6F       [64]         ld	    l, a
+023F: CD4902   [81]         call    joy_map2seg
+0242: CD2103   [98]         call    seg1_write
+0245: 18EC     [110]        jr	    forever
+0247: E1       [120]        pop	    hl
+0248: C9       [130]        ret
+                        #endlocal
+                        
+                        ; uint8_t joy_map2seg(uint8_t joy)
+                        ; - map the joystick status bits in "joy" to a value suitable for writing to the 7-segment display
+                        #local
+0249:                   joy_map2seg::
+0249: AF       [ 4]         xor	    a			; start with no bits on 7-segment display
+024A: CB45     [12]         bit	    JOY_IDX_UP, l	; test for UP
+024C: 2002     [19|24]      jr	    nz, done_up
+024E: CBC7     [27]         set	    SEG_IDX_A, a	; turn on top segment
+0250:                   done_up:
+0250: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; test for DOWN
+0252: 2002     [15|20]      jr	    nz, done_down
+0254: CBDF     [23]         set	    SEG_IDX_D, a	; turn on bottom segment
+0256:                   done_down:
+                            ; if neither UP nor DOWN are active, activate (clear) both to get both top & bottom side segments
+0256: CB45     [ 8]         bit	    JOY_IDX_UP, l
+0258: 2808     [15|20]      jr	    z, sides
+025A: CB4D     [23]         bit	    JOY_IDX_DOWN, l
+025C: 2804     [30|35]      jr	    z, sides
+025E: CB85     [38]         res	    JOY_IDX_UP, l
+0260: CB8D     [46]         res	    JOY_IDX_DOWN, l
+0262:                   sides:
+0262: CB55     [ 8]         bit	    JOY_IDX_LEFT, l	; test for LEFT
+0264: 200C     [15|20]      jr	    nz, done_left
+0266: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-left segment
+0268: 2002     [30|35]      jr	    nz, no_top_left
+026A: CBEF     [38]         set	    SEG_IDX_F, a
+026C:                   no_top_left:
+026C: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
+026E: 2002     [15|20]      jr	    nz, done_left
+0270: CBE7     [23]         set	    SEG_IDX_E, a
+0272:                   done_left:
+0272: CB5D     [ 8]         bit	    JOY_IDX_RIGHT, l	; test for RIGHT
+0274: 200C     [15|20]      jr	    nz, done_right
+0276: CB45     [23]         bit	    JOY_IDX_UP, l	; if UP, set top-right segment
+0278: 2002     [30|35]      jr	    nz, no_top_right
+027A: CBCF     [38]         set	    SEG_IDX_B, a
+027C:                   no_top_right:
+027C: CB4D     [ 8]         bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
+027E: 2002     [15|20]      jr	    nz, done_right
+0280: CBD7     [23]         set	    SEG_IDX_C, a
+0282:                   done_right:
+0282: CB65     [ 8]         bit	    JOY_IDX_FIRE, l	; test for FIRE
+0284: 2002     [15|20]      jr	    nz, done_fire
+0286: CBFF     [23]         set	    SEG_IDX_DP, a
+0288:                   done_fire:
+0288: 6F       [ 4]         ld	    l, a		; return segment mask
+0289: C9       [14]         ret
+                        #endlocal
+                        
+                        ; Library routines
+                        ; ----------------
+                        
+                        ; void sysreg_sndbus(uint8_t bits)
+                        ; - set only bits SYS_BDIR and SYS_BC1 to specified values (from 'bits') in SYSREG
+028A:                   sysreg_sndbus::
+028A: 3A0040   [13]         ld	    a, (Sysreg)		    ; read current value of SYSREG
+028D: E69F     [20]         and	    ~(SYS_BDIR | SYS_BC1)   ; turn off bus control bits
+028F: B5       [24]         or	    l			    ; set any specified bits
+                            ; FALLING THROUGH!!!
+                        
+                        ; void sysreg_write(uint8_t bits)
+                        ; - 'bits' passed in A register
+                        ; - write raw bits to SYSREG
+0290:                   sysreg_write::
+0290: D370     [11]         out	    (PORT_SYSREG), a
+0292: 320040   [24]         ld	    (Sysreg), a
+0295: C9       [34]         ret
+                        
+                        ; void seg_writehex(uint8_t val)
+                        ; - write the two hex digits of "val" to the 7-segment displays
+0296:                   seg_writehex::
+0296: E5       [11]         push    hl
+0297: CDBE02   [28]         call    seg1_writehex
+029A: 7D       [32]         ld	    a, l
+029B: 07       [36]         rlca
+029C: 07       [40]         rlca
+029D: 07       [44]         rlca
+029E: 07       [48]         rlca
+029F: 6F       [52]         ld	    l, a
+02A0: CDA502   [69]         call    seg0_writehex
+02A3: E1       [79]         pop	    hl
+02A4: C9       [89]         ret
+                        
+                        ; void seg0_writehex(uint8_t val)
+                        ; - write hex digit in lower nybble of "val" to 7-segment display
+02A5:                   seg0_writehex::
+02A5: E5       [11]         push    hl
+02A6: C5       [22]         push    bc
+02A7: 01D702   [32]         ld	    bc, HEX_table
+02AA: 7D       [36]         ld	    a, l
+02AB: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+02AD: 6F       [47]         ld	    l, a
+02AE: 2600     [54]         ld	    h, 0
+02B0: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
+02B1: 3A0140   [78]         ld	    a, (Seg0_data)
+02B4: E680     [85]         and	    SEG_DP
+02B6: B6       [92]         or	    (hl)
+02B7: 6F       [96]         ld	    l, a    ; l = (*Seg0_data & SEG_DP) | HEX_table[val & 0xF]
+02B8: CD1A03   [113]        call    seg0_write
+02BB: C1       [123]        pop	    bc
+02BC: E1       [133]        pop	    hl
+02BD: C9       [143]        ret
+                        
+                        ; void seg1_writehex(uint8_t val)
+                        ; - write hex digit in lower nybble of "val" to 7-segment display
+02BE:                   seg1_writehex::
+02BE: E5       [11]         push    hl
+02BF: C5       [22]         push    bc
+02C0: 01D702   [32]         ld	    bc, HEX_table
+02C3: 7D       [36]         ld	    a, l
+02C4: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+02C6: 6F       [47]         ld	    l, a
+02C7: 2600     [54]         ld	    h, 0
+02C9: 09       [65]         add	    hl, bc  ; hl = HEX_table + (val & 0xF)
+02CA: 3A0240   [78]         ld	    a, (Seg1_data)
+02CD: E680     [85]         and	    SEG_DP
+02CF: B6       [92]         or	    (hl)
+02D0: 6F       [96]         ld	    l, a    ; l = (*Seg1_data & SEG_DP) | HEX_table[val & 0xF]
+02D1: CD2103   [113]        call    seg1_write
+02D4: C1       [123]        pop	    bc
+02D5: E1       [133]        pop	    hl
+02D6: C9       [143]        ret
+                        
+02D7:                   HEX_table::
+                            ; 0
+02D7: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
+                            ; 1
+02D8: 06                    .byte SEG_B | SEG_C
+                            ; 2
+02D9: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
+                            ; 3
+02DA: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
+                            ; 4
+02DB: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
+                            ; 5
+02DC: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
+                            ; 6
+02DD: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+                            ; 7
+02DE: 07                    .byte SEG_A | SEG_B | SEG_C
+                            ; 8
+02DF: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
+                            ; 9
+02E0: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
+                            ; A
+02E1: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
+                            ; b
+02E2: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+                            ; C
+02E3: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
+                            ; d
+02E4: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
+                            ; E
+02E5: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
+                            ; F
+02E6: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
+                        
+                        ; void seg0_fig8(uint8_t step)
+                        ; - advance first 7-segment display to specified figure-8 step (0-7)
+02E7:                   seg0_fig8::
+02E7: E5       [11]         push    hl
+02E8: C5       [22]         push    bc
+02E9: 01FC02   [32]         ld	    bc, FIG8_table
+02EC: 2600     [39]         ld	    h, 0
+02EE: 09       [50]         add	    hl, bc	; hl = FIG8_table + step
+02EF: 3A0140   [63]         ld	    a, (Seg0_data)
+02F2: E680     [70]         and	    SEG_DP
+02F4: B6       [77]         or	    (hl)
+02F5: 6F       [81]         ld	    l, a	; l = (*Seg0_data & SEG_DP) | FIG8_table[step]
+02F6: CD1A03   [98]         call    seg0_write
+02F9: C1       [108]        pop	    bc
+02FA: E1       [118]        pop	    hl
+02FB: C9       [128]        ret
+                        
+02FC:                   FIG8_table::
+02FC: 01024010              .byte SEG_A, SEG_B, SEG_G, SEG_E, SEG_D, SEG_C, SEG_G, SEG_F
+0300: 08044020          
+                        
+                        ; void seg0_toggle(uint8_t bits)
+                        ; - toggle specified bits of first 7-segment display register
+0304:                   seg0_toggle::
+0304: E5       [11]         push    hl
+0305: 3A0140   [24]         ld	    a, (Seg0_data)
+0308: AD       [28]         xor	    l
+0309: 6F       [32]         ld	    l, a
+030A: CD1A03   [49]         call    seg0_write
+030D: E1       [59]         pop	    hl
+030E: C9       [69]         ret
+                        
+                        ; void seg1_toggle(uint8_t bits)
+                        ; - toggle specified bits of second 7-segment display register
+030F:                   seg1_toggle::
+030F: E5       [11]         push    hl
+0310: 3A0240   [24]         ld	    a, (Seg1_data)
+0313: AD       [28]         xor	    l
+0314: 6F       [32]         ld	    l, a
+0315: CD2103   [49]         call    seg1_write
+0318: E1       [59]         pop	    hl
+0319: C9       [69]         ret
+                        
+                        ; void seg0_write(uint8_t bits)
+                        ; - write raw bits to first 7-segment display register
+031A:                   seg0_write::
+031A: 7D       [ 4]         ld	    a, l
+031B: 320140   [17]         ld	    (Seg0_data), a
+031E: D300     [28]         out	    (PORT_SEG0), a
+0320: C9       [38]         ret
+                        
+                        ; void seg1_write(uint8_t bits)
+                        ; - write raw bits to second 7-segment display register
+0321:                   seg1_write::
+0321: 7D       [ 4]         ld	    a, l
+0322: 320240   [17]         ld	    (Seg1_data), a
+0325: D310     [28]         out	    (PORT_SEG1), a
+0327: C9       [38]         ret
+                        
+                        ; void delay_ms(uint8_t ms)
+                        ; - delay for at least the specified number of milliseconds
+                        #local
+0328:                   delay_ms::
+0328: 2C       [ 4]         inc	    l
+0329: 2D       [ 8]         dec	    l
+032A: C8       [13|19]      ret	    z		; delay of 0 returns immediately
+032B: C5       [24]         push    bc
+032C: 45       [28]         ld	    b, l
+032D:                   loop:
+032D: CD3403   [17]         call    delay_1ms
+0330: 10FB     [25|30]      djnz    loop
+0332: C1       [35]         pop	    bc
+0333: C9       [45]         ret
+                        #endlocal
+                        
+                        ; void delay_1ms()
+                        ; - delay for 1ms (technically, 0.9999ms)
+                        #local
+0334:                   delay_1ms::
+0334: C5       [11]         push    bc		; 11 T-states
+                        ; To delay 1ms, we want to wait 10,000 T-states (@10MHz)
+                        ; The loop is (38*b + 13*(b-1) + 8) T-states long
+                        ; Rearranging: 51*b - 5
+                        ; Solve for b: b = (10000 + 5 / 51) = 196.17
+0335: 06C3     [18]         ld	    b, 195	; 7 T-states
+0337:                   loop:
+0337: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
+033A: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
+033D: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
+033F: C1       [56]         pop	    bc		; 10 T-states
+0340: 00       [60]         nop			; 4 T-states
+0341: C9       [70]         ret			; 10 T-states
+                        ; We also assume the routine is CALLed, for 17 T-states.
+                        ; Total delay is therefore:
+                        ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
+                        #endlocal
+                        
+                        ; Remaining 48KB and 64KB segments to fill up ROM image
+0000:                   #code FILLER1, 0, 0xC000
+0000:                   #code FILLER2, 0, 0x10000
+
+
+total time: 0.0195 sec.
+no errors
