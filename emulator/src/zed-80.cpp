@@ -14,15 +14,34 @@
 using std::cout;
 using std::cerr;
 using std::endl;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::make_unique;
+using std::make_shared;
 
 //static
 uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80(shared_ptr<MMU> &mmu, unique_ptr<IOMMU> &&iommu)
-: _mmu(mmu), _iommu(std::move(iommu))
+ZED80::ZED80(unique_ptr<const vector<uint8_t>> &&romData)
 {
+    _ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
+    _sysRegDevice = make_shared<SysRegDevice>();
+    _mmu = make_shared<MMU>(std::move(romData), std::move(_ramData), _sysRegDevice);
+    _iommu = make_unique<IOMMU>();
+    _joySegDevice = make_shared<JoySegDevice>();
+    _iommu->setDevice(0, _joySegDevice);
+    _iommu->setDevice(1, _joySegDevice);
+    _iommu->setDevice(6, _mmu);
+    _iommu->setDevice(7, _sysRegDevice);
+    // TODO: iommu->setDevice(2, sioDevice);
+    // TODO: iommu->setDevice(3, pioDevice);
+    // TODO: iommu->setDevice(4, ctcDevice);
+
+    _mmu->describe(cout);
+    _iommu->describe(cout);
+
     z80_desc_t desc;
     desc.tick_cb = z80TickCallback;
     desc.user_data = this;

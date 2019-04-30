@@ -72,31 +72,10 @@ int main(int argc, const char *argv[]) {
         romData->resize(ROM_SIZE);
     }
     
-    auto ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
-    
-    auto sysRegDevice = make_shared<SysRegDevice>();
-
-    auto mmu = make_shared<MMU>(std::move(romData), std::move(ramData), sysRegDevice);
-    
-    auto iommu = make_unique<IOMMU>();
-    
-    auto joySegDevice = make_shared<JoySegDevice>();
-    iommu->setDevice(0, joySegDevice);
-    iommu->setDevice(1, joySegDevice);
-    iommu->setDevice(6, mmu);
-    iommu->setDevice(7, sysRegDevice);
-    // TODO: iommu->setDevice(2, sioDevice);
-    // TODO: iommu->setDevice(3, pioDevice);
-    // TODO: iommu->setDevice(4, ctcDevice);
-
     cout << "ZED-80 Emulator v" << EMULATOR_VERSION << " starting" << endl;
-    cout << "ROM: " << ROM_SIZE << " byte ROM image loaded from \"" << argv[1] << "\"" << endl;
-    cout << "RAM: " << RAM_SIZE << " byte RAM" << endl;
-    mmu->describe(cout);
-    iommu->describe(cout);
     
-    ZED80 zed80(mmu, std::move(iommu));
-    
+    ZED80 zed80(std::move(romData));
+
     zed80.run();
     
     return EXIT_SUCCESS;
