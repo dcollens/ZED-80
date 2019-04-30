@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
+		4A1B3FDD2278083C00714B35 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDC2278083C00714B35 /* AppDelegate.m */; };
+		4A1B3FE02278083C00714B35 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDF2278083C00714B35 /* ViewController.m */; };
+		4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE12278083D00714B35 /* Assets.xcassets */; };
+		4A1B3FE52278083D00714B35 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE32278083D00714B35 /* Main.storyboard */; };
+		4A1B3FE82278083D00714B35 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE72278083D00714B35 /* main.m */; };
 		95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
 		95FE9DB72182A99700476561 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.cpp */; };
 		95FE9DC32182AAEF00476561 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
@@ -32,6 +37,16 @@
 /* Begin PBXFileReference section */
 		4A1B3F922277D94400714B35 /* io_sysreg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = io_sysreg.cpp; sourceTree = "<group>"; };
 		4A1B3F932277D94500714B35 /* io_sysreg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = io_sysreg.hpp; sourceTree = "<group>"; };
+		4A1B3FD92278083C00714B35 /* gui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gui.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A1B3FDB2278083C00714B35 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		4A1B3FDC2278083C00714B35 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		4A1B3FDE2278083C00714B35 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		4A1B3FDF2278083C00714B35 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		4A1B3FE12278083D00714B35 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4A1B3FE42278083D00714B35 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		4A1B3FE62278083D00714B35 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4A1B3FE72278083D00714B35 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
 		95C4D3222190CBD700007662 /* io_joyseg.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = io_joyseg.cpp; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
@@ -54,6 +69,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4A1B3FD62278083C00714B35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		95FE9DB02182A99700476561 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -64,10 +86,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4A1B3FDA2278083C00714B35 /* gui */ = {
+			isa = PBXGroup;
+			children = (
+				4A1B3FDB2278083C00714B35 /* AppDelegate.h */,
+				4A1B3FDC2278083C00714B35 /* AppDelegate.m */,
+				4A1B3FDE2278083C00714B35 /* ViewController.h */,
+				4A1B3FDF2278083C00714B35 /* ViewController.m */,
+				4A1B3FE12278083D00714B35 /* Assets.xcassets */,
+				4A1B3FE32278083D00714B35 /* Main.storyboard */,
+				4A1B3FE62278083D00714B35 /* Info.plist */,
+				4A1B3FE72278083D00714B35 /* main.m */,
+				4A1B3FE92278083D00714B35 /* gui.entitlements */,
+			);
+			path = gui;
+			sourceTree = "<group>";
+		};
 		95FE9DAA2182A99700476561 = {
 			isa = PBXGroup;
 			children = (
 				95FE9DB52182A99700476561 /* src */,
+				4A1B3FDA2278083C00714B35 /* gui */,
 				95FE9DB42182A99700476561 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -76,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				95FE9DB32182A99700476561 /* zed-80-emulator */,
+				4A1B3FD92278083C00714B35 /* gui.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -110,6 +150,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4A1B3FD82278083C00714B35 /* gui */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A1B3FEC2278083D00714B35 /* Build configuration list for PBXNativeTarget "gui" */;
+			buildPhases = (
+				4A1B3FD52278083C00714B35 /* Sources */,
+				4A1B3FD62278083C00714B35 /* Frameworks */,
+				4A1B3FD72278083C00714B35 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = gui;
+			productName = gui;
+			productReference = 4A1B3FD92278083C00714B35 /* gui.app */;
+			productType = "com.apple.product-type.application";
+		};
 		95FE9DB22182A99700476561 /* zed-80-emulator */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 95FE9DBA2182A99700476561 /* Build configuration list for PBXNativeTarget "zed-80-emulator" */;
@@ -136,6 +193,9 @@
 				LastUpgradeCheck = 1000;
 				ORGANIZATIONNAME = "The Head";
 				TargetAttributes = {
+					4A1B3FD82278083C00714B35 = {
+						CreatedOnToolsVersion = 10.2.1;
+					};
 					95FE9DB22182A99700476561 = {
 						CreatedOnToolsVersion = 10.0;
 					};
@@ -147,6 +207,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 95FE9DAA2182A99700476561;
 			productRefGroup = 95FE9DB42182A99700476561 /* Products */;
@@ -154,11 +215,34 @@
 			projectRoot = "";
 			targets = (
 				95FE9DB22182A99700476561 /* zed-80-emulator */,
+				4A1B3FD82278083C00714B35 /* gui */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		4A1B3FD72278083C00714B35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */,
+				4A1B3FE52278083D00714B35 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		4A1B3FD52278083C00714B35 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A1B3FE02278083C00714B35 /* ViewController.m in Sources */,
+				4A1B3FE82278083D00714B35 /* main.m in Sources */,
+				4A1B3FDD2278083C00714B35 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		95FE9DAF2182A99700476561 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -176,7 +260,54 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		4A1B3FE32278083D00714B35 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4A1B3FE42278083D00714B35 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
+		4A1B3FEA2278083D00714B35 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = gui/gui.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				INFOPLIST_FILE = gui/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = com.teamten.gui;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4A1B3FEB2278083D00714B35 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = gui/gui.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				INFOPLIST_FILE = gui/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = com.teamten.gui;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		95FE9DB82182A99700476561 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -309,6 +440,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4A1B3FEC2278083D00714B35 /* Build configuration list for PBXNativeTarget "gui" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A1B3FEA2278083D00714B35 /* Debug */,
+				4A1B3FEB2278083D00714B35 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		95FE9DAE2182A99700476561 /* Build configuration list for PBXProject "zed-80-emulator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
