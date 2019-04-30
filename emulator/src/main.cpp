@@ -12,6 +12,7 @@
 
 #include "zed-80.hpp"
 #include "io_joyseg.hpp"
+#include "io_sysreg.hpp"
 
 using std::cout;
 using std::cerr;
@@ -73,13 +74,17 @@ int main(int argc, const char *argv[]) {
     
     auto ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
     
-    auto mmu = make_unique<MMU>(std::move(romData), std::move(ramData));
+    auto sysRegDevice = make_shared<SysRegDevice>();
+
+    auto mmu = make_shared<MMU>(std::move(romData), std::move(ramData), sysRegDevice);
     
     auto iommu = make_unique<IOMMU>();
     
     auto joySegDevice = make_shared<JoySegDevice>();
     iommu->setDevice(0, joySegDevice);
     iommu->setDevice(1, joySegDevice);
+    iommu->setDevice(6, mmu);
+    iommu->setDevice(7, sysRegDevice);
     // TODO: iommu->setDevice(2, sioDevice);
     // TODO: iommu->setDevice(3, pioDevice);
     // TODO: iommu->setDevice(4, ctcDevice);
@@ -90,7 +95,7 @@ int main(int argc, const char *argv[]) {
     mmu->describe(cout);
     iommu->describe(cout);
     
-    ZED80 zed80(std::move(mmu), std::move(iommu));
+    ZED80 zed80(mmu, std::move(iommu));
     
     zed80.run();
     

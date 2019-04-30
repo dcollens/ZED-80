@@ -19,7 +19,7 @@ typedef uint8_t iorq_t;
 
 class IOMMU {
 public:
-    static constexpr int N_IORQ = 8;
+    static constexpr int N_IORQ = 16;
 
 private:
     shared_ptr<IoDevice>    _devices[N_IORQ];

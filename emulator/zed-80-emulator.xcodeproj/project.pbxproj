@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
 		95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
 		95FE9DB72182A99700476561 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.cpp */; };
 		95FE9DC32182AAEF00476561 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
@@ -29,6 +30,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4A1B3F922277D94400714B35 /* io_sysreg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = io_sysreg.cpp; sourceTree = "<group>"; };
+		4A1B3F932277D94500714B35 /* io_sysreg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = io_sysreg.hpp; sourceTree = "<group>"; };
 		95C4D3222190CBD700007662 /* io_joyseg.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = io_joyseg.cpp; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
@@ -80,6 +83,8 @@
 		95FE9DB52182A99700476561 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				4A1B3F922277D94400714B35 /* io_sysreg.cpp */,
+				4A1B3F932277D94500714B35 /* io_sysreg.hpp */,
 				95FE9DC12182AAC200476561 /* _z80_decoder.h */,
 				95FE9DC02182AA4900476561 /* ay38910.h */,
 				95FE9DBF2182AA4900476561 /* z80.h */,
@@ -160,6 +165,7 @@
 			files = (
 				95FE9DCC2183D12B00476561 /* strutils.cpp in Sources */,
 				95FE9DC62183AE9600476561 /* mmu.cpp in Sources */,
+				4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */,
 				95FE9DB72182A99700476561 /* main.cpp in Sources */,
 				95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */,
 				95FE9DC32182AAEF00476561 /* chips.cpp in Sources */,
@@ -286,7 +292,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = YPXB57X5ED;
+				DEVELOPMENT_TEAM = 5ER7NHYS83;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -295,7 +301,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = YPXB57X5ED;
+				DEVELOPMENT_TEAM = 5ER7NHYS83;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

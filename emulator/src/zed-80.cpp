@@ -20,8 +20,8 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80(unique_ptr<MMU> &&mmu, unique_ptr<IOMMU> &&iommu)
-: _mmu(std::move(mmu)), _iommu(std::move(iommu))
+ZED80::ZED80(shared_ptr<MMU> &mmu, unique_ptr<IOMMU> &&iommu)
+: _mmu(mmu), _iommu(std::move(iommu))
 {
     z80_desc_t desc;
     desc.tick_cb = z80TickCallback;

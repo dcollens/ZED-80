@@ -3,8 +3,8 @@
 ; page is mapped into that frame. There are 16 physical pages, each 16KB in size,
 ; for a total of 256KB of physical address space.
 ; The physical memory map is:
-; 0x00000-0x7FFFF: Flash RAM
-; 0x80000-0xFFFFF: RAM
+; 0x00000-0x1FFFF: Flash RAM
+; 0x20000-0x3FFFF: RAM
 
 PORT_MMUBASE	equ 0x60		; base port address for MMU register
 PORT_MMUPG0	equ PORT_MMUBASE	; port address for MMU page 0 register
