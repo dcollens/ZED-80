@@ -46,7 +46,7 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
 
 void ZED80::run() {
     for (;;) {
-        constexpr int TICKS_PER_LOOP = 1000;
+        constexpr int TICKS_PER_LOOP = 100000000;
         
         auto numTicks = z80_exec(&_cpu, TICKS_PER_LOOP);
         cout << "CPU: ran for " << numTicks << " ticks" << endl;

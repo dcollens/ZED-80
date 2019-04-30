@@ -20,7 +20,6 @@ void SysRegDevice::describe(std::ostream &out) const {
 
 // Called at each step of the main CPU emulation.
 uint64_t SysRegDevice::tickCallback(int numTicks, uint64_t pins) {
-    uint8_t ioAddr = Z80_GET_ADDR(pins) & 0xFF;
     if ((pins & Z80_RD) != 0) {
         Z80_SET_DATA(pins, _value);
     } else if ((pins & Z80_WR) != 0) {

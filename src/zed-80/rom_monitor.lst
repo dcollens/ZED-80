@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_monitor.asm"
-                        ; date: 2019-04-29 18:14:21
+                        ; date: 2019-04-29 18:33:03
                         ; --------------------------------------
 
 
@@ -61,8 +61,8 @@
                         ; page is mapped into that frame. There are 16 physical pages, each 16KB in size,
                         ; for a total of 256KB of physical address space.
                         ; The physical memory map is:
-                        ; 0x00000-0x7FFFF: Flash RAM
-                        ; 0x80000-0xFFFFF: RAM
+                        ; 0x00000-0x1FFFF: Flash RAM
+                        ; 0x20000-0x3FFFF: RAM
                         
 0060:                   PORT_MMUBASE	equ 0x60		; base port address for MMU register
 0060:                   PORT_MMUPG0	equ PORT_MMUBASE	; port address for MMU page 0 register
@@ -1262,5 +1262,5 @@ FC02: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0134 sec.
+total time: 0.0222 sec.
 no errors
