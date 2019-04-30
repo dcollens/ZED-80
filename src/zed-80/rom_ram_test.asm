@@ -128,8 +128,8 @@ init::
     call    seg0_write
     call    seg1_write
     call    snd_test	    ; boot sound
-    call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
-    call    sio_test
+;    call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
+;    call    sio_test
 ;    call    figure8
 ;    call    countup
 ;    call    pio_test

@@ -8,7 +8,7 @@ using std::endl;
 using std::ifstream;
 using std::vector;
 
-static const uint16_t LOAD_ADDR = 0x2000;
+static const uint16_t LOAD_ADDR = 0x4000;
 
 static const uint8_t SOH = 0x01;
 static const uint8_t EOT = 0x04;

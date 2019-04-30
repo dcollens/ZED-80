@@ -1,4 +1,4 @@
 #!/bin/sh
 
 zasm -yu -i $1.asm
-./pkt/pkt $1.bin >$1.pkt
+../pkt/pkt $1.bin >$1.pkt
