@@ -16,7 +16,7 @@
 using std::unique_ptr;
 
 class ZED80 {
-    unique_ptr<MMU>         _mmu;
+    shared_ptr<MMU>         _mmu;
     unique_ptr<IOMMU>       _iommu;
     z80_t                   _cpu;
 
@@ -25,7 +25,7 @@ class ZED80 {
     uint64_t tickCallback(int numTicks, uint64_t pins);
     
 public:
-    ZED80(unique_ptr<MMU> &&mmu, unique_ptr<IOMMU> &&iommu);
+    ZED80(shared_ptr<MMU> &mmu, unique_ptr<IOMMU> &&iommu);
     
     void run();
 };
