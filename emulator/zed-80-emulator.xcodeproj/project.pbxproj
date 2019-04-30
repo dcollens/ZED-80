@@ -8,11 +8,18 @@
 
 /* Begin PBXBuildFile section */
 		4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
-		4A1B3FDD2278083C00714B35 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDC2278083C00714B35 /* AppDelegate.m */; };
+		4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDC2278083C00714B35 /* AppDelegate.mm */; };
 		4A1B3FE02278083C00714B35 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDF2278083C00714B35 /* ViewController.m */; };
 		4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE12278083D00714B35 /* Assets.xcassets */; };
 		4A1B3FE52278083D00714B35 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE32278083D00714B35 /* Main.storyboard */; };
 		4A1B3FE82278083D00714B35 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE72278083D00714B35 /* main.m */; };
+		4A1B3FED2278144700714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
+		4A1B3FEE2278144700714B35 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
+		4A1B3FEF2278144700714B35 /* mmu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.cpp */; };
+		4A1B3FF02278144700714B35 /* zed-80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.cpp */; };
+		4A1B3FF12278144700714B35 /* strutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.cpp */; };
+		4A1B3FF22278144700714B35 /* iommu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.cpp */; };
+		4A1B3FF32278144700714B35 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
 		95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
 		95FE9DB72182A99700476561 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.cpp */; };
 		95FE9DC32182AAEF00476561 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
@@ -39,7 +46,7 @@
 		4A1B3F932277D94500714B35 /* io_sysreg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = io_sysreg.hpp; sourceTree = "<group>"; };
 		4A1B3FD92278083C00714B35 /* gui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gui.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1B3FDB2278083C00714B35 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		4A1B3FDC2278083C00714B35 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		4A1B3FDC2278083C00714B35 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		4A1B3FDE2278083C00714B35 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		4A1B3FDF2278083C00714B35 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		4A1B3FE12278083D00714B35 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -90,7 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				4A1B3FDB2278083C00714B35 /* AppDelegate.h */,
-				4A1B3FDC2278083C00714B35 /* AppDelegate.m */,
+				4A1B3FDC2278083C00714B35 /* AppDelegate.mm */,
 				4A1B3FDE2278083C00714B35 /* ViewController.h */,
 				4A1B3FDF2278083C00714B35 /* ViewController.m */,
 				4A1B3FE12278083D00714B35 /* Assets.xcassets */,
@@ -195,6 +202,11 @@
 				TargetAttributes = {
 					4A1B3FD82278083C00714B35 = {
 						CreatedOnToolsVersion = 10.2.1;
+						SystemCapabilities = {
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
 					};
 					95FE9DB22182A99700476561 = {
 						CreatedOnToolsVersion = 10.0;
@@ -237,9 +249,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A1B3FED2278144700714B35 /* io_sysreg.cpp in Sources */,
+				4A1B3FEE2278144700714B35 /* chips.cpp in Sources */,
+				4A1B3FEF2278144700714B35 /* mmu.cpp in Sources */,
+				4A1B3FF02278144700714B35 /* zed-80.cpp in Sources */,
+				4A1B3FF12278144700714B35 /* strutils.cpp in Sources */,
+				4A1B3FF22278144700714B35 /* iommu.cpp in Sources */,
+				4A1B3FF32278144700714B35 /* io_joyseg.cpp in Sources */,
 				4A1B3FE02278083C00714B35 /* ViewController.m in Sources */,
 				4A1B3FE82278083D00714B35 /* main.m in Sources */,
-				4A1B3FDD2278083C00714B35 /* AppDelegate.m in Sources */,
+				4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,7 +294,6 @@
 		4A1B3FEA2278083D00714B35 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = gui/gui.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 5ER7NHYS83;
@@ -293,7 +311,6 @@
 		4A1B3FEB2278083D00714B35 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = gui/gui.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 5ER7NHYS83;

@@ -24,8 +24,9 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80(unique_ptr<const vector<uint8_t>> &&romData)
+ZED80::ZED80()
 {
+    auto romData = make_unique<vector<uint8_t>>(ROM_SIZE);
     _ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
     _sysRegDevice = make_shared<SysRegDevice>();
     _mmu = make_shared<MMU>(std::move(romData), std::move(_ramData), _sysRegDevice);
@@ -49,6 +50,10 @@ ZED80::ZED80(unique_ptr<const vector<uint8_t>> &&romData)
     z80_init(&_cpu, &desc);
 }
 
+void ZED80::setRom(unique_ptr<vector<uint8_t>> &&rom) {
+    _mmu->setRom(std::move(rom));
+}
+
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
     vaddr_t const addr = Z80_GET_ADDR(pins);
     if ((pins & Z80_MREQ) != 0) {
@@ -69,5 +74,13 @@ void ZED80::run() {
         
         auto numTicks = z80_exec(&_cpu, TICKS_PER_LOOP);
         cout << "CPU: ran for " << numTicks << " ticks" << endl;
+        break;
     }
+}
+
+void ZED80::smallRun(uint32_t ms) {
+    uint32_t ticks = uint32_t(uint64_t(ms)*CLOCK_HZ/1000);
+
+    ticks = z80_exec(&_cpu, ticks);
+//    cout << "CPU: ran for " << ticks << " ticks" << endl;
 }

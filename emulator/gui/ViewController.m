@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "AppDelegate.h"
 
 @implementation ViewController
 
@@ -21,11 +22,6 @@
     [super setRepresentedObject:representedObject];
 
     // Update the view, if already loaded.
-}
-
-// Magically called by Emulator->Run menu item.
-- (IBAction)emulatorRun:(id)sender {
-    NSLog(@"emulatorRun");
 }
 
 @end

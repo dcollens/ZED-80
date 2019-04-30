@@ -26,14 +26,14 @@ typedef uint32_t paddr_t;
 
 constexpr size_t ROM_SIZE = 128 * 1024;
 constexpr size_t RAM_SIZE = 128 * 1024;
-constexpr size_t PAGE_SHIFT = 14;                       // 16 KiB pages.
-constexpr size_t PAGE_SIZE = 1 << PAGE_SHIFT;
+constexpr size_t MMU_PAGE_SHIFT = 14;                       // 16 KiB pages.
+constexpr size_t MMU_PAGE_SIZE = 1 << MMU_PAGE_SHIFT;
 constexpr size_t PHYS_SIZE = 64 * 1024;                  // Addressable space.
-constexpr size_t PHYS_PAGE_COUNT = PHYS_SIZE >> PAGE_SHIFT;
+constexpr size_t PHYS_PAGE_COUNT = PHYS_SIZE >> MMU_PAGE_SHIFT;
 
 class MMU : public IoDevice {
     static constexpr uint8_t UNINITIALIZED = 0xFF;
-    static constexpr paddr_t RAM_BASE = 8 * PAGE_SIZE;
+    static constexpr paddr_t RAM_BASE = 8 * MMU_PAGE_SIZE;
     
     unique_ptr<const vector<uint8_t>>   _rom;
     unique_ptr<vector<uint8_t>>         _ram;
@@ -50,6 +50,10 @@ public:
         for (int i = 0; i < PHYS_PAGE_COUNT; i++) {
             _map[i] = UNINITIALIZED;
         }
+    }
+
+    void setRom(unique_ptr<const vector<uint8_t>> &&rom) {
+        _rom = std::move(rom);
     }
     
     vector<uint8_t> const &rom() const { return *_rom; }
@@ -79,11 +83,11 @@ private:
     // Convert virtual address to physical address.
     paddr_t virtToPhys(vaddr_t vaddr) const {
         if (isEnabled()) {
-            uint8_t mapped = _map[vaddr >> PAGE_SHIFT];
+            uint8_t mapped = _map[vaddr >> MMU_PAGE_SHIFT];
             if (mapped == UNINITIALIZED) {
                 cout << "Warning: MMU is enabled but not initialized" << endl;
             }
-            return paddr_t(mapped) << PAGE_SHIFT;
+            return paddr_t(mapped) << MMU_PAGE_SHIFT;
         } else {
             // Pass-through when disabled.
             return vaddr;

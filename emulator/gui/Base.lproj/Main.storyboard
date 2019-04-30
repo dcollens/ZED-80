@@ -88,7 +88,8 @@
                                                 <action selector="performClose:" target="Ady-hI-5gd" id="HmO-Ls-i7Q"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Save…" keyEquivalent="s" id="pxx-59-PXV">
+                                        <menuItem title="Save…" id="pxx-59-PXV">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="saveDocument:" target="Ady-hI-5gd" id="teZ-XB-qJY"/>
                                             </connections>
@@ -344,7 +345,12 @@
                                     <items>
                                         <menuItem title="Run" keyEquivalent="r" id="rSt-eG-sJQ">
                                             <connections>
-                                                <action selector="emulatorRun:" target="Ady-hI-5gd" id="IiD-Go-Rr2"/>
+                                                <action selector="emulatorRun:" target="Voe-Tx-rLC" id="wpZ-l2-Hn2"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Stop" keyEquivalent="s" id="tkI-bT-aWc">
+                                            <connections>
+                                                <action selector="emulatorStop:" target="Voe-Tx-rLC" id="o3d-S0-MhH"/>
                                             </connections>
                                         </menuItem>
                                     </items>

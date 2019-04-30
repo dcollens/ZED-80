@@ -74,7 +74,8 @@ int main(int argc, const char *argv[]) {
     
     cout << "ZED-80 Emulator v" << EMULATOR_VERSION << " starting" << endl;
     
-    ZED80 zed80(std::move(romData));
+    ZED80 zed80;
+    zed80.setRom(std::move(romData));
 
     zed80.run();
     
