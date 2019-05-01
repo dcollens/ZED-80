@@ -345,12 +345,12 @@
                                     <items>
                                         <menuItem title="Run" keyEquivalent="r" id="rSt-eG-sJQ">
                                             <connections>
-                                                <action selector="emulatorRun:" target="Voe-Tx-rLC" id="wpZ-l2-Hn2"/>
+                                                <action selector="emulatorRun:" target="Ady-hI-5gd" id="IkQ-iu-1oq"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Stop" keyEquivalent="s" id="tkI-bT-aWc">
                                             <connections>
-                                                <action selector="emulatorStop:" target="Voe-Tx-rLC" id="o3d-S0-MhH"/>
+                                                <action selector="emulatorStop:" target="Ady-hI-5gd" id="mxx-OC-YlL"/>
                                             </connections>
                                         </menuItem>
                                     </items>
