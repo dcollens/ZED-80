@@ -302,7 +302,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				DEVELOPMENT_TEAM = SRYH2VZYUR;
 				INFOPLIST_FILE = gui/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -319,7 +319,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				DEVELOPMENT_TEAM = SRYH2VZYUR;
 				INFOPLIST_FILE = gui/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -446,7 +446,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				DEVELOPMENT_TEAM = SRYH2VZYUR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -455,7 +455,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5ER7NHYS83;
+				DEVELOPMENT_TEAM = SRYH2VZYUR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
