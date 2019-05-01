@@ -20,6 +20,7 @@
 		4A1B3FF12278144700714B35 /* strutils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.mm */; };
 		4A1B3FF22278144700714B35 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 		4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
+		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
 		95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
 		95FE9DB72182A99700476561 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.mm */; };
 		95FE9DC32182AAEF00476561 /* chips.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.mm */; };
@@ -54,6 +55,8 @@
 		4A1B3FE62278083D00714B35 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A1B3FE72278083D00714B35 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
+		4A7A0CE2227961BD00279249 /* SevenSegmentView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SevenSegmentView.h; sourceTree = "<group>"; };
+		4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SevenSegmentView.mm; sourceTree = "<group>"; };
 		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
@@ -105,6 +108,8 @@
 				4A1B3FE62278083D00714B35 /* Info.plist */,
 				4A1B3FE72278083D00714B35 /* main.m */,
 				4A1B3FE92278083D00714B35 /* gui.entitlements */,
+				4A7A0CE2227961BD00279249 /* SevenSegmentView.h */,
+				4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */,
 			);
 			path = gui;
 			sourceTree = "<group>";
@@ -249,6 +254,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */,
 				4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */,
 				4A1B3FEE2278144700714B35 /* chips.mm in Sources */,
 				4A1B3FEF2278144700714B35 /* mmu.mm in Sources */,

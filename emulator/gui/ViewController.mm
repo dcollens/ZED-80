@@ -6,10 +6,13 @@
 //  Copyright © 2019 The Head. All rights reserved.
 //
 
+#import <fstream>
 #import "ViewController.h"
+#import "SevenSegmentView.h"
 #import "AppDelegate.h"
 #import "zed-80.hpp"
-#import <fstream>
+
+#define SEVEN_SEGMENT_COUNT 2
 
 using std::cout;
 using std::cerr;
@@ -24,22 +27,12 @@ using std::ifstream;
 @interface ViewController () {
     ZED80 _zed80;
     NSTimer *_emulatorRunTimer;
-    uint8_t _sevenSegment[2];
+    SevenSegmentView *_sevenSegment[SEVEN_SEGMENT_COUNT];
 }
 
 @end
 
 @implementation ViewController
-
-- (instancetype)init {
-    self = [super init];
-
-    _emulatorRunTimer = nil;
-    _sevenSegment[0] = 0;
-    _sevenSegment[1] = 0;
-
-    return self;
-}
 
 static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     ifstream file(fileName, ifstream::in | ifstream::binary);
@@ -64,6 +57,12 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 - (void)viewDidLoad {
     [super viewDidLoad];
 
+    _emulatorRunTimer = nil;
+    for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
+        _sevenSegment[i] = [[SevenSegmentView alloc] init];
+        [self.view addSubview:_sevenSegment[i]];
+    }
+
     _zed80.setUiDelegate(self);
 
     auto romData = loadFile("/Users/lk/mine/zed-80/src/zed-80/rom_only_test.rom");
@@ -80,16 +79,27 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     // Update the view, if already loaded.
 }
 
+- (void)viewWillLayout {
+    [super viewWillLayout];
+
+    for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
+        NSSize size = _sevenSegment[i].size;
+        NSRect frame;
+        frame.origin.x = i*size.width;
+        frame.origin.y = 0;
+        frame.size = size;
+
+        _sevenSegment[i].frame = frame;
+    }
+}
+
 - (void)setSevenSegment:(uint8_t)port to:(uint8_t)value {
-    if (port >= 2) {
+    if (port >= SEVEN_SEGMENT_COUNT) {
         NSLog(@"Invalid seven segment port %d", int(port));
         return;
     }
 
-    if (_sevenSegment[port] != value) {
-        _sevenSegment[port] = value;
-        NSLog(@"Updated port %d to %x", int(port), int(value));
-    }
+    _sevenSegment[port].value = value;
 }
 
 - (void)cancelEmulatorTimer {
@@ -102,6 +112,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 - (IBAction)emulatorRun:(id)sender {
     [self cancelEmulatorTimer];
 
+    NSLog(@"Running emulator");
     uint32_t periodMs = 10;
 
     _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs/1000.0 repeats:YES block:^(NSTimer * _Nonnull timer) {
