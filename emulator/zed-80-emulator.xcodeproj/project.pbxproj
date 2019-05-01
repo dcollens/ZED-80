@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
+		4A1B3F942277D94500714B35 /* io_sysreg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.mm */; };
 		4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDC2278083C00714B35 /* AppDelegate.mm */; };
-		4A1B3FE02278083C00714B35 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDF2278083C00714B35 /* ViewController.m */; };
+		4A1B3FE02278083C00714B35 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDF2278083C00714B35 /* ViewController.mm */; };
 		4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE12278083D00714B35 /* Assets.xcassets */; };
 		4A1B3FE52278083D00714B35 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE32278083D00714B35 /* Main.storyboard */; };
 		4A1B3FE82278083D00714B35 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE72278083D00714B35 /* main.m */; };
-		4A1B3FED2278144700714B35 /* io_sysreg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.cpp */; };
-		4A1B3FEE2278144700714B35 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
-		4A1B3FEF2278144700714B35 /* mmu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.cpp */; };
-		4A1B3FF02278144700714B35 /* zed-80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.cpp */; };
-		4A1B3FF12278144700714B35 /* strutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.cpp */; };
-		4A1B3FF22278144700714B35 /* iommu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.cpp */; };
-		4A1B3FF32278144700714B35 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
-		95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.cpp */; };
-		95FE9DB72182A99700476561 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.cpp */; };
-		95FE9DC32182AAEF00476561 /* chips.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.cpp */; };
-		95FE9DC62183AE9600476561 /* mmu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.cpp */; };
-		95FE9DC92183C8DD00476561 /* zed-80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.cpp */; };
-		95FE9DCC2183D12B00476561 /* strutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.cpp */; };
-		95FE9DCF21848E8700476561 /* iommu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.cpp */; };
+		4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.mm */; };
+		4A1B3FEE2278144700714B35 /* chips.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.mm */; };
+		4A1B3FEF2278144700714B35 /* mmu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.mm */; };
+		4A1B3FF02278144700714B35 /* zed-80.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.mm */; };
+		4A1B3FF12278144700714B35 /* strutils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.mm */; };
+		4A1B3FF22278144700714B35 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
+		4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
+		95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
+		95FE9DB72182A99700476561 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.mm */; };
+		95FE9DC32182AAEF00476561 /* chips.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.mm */; };
+		95FE9DC62183AE9600476561 /* mmu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.mm */; };
+		95FE9DC92183C8DD00476561 /* zed-80.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.mm */; };
+		95FE9DCC2183D12B00476561 /* strutils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.mm */; };
+		95FE9DCF21848E8700476561 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -42,36 +42,36 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4A1B3F922277D94400714B35 /* io_sysreg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = io_sysreg.cpp; sourceTree = "<group>"; };
+		4A1B3F922277D94400714B35 /* io_sysreg.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = io_sysreg.mm; sourceTree = "<group>"; };
 		4A1B3F932277D94500714B35 /* io_sysreg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = io_sysreg.hpp; sourceTree = "<group>"; };
 		4A1B3FD92278083C00714B35 /* gui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gui.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1B3FDB2278083C00714B35 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		4A1B3FDC2278083C00714B35 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		4A1B3FDE2278083C00714B35 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		4A1B3FDF2278083C00714B35 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		4A1B3FDF2278083C00714B35 /* ViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
 		4A1B3FE12278083D00714B35 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4A1B3FE42278083D00714B35 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4A1B3FE62278083D00714B35 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A1B3FE72278083D00714B35 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
-		95C4D3222190CBD700007662 /* io_joyseg.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = io_joyseg.cpp; sourceTree = "<group>"; };
+		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
 		95FE9DB32182A99700476561 /* zed-80-emulator */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "zed-80-emulator"; sourceTree = BUILT_PRODUCTS_DIR; };
-		95FE9DB62182A99700476561 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		95FE9DB62182A99700476561 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		95FE9DBD2182AA4900476561 /* z80ctc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80ctc.h; sourceTree = "<group>"; };
 		95FE9DBE2182AA4900476561 /* z80pio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80pio.h; sourceTree = "<group>"; };
 		95FE9DBF2182AA4900476561 /* z80.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80.h; sourceTree = "<group>"; };
 		95FE9DC02182AA4900476561 /* ay38910.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ay38910.h; sourceTree = "<group>"; };
 		95FE9DC12182AAC200476561 /* _z80_decoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _z80_decoder.h; sourceTree = "<group>"; };
-		95FE9DC22182AAEF00476561 /* chips.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = chips.cpp; sourceTree = "<group>"; };
-		95FE9DC42183AE9600476561 /* mmu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mmu.cpp; sourceTree = "<group>"; };
+		95FE9DC22182AAEF00476561 /* chips.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = chips.mm; sourceTree = "<group>"; };
+		95FE9DC42183AE9600476561 /* mmu.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = mmu.mm; sourceTree = "<group>"; };
 		95FE9DC52183AE9600476561 /* mmu.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mmu.hpp; sourceTree = "<group>"; };
-		95FE9DC72183C8DD00476561 /* zed-80.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "zed-80.cpp"; sourceTree = "<group>"; };
+		95FE9DC72183C8DD00476561 /* zed-80.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "zed-80.mm"; sourceTree = "<group>"; };
 		95FE9DC82183C8DD00476561 /* zed-80.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = "zed-80.hpp"; sourceTree = "<group>"; };
-		95FE9DCA2183D12B00476561 /* strutils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = strutils.cpp; sourceTree = "<group>"; };
+		95FE9DCA2183D12B00476561 /* strutils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = strutils.mm; sourceTree = "<group>"; };
 		95FE9DCB2183D12B00476561 /* strutils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = strutils.hpp; sourceTree = "<group>"; };
-		95FE9DCD21848E8700476561 /* iommu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = iommu.cpp; sourceTree = "<group>"; };
+		95FE9DCD21848E8700476561 /* iommu.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = iommu.mm; sourceTree = "<group>"; };
 		95FE9DCE21848E8700476561 /* iommu.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = iommu.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -99,7 +99,7 @@
 				4A1B3FDB2278083C00714B35 /* AppDelegate.h */,
 				4A1B3FDC2278083C00714B35 /* AppDelegate.mm */,
 				4A1B3FDE2278083C00714B35 /* ViewController.h */,
-				4A1B3FDF2278083C00714B35 /* ViewController.m */,
+				4A1B3FDF2278083C00714B35 /* ViewController.mm */,
 				4A1B3FE12278083D00714B35 /* Assets.xcassets */,
 				4A1B3FE32278083D00714B35 /* Main.storyboard */,
 				4A1B3FE62278083D00714B35 /* Info.plist */,
@@ -130,25 +130,25 @@
 		95FE9DB52182A99700476561 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				4A1B3F922277D94400714B35 /* io_sysreg.cpp */,
+				4A1B3F922277D94400714B35 /* io_sysreg.mm */,
 				4A1B3F932277D94500714B35 /* io_sysreg.hpp */,
 				95FE9DC12182AAC200476561 /* _z80_decoder.h */,
 				95FE9DC02182AA4900476561 /* ay38910.h */,
 				95FE9DBF2182AA4900476561 /* z80.h */,
 				95FE9DBD2182AA4900476561 /* z80ctc.h */,
 				95FE9DBE2182AA4900476561 /* z80pio.h */,
-				95FE9DB62182A99700476561 /* main.cpp */,
-				95FE9DC22182AAEF00476561 /* chips.cpp */,
-				95FE9DC42183AE9600476561 /* mmu.cpp */,
+				95FE9DB62182A99700476561 /* main.mm */,
+				95FE9DC22182AAEF00476561 /* chips.mm */,
+				95FE9DC42183AE9600476561 /* mmu.mm */,
 				95FE9DC52183AE9600476561 /* mmu.hpp */,
-				95FE9DC72183C8DD00476561 /* zed-80.cpp */,
+				95FE9DC72183C8DD00476561 /* zed-80.mm */,
 				95FE9DC82183C8DD00476561 /* zed-80.hpp */,
-				95FE9DCA2183D12B00476561 /* strutils.cpp */,
+				95FE9DCA2183D12B00476561 /* strutils.mm */,
 				95FE9DCB2183D12B00476561 /* strutils.hpp */,
 				95C4D3252190CC0100007662 /* iodevice.h */,
-				95FE9DCD21848E8700476561 /* iommu.cpp */,
+				95FE9DCD21848E8700476561 /* iommu.mm */,
 				95FE9DCE21848E8700476561 /* iommu.hpp */,
-				95C4D3222190CBD700007662 /* io_joyseg.cpp */,
+				95C4D3222190CBD700007662 /* io_joyseg.mm */,
 				95C4D3232190CBD700007662 /* io_joyseg.hpp */,
 			);
 			path = src;
@@ -249,14 +249,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A1B3FED2278144700714B35 /* io_sysreg.cpp in Sources */,
-				4A1B3FEE2278144700714B35 /* chips.cpp in Sources */,
-				4A1B3FEF2278144700714B35 /* mmu.cpp in Sources */,
-				4A1B3FF02278144700714B35 /* zed-80.cpp in Sources */,
-				4A1B3FF12278144700714B35 /* strutils.cpp in Sources */,
-				4A1B3FF22278144700714B35 /* iommu.cpp in Sources */,
-				4A1B3FF32278144700714B35 /* io_joyseg.cpp in Sources */,
-				4A1B3FE02278083C00714B35 /* ViewController.m in Sources */,
+				4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */,
+				4A1B3FEE2278144700714B35 /* chips.mm in Sources */,
+				4A1B3FEF2278144700714B35 /* mmu.mm in Sources */,
+				4A1B3FF02278144700714B35 /* zed-80.mm in Sources */,
+				4A1B3FF12278144700714B35 /* strutils.mm in Sources */,
+				4A1B3FF22278144700714B35 /* iommu.mm in Sources */,
+				4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */,
+				4A1B3FE02278083C00714B35 /* ViewController.mm in Sources */,
 				4A1B3FE82278083D00714B35 /* main.m in Sources */,
 				4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */,
 			);
@@ -266,14 +266,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				95FE9DCC2183D12B00476561 /* strutils.cpp in Sources */,
-				95FE9DC62183AE9600476561 /* mmu.cpp in Sources */,
-				4A1B3F942277D94500714B35 /* io_sysreg.cpp in Sources */,
-				95FE9DB72182A99700476561 /* main.cpp in Sources */,
-				95C4D3242190CBD700007662 /* io_joyseg.cpp in Sources */,
-				95FE9DC32182AAEF00476561 /* chips.cpp in Sources */,
-				95FE9DC92183C8DD00476561 /* zed-80.cpp in Sources */,
-				95FE9DCF21848E8700476561 /* iommu.cpp in Sources */,
+				95FE9DCC2183D12B00476561 /* strutils.mm in Sources */,
+				95FE9DC62183AE9600476561 /* mmu.mm in Sources */,
+				4A1B3F942277D94500714B35 /* io_sysreg.mm in Sources */,
+				95FE9DB72182A99700476561 /* main.mm in Sources */,
+				95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */,
+				95FE9DC32182AAEF00476561 /* chips.mm in Sources */,
+				95FE9DC92183C8DD00476561 /* zed-80.mm in Sources */,
+				95FE9DCF21848E8700476561 /* iommu.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
