@@ -1,2 +1,6 @@
 **/.DS_Store
 **/*.swp
+
+# These store various Xcode user interface state.
+**/xcuserdata/lk.xcuserdatad
+**/xcuserdata/dcollens.xcuserdatad
