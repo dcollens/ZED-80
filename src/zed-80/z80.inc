@@ -2,9 +2,15 @@
 
 M_deref_hl	macro
     ; hl = (hl)
-    ; destroys a
+    ; destroys A
     ld	    a, (hl)
     inc	    hl
     ld	    h, (hl)
     ld	    l, a
+    endm
+
+M_out		macro port, val
+    ; destroys A
+    ld	    a, &val
+    out	    &port, a
     endm
