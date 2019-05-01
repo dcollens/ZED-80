@@ -25,8 +25,11 @@ uint64_t JoySegDevice::tickCallback(int numTicks, uint64_t pins) {
         // TODO: Joysticks
         cout << "JOY: ignoring IO read from port $" << to_hex(ioAddr) << endl;
     } else if ((pins & Z80_WR) != 0) {
-        // TODO: 7-segment displays
-        cout << "SEG: ignoring IO write to port $" << to_hex(ioAddr) << endl;
+        [_uiDelegate setSevenSegment:(ioAddr >> 4) to:Z80_GET_DATA(pins)];
     }
     return pins;
+}
+
+void JoySegDevice::setUiDelegate(ViewController *uiDelegate) {
+    _uiDelegate = uiDelegate;
 }

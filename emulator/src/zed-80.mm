@@ -6,10 +6,10 @@
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#include <iostream>
+#import <iostream>
 
-#include "zed-80.hpp"
-#include "strutils.hpp"
+#import "zed-80.hpp"
+#import "strutils.hpp"
 
 using std::cout;
 using std::cerr;
@@ -25,6 +25,7 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
 }
 
 ZED80::ZED80()
+    : _uiDelegate(nullptr)
 {
     auto romData = make_unique<vector<uint8_t>>(ROM_SIZE);
     _ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
@@ -52,6 +53,11 @@ ZED80::ZED80()
 
 void ZED80::setRom(unique_ptr<vector<uint8_t>> &&rom) {
     _mmu->setRom(std::move(rom));
+}
+
+void ZED80::setUiDelegate(ViewController *uiDelegate) {
+    _uiDelegate = uiDelegate;
+    _joySegDevice->setUiDelegate(uiDelegate);
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {

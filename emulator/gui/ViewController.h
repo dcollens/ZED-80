@@ -10,6 +10,7 @@
 
 @interface ViewController : NSViewController
 
+- (void)setSevenSegment:(uint8_t)port to:(uint8_t)value;
 
 @end
 

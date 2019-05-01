@@ -24,17 +24,19 @@ using std::ifstream;
 @interface ViewController () {
     ZED80 _zed80;
     NSTimer *_emulatorRunTimer;
+    uint8_t _sevenSegment[2];
 }
 
 @end
 
 @implementation ViewController
 
-
 - (instancetype)init {
     self = [super init];
 
     _emulatorRunTimer = nil;
+    _sevenSegment[0] = 0;
+    _sevenSegment[1] = 0;
 
     return self;
 }
@@ -62,6 +64,8 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 - (void)viewDidLoad {
     [super viewDidLoad];
 
+    _zed80.setUiDelegate(self);
+
     auto romData = loadFile("/Users/lk/mine/zed-80/src/zed-80/rom_only_test.rom");
     if (romData == nullptr) {
         NSLog(@"Can't load file");
@@ -74,6 +78,18 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     [super setRepresentedObject:representedObject];
 
     // Update the view, if already loaded.
+}
+
+- (void)setSevenSegment:(uint8_t)port to:(uint8_t)value {
+    if (port >= 2) {
+        NSLog(@"Invalid seven segment port %d", int(port));
+        return;
+    }
+
+    if (_sevenSegment[port] != value) {
+        _sevenSegment[port] = value;
+        NSLog(@"Updated port %d to %x", int(port), int(value));
+    }
 }
 
 - (void)cancelEmulatorTimer {

@@ -9,10 +9,11 @@
 #ifndef zed_80_hpp
 #define zed_80_hpp
 
-#include "mmu.hpp"
-#include "iommu.hpp"
-#include "z80.h"
-#include "io_joyseg.hpp"
+#import "mmu.hpp"
+#import "iommu.hpp"
+#import "z80.h"
+#import "io_joyseg.hpp"
+#import "ViewController.h"
 
 using std::unique_ptr;
 
@@ -25,6 +26,7 @@ class ZED80 {
     shared_ptr<MMU>             _mmu;
     unique_ptr<IOMMU>           _iommu;
     z80_t                       _cpu;
+    ViewController *            _uiDelegate;
 
     static uint64_t z80TickCallback(int numTicks, uint64_t pins, void *userData);
 
@@ -33,6 +35,7 @@ class ZED80 {
 public:
     ZED80();
     void setRom(unique_ptr<vector<uint8_t>> &&rom);
+    void setUiDelegate(ViewController *uiDelegate);
 
     void run();
     void smallRun(uint32_t ms);
