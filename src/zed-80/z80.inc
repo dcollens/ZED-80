@@ -14,3 +14,9 @@ M_out		macro port, val
     ld	    a, &val
     out	    &port, a
     endm
+
+M_out0		macro port
+    ; destroys A
+    xor	    a
+    out	    &port, a
+    endm

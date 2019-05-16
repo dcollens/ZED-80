@@ -2,6 +2,38 @@ PORT_LCDBASE	equ 0x50		; base port address for RA8876 chip
 PORT_LCDCMD	equ PORT_LCDBASE	; port address for RA8876 command/status register
 PORT_LCDDAT	equ PORT_LCDBASE + 1	; port address for RA8876 data register
 
+; Panel geometry
+LCD_WIDTH	equ 1024
+LCD_HEIGHT	equ 600
+
+; Status register values
+LCDSTAT_INTR	equ 0x01		; Interrupt pin state (active high)
+LCDSTAT_MODE	equ 0x02		; Operation mode status (normal=low)
+LCDSTAT_RAMRDY	equ 0x04		; SDRAM ready for access (active high)
+LCDSTAT_BUSY	equ 0x08		; Core task is busy (active high)
+LCDSTAT_RDEMPTY	equ 0x10		; Host Memory Read FIFO empty (active high)
+LCDSTAT_RDFULL	equ 0x20		; Host Memory Read FIFO full (active high)
+LCDSTAT_WREMPTY	equ 0x40		; Host Memory Write FIFO empty (active high)
+LCDSTAT_WRFULL	equ 0x80		; Host Memory Write FIFO full (active high)
+
+; DCR0 (register $67) register values
+LCDDCR0_DRWLIN	equ 0x00		; Draw line
+LCDDCR0_DRWTRI	equ 0x02		; Draw triangle
+LCDDCR0_FILL	equ 0x20		; Fill (0 = outline, 1 = fill)
+LCDDCR0_RUN	equ 0x80		; Start drawing / drawing in progress
+
+; DCR1 (register $76) register values
+LCDDCR1_QUADBL	equ 0x00		; Ellipse curve, bottom-left quadrant
+LCDDCR1_QUADTL	equ 0x01		; Ellipse curve, top-left quadrant
+LCDDCR1_QUADTR	equ 0x02		; Ellipse curve, top-right quadrant
+LCDDCR1_QUADBR	equ 0x03		; Ellipse curve, bottom-right quadrant
+LCDDCR1_DRWELL	equ 0x00		; Draw circle/ellipse
+LCDDCR1_DRWCUR	equ 0x10		; Draw circle/ellipse curve (one quadrant)
+LCDDCR1_DRWRCT	equ 0x20		; Draw rectangle
+LCDDCR1_DRWRR	equ 0x30		; Draw round-rectangle
+LCDDCR1_FILL	equ 0x40		; Fill (0 = outline, 1 = fill)
+LCDDCR1_RUN	equ 0x80		; Start drawing / drawing in progress
+
 ; Register numbers within the RA8876 chip
 LCDREG_SRR	equ 0x00		; Software Reset Register
 LCDREG_CCR	equ 0x01		; Chip Configuration Register
@@ -62,6 +94,10 @@ LCDREG_AW_HT0	equ 0x5C		; Active Window Height 0
 LCDREG_AW_HT1	equ 0x5D		; Active Window Height 1
 LCDREG_AW_COLOR equ 0x5E		; Color Depth of Canvas & Active Window
 
+LCDREG_F_CURX0	equ 0x63		; Text Write X-coordinates Register 0
+LCDREG_F_CURX1	equ 0x64		; Text Write X-coordinates Register 1
+LCDREG_F_CURY0	equ 0x65		; Text Write Y-coordinates Register 0
+LCDREG_F_CURY1	equ 0x66		; Text Write Y-coordinates Register 1
 LCDREG_DCR0	equ 0x67		; Draw Line/Triangle Control Register 0
 LCDREG_DLHSR0	equ 0x68		; Draw Line/Square/Triangle Point 1 X-coordinates 0
 LCDREG_DLHSR1	equ 0x69		; Draw Line/Square/Triangle Point 1 X-coordinates 1
@@ -86,9 +122,17 @@ LCDREG_DEHR1	equ 0x7C		; Draw Circle/Ellipse/Circle Square Center X-coords 1
 LCDREG_DEVR0	equ 0x7D		; Draw Circle/Ellipse/Circle Square Center Y-coords 0
 LCDREG_DEVR1	equ 0x7E		; Draw Circle/Ellipse/Circle Square Center Y-coords 1
 
+LCDREG_CCR0	equ 0xCC		; Character Control Register 0
+LCDREG_CCR1	equ 0xCD		; Character Control Register 1
+
+LCDREG_FLDR	equ 0xD0		; Character Line Gap Setting Register
+LCDREG_F2FSSR	equ 0xD1		; Character to Character Space Setting Register
 LCDREG_FGCR	equ 0xD2		; Foreground Color Register - Red
 LCDREG_FGCG	equ 0xD3		; Foreground Color Register - Green
 LCDREG_FGCB	equ 0xD4		; Foreground Color Register - Blue
+LCDREG_BGCR	equ 0xD5		; Background Color Register - Red
+LCDREG_BGCG	equ 0xD6		; Background Color Register - Green
+LCDREG_BGCB	equ 0xD7		; Background Color Register - Blue
 
 LCDREG_SDRAR	equ 0xE0		; SDRAM Attribute Register
 LCDREG_SDRMD	equ 0xE1		; SDRAM mode register & extended mode register
@@ -96,10 +140,16 @@ LCDREG_SDR_REF_ITVL0 equ 0xE2		; SDRAM auto refresh interval
 LCDREG_SDR_REF_ITVL1 equ 0xE3		; SDRAM auto refresh interval
 LCDREG_SDRCR	equ 0xE4		; SDRAM Control Register
 
+; Write "val" to LCD register "regnum"
 M_lcdwrite	macro regnum, val
     ; destroys A
-    ld	    a, &regnum
-    out	    (PORT_LCDCMD), a
-    ld	    a, &val
-    out	    (PORT_LCDDAT), a
+    M_out   (PORT_LCDCMD), &regnum
+    M_out   (PORT_LCDDAT), &val
+    endm
+
+; Write 0 to LCD register "regnum"
+M_lcdwrite0	macro regnum
+    ; destroys A
+    M_out   (PORT_LCDCMD), &regnum
+    M_out0  (PORT_LCDDAT)
     endm

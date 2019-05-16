@@ -25,6 +25,75 @@
 #include "z84c40.inc"
 #include "ascii.inc"
 
+DCR0_DRAWLINE	equ LCDDCR0_DRWLIN | LCDDCR0_RUN
+DCR0_DRAWTRI	equ LCDDCR0_DRWTRI | LCDDCR0_RUN
+DCR0_FILLTRI	equ LCDDCR0_DRWTRI | LCDDCR0_FILL | LCDDCR0_RUN
+
+DCR1_DRAWRECT	equ LCDDCR1_DRWRCT | LCDDCR1_RUN
+DCR1_FILLRECT	equ LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN
+DCR1_DRAWELL	equ LCDDCR1_DRWELL | LCDDCR1_RUN
+DCR1_FILLELL	equ LCDDCR1_DRWELL | LCDDCR1_FILL | LCDDCR1_RUN
+DCR1_DRAWRR	equ LCDDCR1_DRWRR | LCDDCR1_RUN
+DCR1_FILLRR	equ LCDDCR1_DRWRR | LCDDCR1_FILL | LCDDCR1_RUN
+
+M_lcd_rand_line	macro
+    call    lcd_rand_line_coords
+    M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_triangle macro
+    call    lcd_rand_triangle_coords
+    M_lcdwrite LCDREG_DCR0, DCR0_DRAWTRI
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_triangle_fill macro
+    call    lcd_rand_triangle_coords
+    M_lcdwrite LCDREG_DCR0, DCR0_FILLTRI
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_rect macro
+    call    lcd_rand_line_coords
+    M_lcdwrite LCDREG_DCR1, DCR1_DRAWRECT
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_rect_fill macro
+    call    lcd_rand_line_coords
+    M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_ellipse macro
+    call    lcd_rand_ellipse_coords
+    M_lcdwrite LCDREG_DCR1, DCR1_DRAWELL
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_lcd_rand_ellipse_fill macro
+    call    lcd_rand_ellipse_coords
+    M_lcdwrite LCDREG_DCR1, DCR1_FILLELL
+    call    lcd_wait_idle	    ; wait for graphics operation to complete
+    endm
+
+M_sio_puts  macro str
+    ; Destroys A
+    push    hl
+    ld	    hl, &str
+    call    sio_puts
+    pop	    hl
+    endm
+
+M_sio_putc  macro ch
+    ; Destroys A
+    push    hl
+    ld	    l, &ch
+    call    sio_putc
+    pop	    hl
+    endm
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; our code will load immediately above the ROM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,30 +105,71 @@ init::
     ld	    bc, DATA_size
     call    bzero
     call    seg_init
-    ; run the test program
-    call    lcd_test
+    call    rand_init
+    call    lcd_init		    ; initialize LCD subsystem
+    call    lcd_test_text
+    ld	    b, 250
+    call    delay_ms
+    call    delay_ms
+    call    delay_ms
+    call    delay_ms
+    call    lcd_test_drawing
     ret
 
-; void lcd_test()
-; - exercise the LCD panel
+hello_message::
+    .text   "ZED-80 Personal Computer", NUL
+copyright_message::
+    .text   0xA9, "1976 HeadCode", NUL
+crlf::
+    .text   CR, LF, NUL
+
+; void lcd_test_drawing()
+; - exercise the LCD panel drawing primitives
 #local
-lcd_test::
-    push    hl
-    call    lcd_init
-    ld	    l, 250
+lcd_test_drawing::
 loop:
-    call    lcd_bl_on
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
-    call    lcd_bl_off
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_line
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_triangle
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_triangle_fill
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_rect
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_rect_fill
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_ellipse
+    call    lcd_rand_fgcolor	    ; randomize FG color
+    M_lcd_rand_ellipse_fill
     jr	    loop
+    ret
+#endlocal
+
+; void lcd_test_text()
+; - exercise the LCD panel text primitives
+#local
+lcd_test_text::
+    push    de
+    push    hl
+    M_lcdwrite0 LCDREG_CCR0
+    M_lcdwrite LCDREG_CCR1, 0x40
+    M_lcdwrite LCDREG_FLDR, 0	    ; vertical gap between lines, in pixels
+    M_lcdwrite LCDREG_F2FSSR, 0	    ; horizontal gap between characters, in pixels
+    ld	    de, 0xFFFF
+    ld	    hl, 0xFFFF
+    call    lcd_set_fgcolor	    ; set FG color to white
+    call    lcd_wait_idle	    ; must be idle before switching to text mode
+    M_lcdwrite LCDREG_ICR, 0x04	    ; set text mode
+    ld	    hl, hello_message
+    call    lcd_puts
+    ld	    de, 0
+    ld	    hl, 16
+    call    lcd_text_xy
+    ld	    hl, copyright_message
+    call    lcd_puts
     pop	    hl
+    pop	    de
     ret
 #endlocal
 
@@ -67,6 +177,7 @@ loop:
 ; - set up the LCD panel by programming the RA8876 registers
 #local
 lcd_init::
+    push    de
     push    hl
     in	    a, (PORT_LCDCMD)	    ; read status byte
     ld	    l, a
@@ -89,7 +200,7 @@ wait_reset:
     M_lcdwrite LCDREG_MPLLC2, 19
     M_lcdwrite LCDREG_SPLLC2, 19
     M_out   (PORT_LCDCMD), LCDREG_CCR
-    M_out   (PORT_LCDDAT), 0x00
+    M_out0  (PORT_LCDDAT)
     call    delay_1ms
     M_out   (PORT_LCDDAT), 0x80
     call    delay_1ms
@@ -101,7 +212,7 @@ wait_reset:
     M_lcdwrite LCDREG_SDRCR, 0x01
 wait_sdram:
     in	    a, (PORT_LCDCMD)
-    and	    0x04
+    and	    LCDSTAT_RAMRDY
     jr	    z, wait_sdram
     call delay_1ms
     ;	TFT_24bit();
@@ -112,7 +223,7 @@ wait_sdram:
     out	    (PORT_LCDDAT), a
     ;	RGB_8b_16bpp();
     ;	MemWrite_Left_Right_Top_Down();
-    M_lcdwrite LCDREG_MACR, 0x00
+    M_lcdwrite0 LCDREG_MACR
     ;	Graphic_Mode();
     ;	Memory_Select_SDRAM();   
     M_out   (PORT_LCDCMD), LCDREG_ICR
@@ -138,19 +249,19 @@ wait_sdram:
     out	    (PORT_LCDDAT), a
     ;	LCD_HorizontalWidth_VerticalHeight(1024,600);
     M_lcdwrite LCDREG_HDWR, 127
-    M_lcdwrite LCDREG_HDWFTR, 0
+    M_lcdwrite0 LCDREG_HDWFTR
     M_lcdwrite LCDREG_VDHR0, 0x57
     M_lcdwrite LCDREG_VDHR1, 0x02
     ;	LCD_Horizontal_Non_Display(160);		   //30
     M_lcdwrite LCDREG_HNDR, 19
-    M_lcdwrite LCDREG_HNDFTR, 0
+    M_lcdwrite0 LCDREG_HNDFTR
     ;	LCD_HSYNC_Start_Position(160);
     M_lcdwrite LCDREG_HSTR, 19
     ;	LCD_HSYNC_Pulse_Width(70);
     M_lcdwrite LCDREG_HPWR, 7
     ;	LCD_Vertical_Non_Display(23);		   //16
     M_lcdwrite LCDREG_VNDR0, 22
-    M_lcdwrite LCDREG_VNDR1, 0
+    M_lcdwrite0 LCDREG_VNDR1
     ;	LCD_VSYNC_Start_Position(12);
     M_lcdwrite LCDREG_VSTR, 11
     ;	LCD_VSYNC_Pulse_Width(10);
@@ -164,36 +275,36 @@ wait_sdram:
     out	    (PORT_LCDDAT), a
     ;	Main_Image_Start_Address(0);				
     ; The default is start address 0, so we don't really need to do this.
-    M_lcdwrite LCDREG_MISA0, 0
-    M_lcdwrite LCDREG_MISA1, 0
-    M_lcdwrite LCDREG_MISA2, 0
-    M_lcdwrite LCDREG_MISA3, 0
+    M_lcdwrite0 LCDREG_MISA0
+    M_lcdwrite0 LCDREG_MISA1
+    M_lcdwrite0 LCDREG_MISA2
+    M_lcdwrite0 LCDREG_MISA3
     ;	Main_Image_Width(1024);							
-    M_lcdwrite LCDREG_MIW0, 0
+    M_lcdwrite0 LCDREG_MIW0
     M_lcdwrite LCDREG_MIW1, 4
     ;	Main_Window_Start_XY(0,0);	
     ; The default is (0,0), so we don't really need to do this.
-    M_lcdwrite LCDREG_MWULX0, 0
-    M_lcdwrite LCDREG_MWULX1, 0
-    M_lcdwrite LCDREG_MWULY0, 0
-    M_lcdwrite LCDREG_MWULY1, 0
+    M_lcdwrite0 LCDREG_MWULX0
+    M_lcdwrite0 LCDREG_MWULX1
+    M_lcdwrite0 LCDREG_MWULY0
+    M_lcdwrite0 LCDREG_MWULY1
     ;	Canvas_Image_Start_address(0);
     ; The default is start address 0, so we don't really need to do this.
-    M_lcdwrite LCDREG_CVSSA0, 0
-    M_lcdwrite LCDREG_CVSSA1, 0
-    M_lcdwrite LCDREG_CVSSA2, 0
-    M_lcdwrite LCDREG_CVSSA3, 0
+    M_lcdwrite0 LCDREG_CVSSA0
+    M_lcdwrite0 LCDREG_CVSSA1
+    M_lcdwrite0 LCDREG_CVSSA2
+    M_lcdwrite0 LCDREG_CVSSA3
     ;	Canvas_image_width(1024);
-    M_lcdwrite LCDREG_CVS_IMWTH0, 0
+    M_lcdwrite0 LCDREG_CVS_IMWTH0
     M_lcdwrite LCDREG_CVS_IMWTH1, 4
     ;	Active_Window_XY(0,0);
     ; The default is (0,0), so we don't really need to do this.
-    M_lcdwrite LCDREG_AWUL_X0, 0
-    M_lcdwrite LCDREG_AWUL_X1, 0
-    M_lcdwrite LCDREG_AWUL_Y0, 0
-    M_lcdwrite LCDREG_AWUL_Y1, 0
+    M_lcdwrite0 LCDREG_AWUL_X0
+    M_lcdwrite0 LCDREG_AWUL_X1
+    M_lcdwrite0 LCDREG_AWUL_Y0
+    M_lcdwrite0 LCDREG_AWUL_Y1
     ;	Active_Window_WH(1024,600);
-    M_lcdwrite LCDREG_AW_WTH0, 0
+    M_lcdwrite0 LCDREG_AW_WTH0
     M_lcdwrite LCDREG_AW_WTH1, 4
     M_lcdwrite LCDREG_AW_HT0, 88
     M_lcdwrite LCDREG_AW_HT1, 2
@@ -211,7 +322,19 @@ wait_sdram:
     ; delay_ms(20);
     ld	    l, 20
     call    delay_ms
+    ; Clear the screen
+    ld	    de, 0
+    ld	    hl, 0
+    call    lcd_set_fgcolor	    ; set FG color to black
+    call    lcd_line_start_xy	    ; set start to 0,0
+    ld	    de, LCD_WIDTH-1
+    ld	    hl, LCD_HEIGHT-1
+    call    lcd_line_end_xy	    ; set end to maxX,maxY
+    M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT ; draw filled rectangle to clear screen
+    call    lcd_wait_idle
+    call    lcd_bl_on		    ; turn on backlight
     pop	    hl
+    pop	    de
     ret
 #endlocal
 
@@ -220,7 +343,7 @@ wait_sdram:
 lcd_bl_on::
     ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
     out	    (PORT_SIOACTL), a
-    ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+    ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS
     out	    (PORT_SIOACTL), a
     ret
 
@@ -229,13 +352,185 @@ lcd_bl_on::
 lcd_bl_off::
     ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
     out	    (PORT_SIOACTL), a
-    ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS
+    ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
     out	    (PORT_SIOACTL), a
     ret
 
 ; void lcd_set_fgcolor(uint8_t r, uint8_t g, uint8_t b)
+; - sets foreground drawing color to (r,g,b)
+; - "r" in D, "g" in E, "b" in H
 ; - R,G,B uses upper 5,6,5 bits of precision only (i.e. 16bpp color)
 lcd_set_fgcolor::
+    M_lcdwrite LCDREG_FGCR, d
+    M_lcdwrite LCDREG_FGCG, e
+    M_lcdwrite LCDREG_FGCB, h
+    ret
+
+; void lcd_rand_fgcolor()
+; - randomizes foreground drawing color
+lcd_rand_fgcolor::
+    push    hl
+    call    rand16
+    M_lcdwrite LCDREG_FGCR, h
+    M_lcdwrite LCDREG_FGCG, l
+    call    rand16
+    M_lcdwrite LCDREG_FGCB, h
+    pop	    hl
+    ret
+
+; void lcd_line_start_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_line_start_xy::
+    M_lcdwrite LCDREG_DLHSR0, e
+    M_lcdwrite LCDREG_DLHSR1, d
+    M_lcdwrite LCDREG_DLVSR0, l
+    M_lcdwrite LCDREG_DLVSR1, h
+    ret
+
+; void lcd_line_end_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_line_end_xy::
+    M_lcdwrite LCDREG_DLHER0, e
+    M_lcdwrite LCDREG_DLHER1, d
+    M_lcdwrite LCDREG_DLVER0, l
+    M_lcdwrite LCDREG_DLVER1, h
+    ret
+
+; void lcd_triangle_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+; - this sets the third point for a triangle (first two are the "line start" and "line end" points)
+lcd_triangle_xy::
+    M_lcdwrite LCDREG_DTPH0, e
+    M_lcdwrite LCDREG_DTPH1, d
+    M_lcdwrite LCDREG_DTPV0, l
+    M_lcdwrite LCDREG_DTPV1, h
+    ret
+
+; void lcd_text_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_text_xy::
+    M_lcdwrite LCDREG_F_CURX0, e
+    M_lcdwrite LCDREG_F_CURX1, d
+    M_lcdwrite LCDREG_F_CURY0, l
+    M_lcdwrite LCDREG_F_CURY1, h
+    ret
+
+; void lcd_ellipse_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_ellipse_xy::
+    M_lcdwrite LCDREG_DEHR0, e
+    M_lcdwrite LCDREG_DEHR1, d
+    M_lcdwrite LCDREG_DEVR0, l
+    M_lcdwrite LCDREG_DEVR1, h
+    ret
+
+; void lcd_ellipse_radii(uint16_t rx, uint16_t ry)
+; - "rx" in DE, "ry" in HL
+lcd_ellipse_radii::
+    M_lcdwrite LCDREG_ELL_A0, e
+    M_lcdwrite LCDREG_ELL_A1, d
+    M_lcdwrite LCDREG_ELL_B0, l
+    M_lcdwrite LCDREG_ELL_B1, h
+    ret
+
+; void lcd_puts(uint8_t *text)
+; - write the NUL-terminated string at "text" to LCD
+#local
+lcd_puts::
+    push    hl
+    push    bc
+    M_out   (PORT_LCDCMD), LCDREG_MRWDP
+next_byte:
+    ld	    a, (hl)
+    inc	    hl
+    or	    a		; fast test a==0
+    jr	    z, done
+    ld	    b, a
+wait_fifo_room:
+    ; wait until memory FIFO is non-full
+    in	    a, (PORT_LCDCMD)
+    and	    LCDSTAT_WRFULL
+    jr	    nz, wait_fifo_room
+    ; write output character
+    ld	    a, b
+    out	    (PORT_LCDDAT), a	; send byte to LCD panel
+    jr	    next_byte
+done:
+    call    lcd_wait_idle
+    pop	    bc
+    pop	    hl
+    ret
+#endlocal
+
+; void lcd_wait_idle()
+; - waits until geometry engine, BTE, text/graphic write complete
+lcd_wait_idle::
+    in	    a, (PORT_LCDCMD)
+    and	    LCDSTAT_BUSY
+    jr	    nz, lcd_wait_idle
+    ret
+
+; void lcd_rand_line_coords()
+; - set up random coordinates for line start & line end
+#local
+lcd_rand_line_coords::
+    push    bc
+    push    de
+    push    hl
+do_line_coords:
+    ld	    bc, LCD_WIDTH
+    call    rand16_modn
+    ex	    de, hl
+    ld	    bc, LCD_HEIGHT
+    call    rand16_modn
+    call    lcd_line_start_xy	    ; random start X,Y
+    ld	    bc, LCD_WIDTH
+    call    rand16_modn
+    ex	    de, hl
+    ld	    bc, LCD_HEIGHT
+    call    rand16_modn
+    call    lcd_line_end_xy	    ; random end X,Y
+    pop	    hl
+    pop	    de
+    pop	    bc
+    ret
+
+; void lcd_rand_triangle_coords()
+; - set up random coordinates for the three triangle vertices
+lcd_rand_triangle_coords::
+    push    bc
+    push    de
+    push    hl
+    ld	    bc, LCD_WIDTH
+    call    rand16_modn
+    ex	    de, hl
+    ld	    bc, LCD_HEIGHT
+    call    rand16_modn
+    call    lcd_triangle_xy	    ; random triangle 3rd vertex X,Y
+    jr	    do_line_coords	    ; random triangle 1st & 2nd vertices
+#endlocal
+
+; void lcd_rand_ellipse_coords()
+; - set up random coordinates and size for ellipse/circle
+lcd_rand_ellipse_coords::
+    push    bc
+    push    de
+    push    hl
+    ld	    bc, LCD_WIDTH
+    call    rand16_modn
+    ex	    de, hl
+    ld	    bc, LCD_HEIGHT
+    call    rand16_modn
+    call    lcd_ellipse_xy	    ; random center X,Y
+    ld	    bc, LCD_WIDTH/2
+    call    rand16_modn
+    ex	    de, hl
+    ld	    bc, LCD_HEIGHT/2
+    call    rand16_modn
+    call    lcd_ellipse_radii	    ; random radii
+    pop	    hl
+    pop	    de
+    pop	    bc
     ret
 
 ; void bzero(uint8_t *ptr, uint16_t len)
@@ -260,6 +555,210 @@ done:
     pop	    de
     ret
 #endlocal
+
+rand_init::
+    push    hl
+    ld	    hl, 0x2019
+    ld	    (Rand16_seed1), hl
+    ld	    hl, 0xA05F
+    ld	    (Rand16_seed2), hl
+    pop	    hl
+    ret
+
+; uint16_t rand16()
+; Inputs:
+;   (Rand16_seed1) contains a 16-bit seed value
+;   (Rand16_seed2) contains a NON-ZERO 16-bit seed value
+; Outputs:
+;   HL is the result
+;   BC, DE is preserved
+; Destroys:
+;   AF
+; cycle: 4,294,901,760 (almost 4.3 billion)
+; 160cc
+; 26 bytes
+rand16:
+    push bc
+    ld hl,(Rand16_seed1)
+    ld b,h
+    ld c,l
+    add hl,hl
+    add hl,hl
+    inc l
+    add hl,bc
+    ld (Rand16_seed1),hl
+    ld hl,(Rand16_seed2)
+    add hl,hl
+    sbc a,a
+    and %00101101
+    xor l
+    ld l,a
+    ld (Rand16_seed2),hl
+    add hl,bc
+    pop bc
+    ret
+
+; uint16_t rand16_modn(uint16_t n)
+; - pass "n" in BC
+; - returns a 16-bit pseudo-random number on the interval [0, n) in HL
+rand16_modn::
+    push    de
+    ld	    d, b
+    ld	    e, c	; DE = BC
+    call    rand16	; HL = rand16()
+    ld	    a, h
+    ld	    c, l	; AC = HL
+    call    div_ac_de	; (AC, HL) = divmod16(AC, DE)
+    pop	    de		; we don't want the quotient, only the remainder in HL
+    ret
+
+; (uint16_t, uint16_t) divmod16(uint16_t n, uint16_t d)
+; - divides "n" by "d", returning n / d and n % d
+; - pass "n" in DE, "d" in BC
+; - returns quotient (n/d) in DE, remainder (n%d) in HL
+#local
+divmod16_me::
+    ld	    a, 16	; max 16 iterations
+    ld	    hl, 0
+    jr	    start
+loop:
+    add	    hl, bc	; HL += "d"
+loop2:
+    dec	    a		; decrement loop counter
+    ret	    z		; return if done
+start:
+    sla	    e
+    rl	    d		; shift DE left 1, high bit to carry flag
+    adc	    hl, hl	; HL = (HL << 1) + carry, with carry flag receiving shifted-out bit
+    sbc	    hl, bc	; HL = HL - "d" - carry
+    jr	    nc, loop	; jump if carry == 0
+    inc	    e		; set low bit of DE
+    jr	    loop2
+#endlocal
+
+#local
+divmod16_z80heaven::
+     ld a,16        ;7
+     ld hl,0        ;10
+     jp $+5         ;10
+DivLoop:
+       add hl,bc    ;--
+       dec a        ;64
+       ret z        ;86
+
+       sla e        ;128
+       rl d         ;128
+       adc hl,hl    ;240
+       sbc hl,bc    ;240
+       jr nc,DivLoop ;23|21
+       inc e        ;--
+       jp DivLoop+1
+#endlocal
+
+; The following routine divides AC by DE and places the quotient in AC and the remainder in HL.
+#local
+div_ac_de::
+    ld	    hl, 0
+    ld	    b, 16
+
+loop:
+    sll	    c
+    rla
+    adc	    hl, hl
+    sbc	    hl, de
+    jr	    nc, $+4
+    add	    hl, de
+    dec	    c
+    
+    djnz    loop
+    
+    ret
+#endlocal
+
+; uint8_t bin2hex(uint8_t val)
+; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
+#local
+bin2hex::
+    ld	    a, l
+    and	    0xF
+    cp	    0xA
+    jr	    c, decimal
+    add	    'A'-10
+    ld	    l, a
+    ret
+decimal:
+    add	    '0'
+    ld	    l, a
+    ret
+#endlocal
+
+; void sio_putc(uint8_t ch)
+; - write the specified character "ch" to port A
+#local
+sio_putc::
+waitTX:
+    ; wait until transmitter is idle
+    in	    a, (PORT_SIOACTL)
+    bit	    SIORR0_IDX_TBE, a
+    jr	    z, waitTX
+    ; write output character
+    ld	    a, l
+    out	    (PORT_SIOADAT), a	; send byte out serial port
+    ret
+#endlocal
+
+; void sio_puts(uint8_t *text)
+; - write the NUL-terminated string at "text" to port A
+#local
+sio_puts::
+    push    hl
+    push    bc
+nextByte:
+    ld	    a, (hl)
+    inc	    hl
+    or	    a		; fast test a==0
+    jr	    z, done
+    ld	    b, a
+waitTX:
+    ; wait until transmitter is idle
+    in	    a, (PORT_SIOACTL)
+    bit	    SIORR0_IDX_TBE, a
+    jr	    z, waitTX
+    ; write output character
+    ld	    a, b
+    out	    (PORT_SIOADAT), a	; send byte out serial port
+    jr	    nextByte
+done:
+    pop	    bc
+    pop	    hl
+    ret
+#endlocal
+
+; void sio_puthex8(uint8_t val)
+; - writes the specified 8-bit value "val" as a pair of hex digits to port A
+sio_puthex8::
+    push    hl
+    ld	    h, l
+    srl	    l
+    srl	    l
+    srl	    l
+    srl	    l
+    call    bin2hex
+    call    sio_putc
+    ld	    l, h
+    call    bin2hex
+    call    sio_putc
+    pop	    hl
+    ret
+
+; void sio_puthex16(uint16_t val)
+; - writes the specified 16-bit value "val" as a quad of hex digits to port A
+sio_puthex16::
+    push    hl
+    ld	    l, h
+    call    sio_puthex8
+    pop	    hl
+    jr	    sio_puthex8
 
 ; void seg_init()
 seg_init::
@@ -418,3 +917,5 @@ loop:
 ; define static variables here
 Seg0_data:: defs 1	; current value of first 7-segment display byte
 Seg1_data:: defs 1	; current value of second 7-segment display byte
+Rand16_seed1:: defs 2	; seed value for rand16() routine
+Rand16_seed2:: defs 2	; seed value for rand16() routine

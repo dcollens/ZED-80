@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "lcd_test.asm"
-                        ; date: 2019-04-30 15:36:21
+                        ; date: 2019-05-15 22:51:17
                         ; --------------------------------------
 
 
@@ -39,10 +39,48 @@
                             ld	    a, &val
                             out	    &port, a
                             endm
+                        
+                        M_out0		macro port
+                            ; destroys A
+                            xor	    a
+                            out	    &port, a
+                            endm
                         #include "lcd.inc"
 0050:                   PORT_LCDBASE	equ 0x50		; base port address for RA8876 chip
 0050:                   PORT_LCDCMD	equ PORT_LCDBASE	; port address for RA8876 command/status register
 0051:                   PORT_LCDDAT	equ PORT_LCDBASE + 1	; port address for RA8876 data register
+                        
+                        ; Panel geometry
+0400:                   LCD_WIDTH	equ 1024
+0258:                   LCD_HEIGHT	equ 600
+                        
+                        ; Status register values
+0001:                   LCDSTAT_INTR	equ 0x01		; Interrupt pin state (active high)
+0002:                   LCDSTAT_MODE	equ 0x02		; Operation mode status (normal=low)
+0004:                   LCDSTAT_RAMRDY	equ 0x04		; SDRAM ready for access (active high)
+0008:                   LCDSTAT_BUSY	equ 0x08		; Core task is busy (active high)
+0010:                   LCDSTAT_RDEMPTY	equ 0x10		; Host Memory Read FIFO empty (active high)
+0020:                   LCDSTAT_RDFULL	equ 0x20		; Host Memory Read FIFO full (active high)
+0040:                   LCDSTAT_WREMPTY	equ 0x40		; Host Memory Write FIFO empty (active high)
+0080:                   LCDSTAT_WRFULL	equ 0x80		; Host Memory Write FIFO full (active high)
+                        
+                        ; DCR0 (register $67) register values
+0000:                   LCDDCR0_DRWLIN	equ 0x00		; Draw line
+0002:                   LCDDCR0_DRWTRI	equ 0x02		; Draw triangle
+0020:                   LCDDCR0_FILL	equ 0x20		; Fill (0 = outline, 1 = fill)
+0080:                   LCDDCR0_RUN	equ 0x80		; Start drawing / drawing in progress
+                        
+                        ; DCR1 (register $76) register values
+0000:                   LCDDCR1_QUADBL	equ 0x00		; Ellipse curve, bottom-left quadrant
+0001:                   LCDDCR1_QUADTL	equ 0x01		; Ellipse curve, top-left quadrant
+0002:                   LCDDCR1_QUADTR	equ 0x02		; Ellipse curve, top-right quadrant
+0003:                   LCDDCR1_QUADBR	equ 0x03		; Ellipse curve, bottom-right quadrant
+0000:                   LCDDCR1_DRWELL	equ 0x00		; Draw circle/ellipse
+0010:                   LCDDCR1_DRWCUR	equ 0x10		; Draw circle/ellipse curve (one quadrant)
+0020:                   LCDDCR1_DRWRCT	equ 0x20		; Draw rectangle
+0030:                   LCDDCR1_DRWRR	equ 0x30		; Draw round-rectangle
+0040:                   LCDDCR1_FILL	equ 0x40		; Fill (0 = outline, 1 = fill)
+0080:                   LCDDCR1_RUN	equ 0x80		; Start drawing / drawing in progress
                         
                         ; Register numbers within the RA8876 chip
 0000:                   LCDREG_SRR	equ 0x00		; Software Reset Register
@@ -104,6 +142,10 @@
 005D:                   LCDREG_AW_HT1	equ 0x5D		; Active Window Height 1
 005E:                   LCDREG_AW_COLOR equ 0x5E		; Color Depth of Canvas & Active Window
                         
+0063:                   LCDREG_F_CURX0	equ 0x63		; Text Write X-coordinates Register 0
+0064:                   LCDREG_F_CURX1	equ 0x64		; Text Write X-coordinates Register 1
+0065:                   LCDREG_F_CURY0	equ 0x65		; Text Write Y-coordinates Register 0
+0066:                   LCDREG_F_CURY1	equ 0x66		; Text Write Y-coordinates Register 1
 0067:                   LCDREG_DCR0	equ 0x67		; Draw Line/Triangle Control Register 0
 0068:                   LCDREG_DLHSR0	equ 0x68		; Draw Line/Square/Triangle Point 1 X-coordinates 0
 0069:                   LCDREG_DLHSR1	equ 0x69		; Draw Line/Square/Triangle Point 1 X-coordinates 1
@@ -128,9 +170,17 @@
 007D:                   LCDREG_DEVR0	equ 0x7D		; Draw Circle/Ellipse/Circle Square Center Y-coords 0
 007E:                   LCDREG_DEVR1	equ 0x7E		; Draw Circle/Ellipse/Circle Square Center Y-coords 1
                         
+00CC:                   LCDREG_CCR0	equ 0xCC		; Character Control Register 0
+00CD:                   LCDREG_CCR1	equ 0xCD		; Character Control Register 1
+                        
+00D0:                   LCDREG_FLDR	equ 0xD0		; Character Line Gap Setting Register
+00D1:                   LCDREG_F2FSSR	equ 0xD1		; Character to Character Space Setting Register
 00D2:                   LCDREG_FGCR	equ 0xD2		; Foreground Color Register - Red
 00D3:                   LCDREG_FGCG	equ 0xD3		; Foreground Color Register - Green
 00D4:                   LCDREG_FGCB	equ 0xD4		; Foreground Color Register - Blue
+00D5:                   LCDREG_BGCR	equ 0xD5		; Background Color Register - Red
+00D6:                   LCDREG_BGCG	equ 0xD6		; Background Color Register - Green
+00D7:                   LCDREG_BGCB	equ 0xD7		; Background Color Register - Blue
                         
 00E0:                   LCDREG_SDRAR	equ 0xE0		; SDRAM Attribute Register
 00E1:                   LCDREG_SDRMD	equ 0xE1		; SDRAM mode register & extended mode register
@@ -138,12 +188,18 @@
 00E3:                   LCDREG_SDR_REF_ITVL1 equ 0xE3		; SDRAM auto refresh interval
 00E4:                   LCDREG_SDRCR	equ 0xE4		; SDRAM Control Register
                         
+                        ; Write "val" to LCD register "regnum"
                         M_lcdwrite	macro regnum, val
                             ; destroys A
-                            ld	    a, &regnum
-                            out	    (PORT_LCDCMD), a
-                            ld	    a, &val
-                            out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), &regnum
+                            M_out   (PORT_LCDDAT), &val
+                            endm
+                        
+                        ; Write 0 to LCD register "regnum"
+                        M_lcdwrite0	macro regnum
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), &regnum
+                            M_out0  (PORT_LCDDAT)
                             endm
                         #include "7segdisp.inc"
 0000:                   PORT_SEG0	equ 0x00	    ; port address for first 7-segment display element
@@ -411,6 +467,75 @@
 0015:                   NAK	equ 0x15
 001B:                   ESC	equ 0x1B
                         
+0080:                   DCR0_DRAWLINE	equ LCDDCR0_DRWLIN | LCDDCR0_RUN
+0082:                   DCR0_DRAWTRI	equ LCDDCR0_DRWTRI | LCDDCR0_RUN
+00A2:                   DCR0_FILLTRI	equ LCDDCR0_DRWTRI | LCDDCR0_FILL | LCDDCR0_RUN
+                        
+00A0:                   DCR1_DRAWRECT	equ LCDDCR1_DRWRCT | LCDDCR1_RUN
+00E0:                   DCR1_FILLRECT	equ LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN
+0080:                   DCR1_DRAWELL	equ LCDDCR1_DRWELL | LCDDCR1_RUN
+00C0:                   DCR1_FILLELL	equ LCDDCR1_DRWELL | LCDDCR1_FILL | LCDDCR1_RUN
+00B0:                   DCR1_DRAWRR	equ LCDDCR1_DRWRR | LCDDCR1_RUN
+00F0:                   DCR1_FILLRR	equ LCDDCR1_DRWRR | LCDDCR1_FILL | LCDDCR1_RUN
+                        
+                        M_lcd_rand_line	macro
+                            call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_triangle macro
+                            call    lcd_rand_triangle_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_DRAWTRI
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_triangle_fill macro
+                            call    lcd_rand_triangle_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_FILLTRI
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_rect macro
+                            call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_DRAWRECT
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_rect_fill macro
+                            call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_ellipse macro
+                            call    lcd_rand_ellipse_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_DRAWELL
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_lcd_rand_ellipse_fill macro
+                            call    lcd_rand_ellipse_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_FILLELL
+                            call    lcd_wait_idle	    ; wait for graphics operation to complete
+                            endm
+                        
+                        M_sio_puts  macro str
+                            ; Destroys A
+                            push    hl
+                            ld	    hl, &str
+                            call    sio_puts
+                            pop	    hl
+                            endm
+                        
+                        M_sio_putc  macro ch
+                            ; Destroys A
+                            push    hl
+                            ld	    l, &ch
+                            call    sio_putc
+                            pop	    hl
+                            endm
+                        
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                         ; our code will load immediately above the ROM
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -418,650 +543,1701 @@
                         
 4000:                   init::
                             ; zero the DATA segment
-4000: 21DD42   [10]         ld	    hl, DATA
-4003: 010200   [20]         ld	    bc, DATA_size
-4006: CD4D42   [37]         call    bzero
-4009: CD6042   [54]         call    seg_init
-                            ; run the test program
-400C: CD1040   [71]         call    lcd_test
-400F: C9       [81]         ret
+4000: 21FF45   [10]         ld	    hl, DATA
+4003: 010600   [20]         ld	    bc, DATA_size
+4006: CDA444   [37]         call    bzero
+4009: CD8245   [54]         call    seg_init
+400C: CDB744   [71]         call    rand_init
+400F: CD1941   [88]         call    lcd_init		    ; initialize LCD subsystem
+4012: CDCC40   [105]        call    lcd_test_text
+4015: 06FA     [112]        ld	    b, 250
+4017: CDE545   [129]        call    delay_ms
+401A: CDE545   [146]        call    delay_ms
+401D: CDE545   [163]        call    delay_ms
+4020: CDE545   [180]        call    delay_ms
+4023: CD5240   [197]        call    lcd_test_drawing
+4026: C9       [207]        ret
                         
-                        ; void lcd_test()
-                        ; - exercise the LCD panel
+4027:                   hello_message::
+4027: 5A45442D              .text   "ZED-80 Personal Computer", NUL
+402B: 38302050          
+402F: 6572736F          
+4033: 6E616C20          
+4037: 436F6D70          
+403B: 75746572          
+403F: 00                
+4040:                   copyright_message::
+4040: A9313937              .text   0xA9, "1976 HeadCode", NUL
+4044: 36204865          
+4048: 6164436F          
+404C: 646500            
+404F:                   crlf::
+404F: 0D0A00                .text   CR, LF, NUL
+                        
+                        ; void lcd_test_drawing()
+                        ; - exercise the LCD panel drawing primitives
                         #local
-4010:                   lcd_test::
-4010: E5       [11]         push    hl
-4011: CD3840   [28]         call    lcd_init
-4014: 2EFA     [35]         ld	    l, 250
-4016:                   loop:
-4016: CD3B42   [17]         call    lcd_bl_on
-4019: CDC342   [34]         call    delay_ms
-401C: CDC342   [51]         call    delay_ms
-401F: CDC342   [68]         call    delay_ms
-4022: CDC342   [85]         call    delay_ms
-4025: CD4442   [102]        call    lcd_bl_off
-4028: CDC342   [119]        call    delay_ms
-402B: CDC342   [136]        call    delay_ms
-402E: CDC342   [153]        call    delay_ms
-4031: CDC342   [170]        call    delay_ms
-4034: 18E0     [182]        jr	    loop
-4036: E1       [192]        pop	    hl
-4037: C9       [202]        ret
+4052:                   lcd_test_drawing::
+4052:                   loop:
+4052: CD5143   [17]         call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_line
+4055: CD4144   [34]         call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR0
+                            ; destroys A
+4058: 3E67     [41]         ld	    a, LCDREG_DCR0
+405A: D350     [52]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR0_DRAWLINE
+                            ; destroys A
+405C: 3E80     [59]         ld	    a, DCR0_DRAWLINE
+405E: D351     [70]         out	    (PORT_LCDDAT), a
+4060: CD3A44   [87]         call    lcd_wait_idle	    ; wait for graphics operation to complete
+4063: CD5143   [104]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_triangle
+4066: CD6844   [121]        call    lcd_rand_triangle_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_DRAWTRI
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR0
+                            ; destroys A
+4069: 3E67     [128]        ld	    a, LCDREG_DCR0
+406B: D350     [139]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR0_DRAWTRI
+                            ; destroys A
+406D: 3E82     [146]        ld	    a, DCR0_DRAWTRI
+406F: D351     [157]        out	    (PORT_LCDDAT), a
+4071: CD3A44   [174]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+4074: CD5143   [191]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_triangle_fill
+4077: CD6844   [208]        call    lcd_rand_triangle_coords
+                            M_lcdwrite LCDREG_DCR0, DCR0_FILLTRI
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR0
+                            ; destroys A
+407A: 3E67     [215]        ld	    a, LCDREG_DCR0
+407C: D350     [226]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR0_FILLTRI
+                            ; destroys A
+407E: 3EA2     [233]        ld	    a, DCR0_FILLTRI
+4080: D351     [244]        out	    (PORT_LCDDAT), a
+4082: CD3A44   [261]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+4085: CD5143   [278]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_rect
+4088: CD4144   [295]        call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_DRAWRECT
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR1
+                            ; destroys A
+408B: 3E76     [302]        ld	    a, LCDREG_DCR1
+408D: D350     [313]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR1_DRAWRECT
+                            ; destroys A
+408F: 3EA0     [320]        ld	    a, DCR1_DRAWRECT
+4091: D351     [331]        out	    (PORT_LCDDAT), a
+4093: CD3A44   [348]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+4096: CD5143   [365]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_rect_fill
+4099: CD4144   [382]        call    lcd_rand_line_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR1
+                            ; destroys A
+409C: 3E76     [389]        ld	    a, LCDREG_DCR1
+409E: D350     [400]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR1_FILLRECT
+                            ; destroys A
+40A0: 3EE0     [407]        ld	    a, DCR1_FILLRECT
+40A2: D351     [418]        out	    (PORT_LCDDAT), a
+40A4: CD3A44   [435]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+40A7: CD5143   [452]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_ellipse
+40AA: CD7D44   [469]        call    lcd_rand_ellipse_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_DRAWELL
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR1
+                            ; destroys A
+40AD: 3E76     [476]        ld	    a, LCDREG_DCR1
+40AF: D350     [487]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR1_DRAWELL
+                            ; destroys A
+40B1: 3E80     [494]        ld	    a, DCR1_DRAWELL
+40B3: D351     [505]        out	    (PORT_LCDDAT), a
+40B5: CD3A44   [522]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+40B8: CD5143   [539]        call    lcd_rand_fgcolor	    ; randomize FG color
+                            M_lcd_rand_ellipse_fill
+40BB: CD7D44   [556]        call    lcd_rand_ellipse_coords
+                            M_lcdwrite LCDREG_DCR1, DCR1_FILLELL
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR1
+                            ; destroys A
+40BE: 3E76     [563]        ld	    a, LCDREG_DCR1
+40C0: D350     [574]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR1_FILLELL
+                            ; destroys A
+40C2: 3EC0     [581]        ld	    a, DCR1_FILLELL
+40C4: D351     [592]        out	    (PORT_LCDDAT), a
+40C6: CD3A44   [609]        call    lcd_wait_idle	    ; wait for graphics operation to complete
+40C9: 1887     [621]        jr	    loop
+40CB: C9       [631]        ret
+                        #endlocal
+                        
+                        ; void lcd_test_text()
+                        ; - exercise the LCD panel text primitives
+                        #local
+40CC:                   lcd_test_text::
+40CC: D5       [11]         push    de
+40CD: E5       [22]         push    hl
+                            M_lcdwrite0 LCDREG_CCR0
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_CCR0
+                            ; destroys A
+40CE: 3ECC     [29]         ld	    a, LCDREG_CCR0
+40D0: D350     [40]         out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+40D2: AF       [44]         xor	    a
+40D3: D351     [55]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_CCR1, 0x40
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_CCR1
+                            ; destroys A
+40D5: 3ECD     [62]         ld	    a, LCDREG_CCR1
+40D7: D350     [73]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x40
+                            ; destroys A
+40D9: 3E40     [80]         ld	    a, 0x40
+40DB: D351     [91]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_FLDR, 0	    ; vertical gap between lines, in pixels
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FLDR
+                            ; destroys A
+40DD: 3ED0     [98]         ld	    a, LCDREG_FLDR
+40DF: D350     [109]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0
+                            ; destroys A
+40E1: 3E00     [116]        ld	    a, 0
+40E3: D351     [127]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_F2FSSR, 0	    ; horizontal gap between characters, in pixels
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_F2FSSR
+                            ; destroys A
+40E5: 3ED1     [134]        ld	    a, LCDREG_F2FSSR
+40E7: D350     [145]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0
+                            ; destroys A
+40E9: 3E00     [152]        ld	    a, 0
+40EB: D351     [163]        out	    (PORT_LCDDAT), a
+40ED: 11FFFF   [173]        ld	    de, 0xFFFF
+40F0: 21FFFF   [183]        ld	    hl, 0xFFFF
+40F3: CD3B43   [200]        call    lcd_set_fgcolor	    ; set FG color to white
+40F6: CD3A44   [217]        call    lcd_wait_idle	    ; must be idle before switching to text mode
+                            M_lcdwrite LCDREG_ICR, 0x04	    ; set text mode
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_ICR
+                            ; destroys A
+40F9: 3E03     [224]        ld	    a, LCDREG_ICR
+40FB: D350     [235]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x04
+                            ; destroys A
+40FD: 3E04     [242]        ld	    a, 0x04
+40FF: D351     [253]        out	    (PORT_LCDDAT), a
+4101: 212740   [263]        ld	    hl, hello_message
+4104: CD1D44   [280]        call    lcd_puts
+4107: 110000   [290]        ld	    de, 0
+410A: 211000   [300]        ld	    hl, 16
+410D: CDC643   [317]        call    lcd_text_xy
+4110: 214040   [327]        ld	    hl, copyright_message
+4113: CD1D44   [344]        call    lcd_puts
+4116: E1       [354]        pop	    hl
+4117: D1       [364]        pop	    de
+4118: C9       [374]        ret
                         #endlocal
                         
                         ; void lcd_init()
                         ; - set up the LCD panel by programming the RA8876 registers
                         #local
-4038:                   lcd_init::
-4038: E5       [11]         push    hl
-4039: DB50     [22]         in	    a, (PORT_LCDCMD)	    ; read status byte
-403B: 6F       [26]         ld	    l, a
-403C: CD6842   [43]         call    seg_writehex
+4119:                   lcd_init::
+4119: D5       [11]         push    de
+411A: E5       [22]         push    hl
+411B: DB50     [33]         in	    a, (PORT_LCDCMD)	    ; read status byte
+411D: 6F       [37]         ld	    l, a
+411E: CD8A45   [54]         call    seg_writehex
                             ; RA8876_initial()
                             ;	RA8876_SW_Reset();
                             M_out   (PORT_LCDCMD), LCDREG_SRR
                             ; destroys A
-403F: 3E00     [50]         ld	    a, LCDREG_SRR
-4041: D350     [61]         out	    (PORT_LCDCMD), a
-4043: DB51     [72]         in	    a, (PORT_LCDDAT)
-4045: F601     [79]         or	    0x01
-4047: D351     [90]         out	    (PORT_LCDDAT), a
-4049:                   wait_reset:
-4049: DB51     [11]         in	    a, (PORT_LCDDAT)
-404B: E601     [18]         and	    0x01
-404D: 20FA     [25|30]      jr	    nz, wait_reset
+4121: 3E00     [61]         ld	    a, LCDREG_SRR
+4123: D350     [72]         out	    (PORT_LCDCMD), a
+4125: DB51     [83]         in	    a, (PORT_LCDDAT)
+4127: F601     [90]         or	    0x01
+4129: D351     [101]        out	    (PORT_LCDDAT), a
+412B:                   wait_reset:
+412B: DB51     [11]         in	    a, (PORT_LCDDAT)
+412D: E601     [18]         and	    0x01
+412F: 20FA     [25|30]      jr	    nz, wait_reset
                             ;	RA8876_PLL_Initial(); 
                             M_lcdwrite LCDREG_PPLLC1, 2
                             ; destroys A
-404F: 3E05     [32]         ld	    a, LCDREG_PPLLC1
-4051: D350     [43]         out	    (PORT_LCDCMD), a
-4053: 3E02     [50]         ld	    a, 2
-4055: D351     [61]         out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_PPLLC1
+                            ; destroys A
+4131: 3E05     [32]         ld	    a, LCDREG_PPLLC1
+4133: D350     [43]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 2
+                            ; destroys A
+4135: 3E02     [50]         ld	    a, 2
+4137: D351     [61]         out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_MPLLC1, 2
                             ; destroys A
-4057: 3E07     [68]         ld	    a, LCDREG_MPLLC1
-4059: D350     [79]         out	    (PORT_LCDCMD), a
-405B: 3E02     [86]         ld	    a, 2
-405D: D351     [97]         out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MPLLC1
+                            ; destroys A
+4139: 3E07     [68]         ld	    a, LCDREG_MPLLC1
+413B: D350     [79]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 2
+                            ; destroys A
+413D: 3E02     [86]         ld	    a, 2
+413F: D351     [97]         out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SPLLC1, 2
                             ; destroys A
-405F: 3E09     [104]        ld	    a, LCDREG_SPLLC1
-4061: D350     [115]        out	    (PORT_LCDCMD), a
-4063: 3E02     [122]        ld	    a, 2
-4065: D351     [133]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SPLLC1
+                            ; destroys A
+4141: 3E09     [104]        ld	    a, LCDREG_SPLLC1
+4143: D350     [115]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 2
+                            ; destroys A
+4145: 3E02     [122]        ld	    a, 2
+4147: D351     [133]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_PPLLC2, 7
                             ; destroys A
-4067: 3E06     [140]        ld	    a, LCDREG_PPLLC2
-4069: D350     [151]        out	    (PORT_LCDCMD), a
-406B: 3E07     [158]        ld	    a, 7
-406D: D351     [169]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_PPLLC2
+                            ; destroys A
+4149: 3E06     [140]        ld	    a, LCDREG_PPLLC2
+414B: D350     [151]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 7
+                            ; destroys A
+414D: 3E07     [158]        ld	    a, 7
+414F: D351     [169]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_MPLLC2, 19
                             ; destroys A
-406F: 3E08     [176]        ld	    a, LCDREG_MPLLC2
-4071: D350     [187]        out	    (PORT_LCDCMD), a
-4073: 3E13     [194]        ld	    a, 19
-4075: D351     [205]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MPLLC2
+                            ; destroys A
+4151: 3E08     [176]        ld	    a, LCDREG_MPLLC2
+4153: D350     [187]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 19
+                            ; destroys A
+4155: 3E13     [194]        ld	    a, 19
+4157: D351     [205]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SPLLC2, 19
                             ; destroys A
-4077: 3E0A     [212]        ld	    a, LCDREG_SPLLC2
-4079: D350     [223]        out	    (PORT_LCDCMD), a
-407B: 3E13     [230]        ld	    a, 19
-407D: D351     [241]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SPLLC2
+                            ; destroys A
+4159: 3E0A     [212]        ld	    a, LCDREG_SPLLC2
+415B: D350     [223]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 19
+                            ; destroys A
+415D: 3E13     [230]        ld	    a, 19
+415F: D351     [241]        out	    (PORT_LCDDAT), a
                             M_out   (PORT_LCDCMD), LCDREG_CCR
                             ; destroys A
-407F: 3E01     [248]        ld	    a, LCDREG_CCR
-4081: D350     [259]        out	    (PORT_LCDCMD), a
-                            M_out   (PORT_LCDDAT), 0x00
+4161: 3E01     [248]        ld	    a, LCDREG_CCR
+4163: D350     [259]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
                             ; destroys A
-4083: 3E00     [266]        ld	    a, 0x00
-4085: D351     [277]        out	    (PORT_LCDDAT), a
-4087: CDCF42   [294]        call    delay_1ms
+4165: AF       [263]        xor	    a
+4166: D351     [274]        out	    (PORT_LCDDAT), a
+4168: CDF145   [291]        call    delay_1ms
                             M_out   (PORT_LCDDAT), 0x80
                             ; destroys A
-408A: 3E80     [301]        ld	    a, 0x80
-408C: D351     [312]        out	    (PORT_LCDDAT), a
-408E: CDCF42   [329]        call    delay_1ms
+416B: 3E80     [298]        ld	    a, 0x80
+416D: D351     [309]        out	    (PORT_LCDDAT), a
+416F: CDF145   [326]        call    delay_1ms
                             ;	RA8876_SDRAM_initail();
                             M_lcdwrite LCDREG_SDRAR, 0x29
                             ; destroys A
-4091: 3EE0     [336]        ld	    a, LCDREG_SDRAR
-4093: D350     [347]        out	    (PORT_LCDCMD), a
-4095: 3E29     [354]        ld	    a, 0x29
-4097: D351     [365]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SDRAR
+                            ; destroys A
+4172: 3EE0     [333]        ld	    a, LCDREG_SDRAR
+4174: D350     [344]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x29
+                            ; destroys A
+4176: 3E29     [351]        ld	    a, 0x29
+4178: D351     [362]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SDRMD, 0x03
                             ; destroys A
-4099: 3EE1     [372]        ld	    a, LCDREG_SDRMD
-409B: D350     [383]        out	    (PORT_LCDCMD), a
-409D: 3E03     [390]        ld	    a, 0x03
-409F: D351     [401]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SDRMD
+                            ; destroys A
+417A: 3EE1     [369]        ld	    a, LCDREG_SDRMD
+417C: D350     [380]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x03
+                            ; destroys A
+417E: 3E03     [387]        ld	    a, 0x03
+4180: D351     [398]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SDR_REF_ITVL0, 0x0B
                             ; destroys A
-40A1: 3EE2     [408]        ld	    a, LCDREG_SDR_REF_ITVL0
-40A3: D350     [419]        out	    (PORT_LCDCMD), a
-40A5: 3E0B     [426]        ld	    a, 0x0B
-40A7: D351     [437]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SDR_REF_ITVL0
+                            ; destroys A
+4182: 3EE2     [405]        ld	    a, LCDREG_SDR_REF_ITVL0
+4184: D350     [416]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x0B
+                            ; destroys A
+4186: 3E0B     [423]        ld	    a, 0x0B
+4188: D351     [434]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SDR_REF_ITVL1, 0x03
                             ; destroys A
-40A9: 3EE3     [444]        ld	    a, LCDREG_SDR_REF_ITVL1
-40AB: D350     [455]        out	    (PORT_LCDCMD), a
-40AD: 3E03     [462]        ld	    a, 0x03
-40AF: D351     [473]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_SDR_REF_ITVL1
+                            ; destroys A
+418A: 3EE3     [441]        ld	    a, LCDREG_SDR_REF_ITVL1
+418C: D350     [452]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x03
+                            ; destroys A
+418E: 3E03     [459]        ld	    a, 0x03
+4190: D351     [470]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_SDRCR, 0x01
                             ; destroys A
-40B1: 3EE4     [480]        ld	    a, LCDREG_SDRCR
-40B3: D350     [491]        out	    (PORT_LCDCMD), a
-40B5: 3E01     [498]        ld	    a, 0x01
-40B7: D351     [509]        out	    (PORT_LCDDAT), a
-40B9:                   wait_sdram:
-40B9: DB50     [11]         in	    a, (PORT_LCDCMD)
-40BB: E604     [18]         and	    0x04
-40BD: 28FA     [25|30]      jr	    z, wait_sdram
-40BF: CDCF42   [42]         call delay_1ms
+                            M_out   (PORT_LCDCMD), LCDREG_SDRCR
+                            ; destroys A
+4192: 3EE4     [477]        ld	    a, LCDREG_SDRCR
+4194: D350     [488]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x01
+                            ; destroys A
+4196: 3E01     [495]        ld	    a, 0x01
+4198: D351     [506]        out	    (PORT_LCDDAT), a
+419A:                   wait_sdram:
+419A: DB50     [11]         in	    a, (PORT_LCDCMD)
+419C: E604     [18]         and	    LCDSTAT_RAMRDY
+419E: 28FA     [25|30]      jr	    z, wait_sdram
+41A0: CDF145   [42]         call delay_1ms
                             ;	TFT_24bit();
                             ;	Host_Bus_8bit();
                             M_out   (PORT_LCDCMD), LCDREG_CCR
                             ; destroys A
-40C2: 3E01     [49]         ld	    a, LCDREG_CCR
-40C4: D350     [60]         out	    (PORT_LCDCMD), a
-40C6: DB51     [71]         in	    a, (PORT_LCDDAT)
-40C8: E6E6     [78]         and	    ~0x19
-40CA: D351     [89]         out	    (PORT_LCDDAT), a
+41A3: 3E01     [49]         ld	    a, LCDREG_CCR
+41A5: D350     [60]         out	    (PORT_LCDCMD), a
+41A7: DB51     [71]         in	    a, (PORT_LCDDAT)
+41A9: E6E6     [78]         and	    ~0x19
+41AB: D351     [89]         out	    (PORT_LCDDAT), a
                             ;	RGB_8b_16bpp();
                             ;	MemWrite_Left_Right_Top_Down();
-                            M_lcdwrite LCDREG_MACR, 0x00
+                            M_lcdwrite0 LCDREG_MACR
                             ; destroys A
-40CC: 3E02     [96]         ld	    a, LCDREG_MACR
-40CE: D350     [107]        out	    (PORT_LCDCMD), a
-40D0: 3E00     [114]        ld	    a, 0x00
-40D2: D351     [125]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MACR
+                            ; destroys A
+41AD: 3E02     [96]         ld	    a, LCDREG_MACR
+41AF: D350     [107]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+41B1: AF       [111]        xor	    a
+41B2: D351     [122]        out	    (PORT_LCDDAT), a
                             ;	Graphic_Mode();
                             ;	Memory_Select_SDRAM();   
                             M_out   (PORT_LCDCMD), LCDREG_ICR
                             ; destroys A
-40D4: 3E03     [132]        ld	    a, LCDREG_ICR
-40D6: D350     [143]        out	    (PORT_LCDCMD), a
-40D8: DB51     [154]        in	    a, (PORT_LCDDAT)
-40DA: E6F8     [161]        and	    ~0x07
-40DC: D351     [172]        out	    (PORT_LCDDAT), a
+41B4: 3E03     [129]        ld	    a, LCDREG_ICR
+41B6: D350     [140]        out	    (PORT_LCDCMD), a
+41B8: DB51     [151]        in	    a, (PORT_LCDDAT)
+41BA: E6F8     [158]        and	    ~0x07
+41BC: D351     [169]        out	    (PORT_LCDDAT), a
                             ;	HSCAN_L_to_R();
                             ;	VSCAN_T_to_B();
                             ;	PDATA_Set_RGB();
                             ;	PCLK_Falling();
                             M_out   (PORT_LCDCMD), LCDREG_DPCR
                             ; destroys A
-40DE: 3E12     [179]        ld	    a, LCDREG_DPCR
-40E0: D350     [190]        out	    (PORT_LCDCMD), a
-40E2: DB51     [201]        in	    a, (PORT_LCDDAT)
-40E4: E6E0     [208]        and	    ~0x1F
-40E6: F680     [215]        or	    0x80
-40E8: D351     [226]        out	    (PORT_LCDDAT), a
+41BE: 3E12     [176]        ld	    a, LCDREG_DPCR
+41C0: D350     [187]        out	    (PORT_LCDCMD), a
+41C2: DB51     [198]        in	    a, (PORT_LCDDAT)
+41C4: E6E0     [205]        and	    ~0x1F
+41C6: F680     [212]        or	    0x80
+41C8: D351     [223]        out	    (PORT_LCDDAT), a
                             ;	DE_High_Active();
                             ;	HSYNC_High_Active();
                             ;	VSYNC_High_Active(); 
                             M_out   (PORT_LCDCMD), LCDREG_PCSR
                             ; destroys A
-40EA: 3E13     [233]        ld	    a, LCDREG_PCSR
-40EC: D350     [244]        out	    (PORT_LCDCMD), a
-40EE: DB51     [255]        in	    a, (PORT_LCDDAT)
-40F0: E6DF     [262]        and	    ~0x20
-40F2: F6C0     [269]        or	    0xC0
-40F4: D351     [280]        out	    (PORT_LCDDAT), a
+41CA: 3E13     [230]        ld	    a, LCDREG_PCSR
+41CC: D350     [241]        out	    (PORT_LCDCMD), a
+41CE: DB51     [252]        in	    a, (PORT_LCDDAT)
+41D0: E6DF     [259]        and	    ~0x20
+41D2: F6C0     [266]        or	    0xC0
+41D4: D351     [277]        out	    (PORT_LCDDAT), a
                             ;	LCD_HorizontalWidth_VerticalHeight(1024,600);
                             M_lcdwrite LCDREG_HDWR, 127
                             ; destroys A
-40F6: 3E14     [287]        ld	    a, LCDREG_HDWR
-40F8: D350     [298]        out	    (PORT_LCDCMD), a
-40FA: 3E7F     [305]        ld	    a, 127
-40FC: D351     [316]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_HDWFTR, 0
+                            M_out   (PORT_LCDCMD), LCDREG_HDWR
                             ; destroys A
-40FE: 3E15     [323]        ld	    a, LCDREG_HDWFTR
-4100: D350     [334]        out	    (PORT_LCDCMD), a
-4102: 3E00     [341]        ld	    a, 0
-4104: D351     [352]        out	    (PORT_LCDDAT), a
+41D6: 3E14     [284]        ld	    a, LCDREG_HDWR
+41D8: D350     [295]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 127
+                            ; destroys A
+41DA: 3E7F     [302]        ld	    a, 127
+41DC: D351     [313]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_HDWFTR
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_HDWFTR
+                            ; destroys A
+41DE: 3E15     [320]        ld	    a, LCDREG_HDWFTR
+41E0: D350     [331]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+41E2: AF       [335]        xor	    a
+41E3: D351     [346]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_VDHR0, 0x57
                             ; destroys A
-4106: 3E1A     [359]        ld	    a, LCDREG_VDHR0
-4108: D350     [370]        out	    (PORT_LCDCMD), a
-410A: 3E57     [377]        ld	    a, 0x57
-410C: D351     [388]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_VDHR0
+                            ; destroys A
+41E5: 3E1A     [353]        ld	    a, LCDREG_VDHR0
+41E7: D350     [364]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x57
+                            ; destroys A
+41E9: 3E57     [371]        ld	    a, 0x57
+41EB: D351     [382]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_VDHR1, 0x02
                             ; destroys A
-410E: 3E1B     [395]        ld	    a, LCDREG_VDHR1
-4110: D350     [406]        out	    (PORT_LCDCMD), a
-4112: 3E02     [413]        ld	    a, 0x02
-4114: D351     [424]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_VDHR1
+                            ; destroys A
+41ED: 3E1B     [389]        ld	    a, LCDREG_VDHR1
+41EF: D350     [400]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x02
+                            ; destroys A
+41F1: 3E02     [407]        ld	    a, 0x02
+41F3: D351     [418]        out	    (PORT_LCDDAT), a
                             ;	LCD_Horizontal_Non_Display(160);		   //30
                             M_lcdwrite LCDREG_HNDR, 19
                             ; destroys A
-4116: 3E16     [431]        ld	    a, LCDREG_HNDR
-4118: D350     [442]        out	    (PORT_LCDCMD), a
-411A: 3E13     [449]        ld	    a, 19
-411C: D351     [460]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_HNDFTR, 0
+                            M_out   (PORT_LCDCMD), LCDREG_HNDR
                             ; destroys A
-411E: 3E17     [467]        ld	    a, LCDREG_HNDFTR
-4120: D350     [478]        out	    (PORT_LCDCMD), a
-4122: 3E00     [485]        ld	    a, 0
-4124: D351     [496]        out	    (PORT_LCDDAT), a
+41F5: 3E16     [425]        ld	    a, LCDREG_HNDR
+41F7: D350     [436]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 19
+                            ; destroys A
+41F9: 3E13     [443]        ld	    a, 19
+41FB: D351     [454]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_HNDFTR
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_HNDFTR
+                            ; destroys A
+41FD: 3E17     [461]        ld	    a, LCDREG_HNDFTR
+41FF: D350     [472]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4201: AF       [476]        xor	    a
+4202: D351     [487]        out	    (PORT_LCDDAT), a
                             ;	LCD_HSYNC_Start_Position(160);
                             M_lcdwrite LCDREG_HSTR, 19
                             ; destroys A
-4126: 3E18     [503]        ld	    a, LCDREG_HSTR
-4128: D350     [514]        out	    (PORT_LCDCMD), a
-412A: 3E13     [521]        ld	    a, 19
-412C: D351     [532]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_HSTR
+                            ; destroys A
+4204: 3E18     [494]        ld	    a, LCDREG_HSTR
+4206: D350     [505]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 19
+                            ; destroys A
+4208: 3E13     [512]        ld	    a, 19
+420A: D351     [523]        out	    (PORT_LCDDAT), a
                             ;	LCD_HSYNC_Pulse_Width(70);
                             M_lcdwrite LCDREG_HPWR, 7
                             ; destroys A
-412E: 3E19     [539]        ld	    a, LCDREG_HPWR
-4130: D350     [550]        out	    (PORT_LCDCMD), a
-4132: 3E07     [557]        ld	    a, 7
-4134: D351     [568]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_HPWR
+                            ; destroys A
+420C: 3E19     [530]        ld	    a, LCDREG_HPWR
+420E: D350     [541]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 7
+                            ; destroys A
+4210: 3E07     [548]        ld	    a, 7
+4212: D351     [559]        out	    (PORT_LCDDAT), a
                             ;	LCD_Vertical_Non_Display(23);		   //16
                             M_lcdwrite LCDREG_VNDR0, 22
                             ; destroys A
-4136: 3E1C     [575]        ld	    a, LCDREG_VNDR0
-4138: D350     [586]        out	    (PORT_LCDCMD), a
-413A: 3E16     [593]        ld	    a, 22
-413C: D351     [604]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_VNDR1, 0
+                            M_out   (PORT_LCDCMD), LCDREG_VNDR0
                             ; destroys A
-413E: 3E1D     [611]        ld	    a, LCDREG_VNDR1
-4140: D350     [622]        out	    (PORT_LCDCMD), a
-4142: 3E00     [629]        ld	    a, 0
-4144: D351     [640]        out	    (PORT_LCDDAT), a
+4214: 3E1C     [566]        ld	    a, LCDREG_VNDR0
+4216: D350     [577]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 22
+                            ; destroys A
+4218: 3E16     [584]        ld	    a, 22
+421A: D351     [595]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_VNDR1
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_VNDR1
+                            ; destroys A
+421C: 3E1D     [602]        ld	    a, LCDREG_VNDR1
+421E: D350     [613]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4220: AF       [617]        xor	    a
+4221: D351     [628]        out	    (PORT_LCDDAT), a
                             ;	LCD_VSYNC_Start_Position(12);
                             M_lcdwrite LCDREG_VSTR, 11
                             ; destroys A
-4146: 3E1E     [647]        ld	    a, LCDREG_VSTR
-4148: D350     [658]        out	    (PORT_LCDCMD), a
-414A: 3E0B     [665]        ld	    a, 11
-414C: D351     [676]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_VSTR
+                            ; destroys A
+4223: 3E1E     [635]        ld	    a, LCDREG_VSTR
+4225: D350     [646]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 11
+                            ; destroys A
+4227: 3E0B     [653]        ld	    a, 11
+4229: D351     [664]        out	    (PORT_LCDDAT), a
                             ;	LCD_VSYNC_Pulse_Width(10);
                             M_lcdwrite LCDREG_VPWR, 9
                             ; destroys A
-414E: 3E1F     [683]        ld	    a, LCDREG_VPWR
-4150: D350     [694]        out	    (PORT_LCDCMD), a
-4152: 3E09     [701]        ld	    a, 9
-4154: D351     [712]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_VPWR
+                            ; destroys A
+422B: 3E1F     [671]        ld	    a, LCDREG_VPWR
+422D: D350     [682]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 9
+                            ; destroys A
+422F: 3E09     [689]        ld	    a, 9
+4231: D351     [700]        out	    (PORT_LCDDAT), a
                             ;	Select_Main_Window_16bpp();
                             ; This is the default, so we don't really need to do this.
                             M_out   (PORT_LCDCMD), LCDREG_MPWCTR
                             ; destroys A
-4156: 3E10     [719]        ld	    a, LCDREG_MPWCTR
-4158: D350     [730]        out	    (PORT_LCDCMD), a
-415A: DB51     [741]        in	    a, (PORT_LCDDAT)
-415C: E6F7     [748]        and	    ~0x08
-415E: F604     [755]        or	    0x04
-4160: D351     [766]        out	    (PORT_LCDDAT), a
+4233: 3E10     [707]        ld	    a, LCDREG_MPWCTR
+4235: D350     [718]        out	    (PORT_LCDCMD), a
+4237: DB51     [729]        in	    a, (PORT_LCDDAT)
+4239: E6F7     [736]        and	    ~0x08
+423B: F604     [743]        or	    0x04
+423D: D351     [754]        out	    (PORT_LCDDAT), a
                             ;	Main_Image_Start_Address(0);				
                             ; The default is start address 0, so we don't really need to do this.
-                            M_lcdwrite LCDREG_MISA0, 0
+                            M_lcdwrite0 LCDREG_MISA0
                             ; destroys A
-4162: 3E20     [773]        ld	    a, LCDREG_MISA0
-4164: D350     [784]        out	    (PORT_LCDCMD), a
-4166: 3E00     [791]        ld	    a, 0
-4168: D351     [802]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MISA1, 0
+                            M_out   (PORT_LCDCMD), LCDREG_MISA0
                             ; destroys A
-416A: 3E21     [809]        ld	    a, LCDREG_MISA1
-416C: D350     [820]        out	    (PORT_LCDCMD), a
-416E: 3E00     [827]        ld	    a, 0
-4170: D351     [838]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MISA2, 0
+423F: 3E20     [761]        ld	    a, LCDREG_MISA0
+4241: D350     [772]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
                             ; destroys A
-4172: 3E22     [845]        ld	    a, LCDREG_MISA2
-4174: D350     [856]        out	    (PORT_LCDCMD), a
-4176: 3E00     [863]        ld	    a, 0
-4178: D351     [874]        out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MISA3, 0
+4243: AF       [776]        xor	    a
+4244: D351     [787]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MISA1
                             ; destroys A
-417A: 3E23     [881]        ld	    a, LCDREG_MISA3
-417C: D350     [892]        out	    (PORT_LCDCMD), a
-417E: 3E00     [899]        ld	    a, 0
-4180: D351     [910]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MISA1
+                            ; destroys A
+4246: 3E21     [794]        ld	    a, LCDREG_MISA1
+4248: D350     [805]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+424A: AF       [809]        xor	    a
+424B: D351     [820]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MISA2
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_MISA2
+                            ; destroys A
+424D: 3E22     [827]        ld	    a, LCDREG_MISA2
+424F: D350     [838]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4251: AF       [842]        xor	    a
+4252: D351     [853]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MISA3
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_MISA3
+                            ; destroys A
+4254: 3E23     [860]        ld	    a, LCDREG_MISA3
+4256: D350     [871]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4258: AF       [875]        xor	    a
+4259: D351     [886]        out	    (PORT_LCDDAT), a
                             ;	Main_Image_Width(1024);							
-                            M_lcdwrite LCDREG_MIW0, 0
+                            M_lcdwrite0 LCDREG_MIW0
                             ; destroys A
-4182: 3E24     [917]        ld	    a, LCDREG_MIW0
-4184: D350     [928]        out	    (PORT_LCDCMD), a
-4186: 3E00     [935]        ld	    a, 0
-4188: D351     [946]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MIW0
+                            ; destroys A
+425B: 3E24     [893]        ld	    a, LCDREG_MIW0
+425D: D350     [904]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+425F: AF       [908]        xor	    a
+4260: D351     [919]        out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_MIW1, 4
                             ; destroys A
-418A: 3E25     [953]        ld	    a, LCDREG_MIW1
-418C: D350     [964]        out	    (PORT_LCDCMD), a
-418E: 3E04     [971]        ld	    a, 4
-4190: D351     [982]        out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MIW1
+                            ; destroys A
+4262: 3E25     [926]        ld	    a, LCDREG_MIW1
+4264: D350     [937]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 4
+                            ; destroys A
+4266: 3E04     [944]        ld	    a, 4
+4268: D351     [955]        out	    (PORT_LCDDAT), a
                             ;	Main_Window_Start_XY(0,0);	
                             ; The default is (0,0), so we don't really need to do this.
-                            M_lcdwrite LCDREG_MWULX0, 0
+                            M_lcdwrite0 LCDREG_MWULX0
                             ; destroys A
-4192: 3E26     [989]        ld	    a, LCDREG_MWULX0
-4194: D350     [1000]       out	    (PORT_LCDCMD), a
-4196: 3E00     [1007]       ld	    a, 0
-4198: D351     [1018]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MWULX1, 0
+                            M_out   (PORT_LCDCMD), LCDREG_MWULX0
                             ; destroys A
-419A: 3E27     [1025]       ld	    a, LCDREG_MWULX1
-419C: D350     [1036]       out	    (PORT_LCDCMD), a
-419E: 3E00     [1043]       ld	    a, 0
-41A0: D351     [1054]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MWULY0, 0
+426A: 3E26     [962]        ld	    a, LCDREG_MWULX0
+426C: D350     [973]        out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
                             ; destroys A
-41A2: 3E28     [1061]       ld	    a, LCDREG_MWULY0
-41A4: D350     [1072]       out	    (PORT_LCDCMD), a
-41A6: 3E00     [1079]       ld	    a, 0
-41A8: D351     [1090]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_MWULY1, 0
+426E: AF       [977]        xor	    a
+426F: D351     [988]        out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MWULX1
                             ; destroys A
-41AA: 3E29     [1097]       ld	    a, LCDREG_MWULY1
-41AC: D350     [1108]       out	    (PORT_LCDCMD), a
-41AE: 3E00     [1115]       ld	    a, 0
-41B0: D351     [1126]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_MWULX1
+                            ; destroys A
+4271: 3E27     [995]        ld	    a, LCDREG_MWULX1
+4273: D350     [1006]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4275: AF       [1010]       xor	    a
+4276: D351     [1021]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MWULY0
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_MWULY0
+                            ; destroys A
+4278: 3E28     [1028]       ld	    a, LCDREG_MWULY0
+427A: D350     [1039]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+427C: AF       [1043]       xor	    a
+427D: D351     [1054]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_MWULY1
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_MWULY1
+                            ; destroys A
+427F: 3E29     [1061]       ld	    a, LCDREG_MWULY1
+4281: D350     [1072]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4283: AF       [1076]       xor	    a
+4284: D351     [1087]       out	    (PORT_LCDDAT), a
                             ;	Canvas_Image_Start_address(0);
                             ; The default is start address 0, so we don't really need to do this.
-                            M_lcdwrite LCDREG_CVSSA0, 0
+                            M_lcdwrite0 LCDREG_CVSSA0
                             ; destroys A
-41B2: 3E50     [1133]       ld	    a, LCDREG_CVSSA0
-41B4: D350     [1144]       out	    (PORT_LCDCMD), a
-41B6: 3E00     [1151]       ld	    a, 0
-41B8: D351     [1162]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_CVSSA1, 0
+                            M_out   (PORT_LCDCMD), LCDREG_CVSSA0
                             ; destroys A
-41BA: 3E51     [1169]       ld	    a, LCDREG_CVSSA1
-41BC: D350     [1180]       out	    (PORT_LCDCMD), a
-41BE: 3E00     [1187]       ld	    a, 0
-41C0: D351     [1198]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_CVSSA2, 0
+4286: 3E50     [1094]       ld	    a, LCDREG_CVSSA0
+4288: D350     [1105]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
                             ; destroys A
-41C2: 3E52     [1205]       ld	    a, LCDREG_CVSSA2
-41C4: D350     [1216]       out	    (PORT_LCDCMD), a
-41C6: 3E00     [1223]       ld	    a, 0
-41C8: D351     [1234]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_CVSSA3, 0
+428A: AF       [1109]       xor	    a
+428B: D351     [1120]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_CVSSA1
                             ; destroys A
-41CA: 3E53     [1241]       ld	    a, LCDREG_CVSSA3
-41CC: D350     [1252]       out	    (PORT_LCDCMD), a
-41CE: 3E00     [1259]       ld	    a, 0
-41D0: D351     [1270]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_CVSSA1
+                            ; destroys A
+428D: 3E51     [1127]       ld	    a, LCDREG_CVSSA1
+428F: D350     [1138]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4291: AF       [1142]       xor	    a
+4292: D351     [1153]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_CVSSA2
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_CVSSA2
+                            ; destroys A
+4294: 3E52     [1160]       ld	    a, LCDREG_CVSSA2
+4296: D350     [1171]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+4298: AF       [1175]       xor	    a
+4299: D351     [1186]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_CVSSA3
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_CVSSA3
+                            ; destroys A
+429B: 3E53     [1193]       ld	    a, LCDREG_CVSSA3
+429D: D350     [1204]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+429F: AF       [1208]       xor	    a
+42A0: D351     [1219]       out	    (PORT_LCDDAT), a
                             ;	Canvas_image_width(1024);
-                            M_lcdwrite LCDREG_CVS_IMWTH0, 0
+                            M_lcdwrite0 LCDREG_CVS_IMWTH0
                             ; destroys A
-41D2: 3E54     [1277]       ld	    a, LCDREG_CVS_IMWTH0
-41D4: D350     [1288]       out	    (PORT_LCDCMD), a
-41D6: 3E00     [1295]       ld	    a, 0
-41D8: D351     [1306]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_CVS_IMWTH0
+                            ; destroys A
+42A2: 3E54     [1226]       ld	    a, LCDREG_CVS_IMWTH0
+42A4: D350     [1237]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+42A6: AF       [1241]       xor	    a
+42A7: D351     [1252]       out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_CVS_IMWTH1, 4
                             ; destroys A
-41DA: 3E55     [1313]       ld	    a, LCDREG_CVS_IMWTH1
-41DC: D350     [1324]       out	    (PORT_LCDCMD), a
-41DE: 3E04     [1331]       ld	    a, 4
-41E0: D351     [1342]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_CVS_IMWTH1
+                            ; destroys A
+42A9: 3E55     [1259]       ld	    a, LCDREG_CVS_IMWTH1
+42AB: D350     [1270]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 4
+                            ; destroys A
+42AD: 3E04     [1277]       ld	    a, 4
+42AF: D351     [1288]       out	    (PORT_LCDDAT), a
                             ;	Active_Window_XY(0,0);
                             ; The default is (0,0), so we don't really need to do this.
-                            M_lcdwrite LCDREG_AWUL_X0, 0
+                            M_lcdwrite0 LCDREG_AWUL_X0
                             ; destroys A
-41E2: 3E56     [1349]       ld	    a, LCDREG_AWUL_X0
-41E4: D350     [1360]       out	    (PORT_LCDCMD), a
-41E6: 3E00     [1367]       ld	    a, 0
-41E8: D351     [1378]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_AWUL_X1, 0
+                            M_out   (PORT_LCDCMD), LCDREG_AWUL_X0
                             ; destroys A
-41EA: 3E57     [1385]       ld	    a, LCDREG_AWUL_X1
-41EC: D350     [1396]       out	    (PORT_LCDCMD), a
-41EE: 3E00     [1403]       ld	    a, 0
-41F0: D351     [1414]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_AWUL_Y0, 0
+42B1: 3E56     [1295]       ld	    a, LCDREG_AWUL_X0
+42B3: D350     [1306]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
                             ; destroys A
-41F2: 3E58     [1421]       ld	    a, LCDREG_AWUL_Y0
-41F4: D350     [1432]       out	    (PORT_LCDCMD), a
-41F6: 3E00     [1439]       ld	    a, 0
-41F8: D351     [1450]       out	    (PORT_LCDDAT), a
-                            M_lcdwrite LCDREG_AWUL_Y1, 0
+42B5: AF       [1310]       xor	    a
+42B6: D351     [1321]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_AWUL_X1
                             ; destroys A
-41FA: 3E59     [1457]       ld	    a, LCDREG_AWUL_Y1
-41FC: D350     [1468]       out	    (PORT_LCDCMD), a
-41FE: 3E00     [1475]       ld	    a, 0
-4200: D351     [1486]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AWUL_X1
+                            ; destroys A
+42B8: 3E57     [1328]       ld	    a, LCDREG_AWUL_X1
+42BA: D350     [1339]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+42BC: AF       [1343]       xor	    a
+42BD: D351     [1354]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_AWUL_Y0
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_AWUL_Y0
+                            ; destroys A
+42BF: 3E58     [1361]       ld	    a, LCDREG_AWUL_Y0
+42C1: D350     [1372]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+42C3: AF       [1376]       xor	    a
+42C4: D351     [1387]       out	    (PORT_LCDDAT), a
+                            M_lcdwrite0 LCDREG_AWUL_Y1
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_AWUL_Y1
+                            ; destroys A
+42C6: 3E59     [1394]       ld	    a, LCDREG_AWUL_Y1
+42C8: D350     [1405]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+42CA: AF       [1409]       xor	    a
+42CB: D351     [1420]       out	    (PORT_LCDDAT), a
                             ;	Active_Window_WH(1024,600);
-                            M_lcdwrite LCDREG_AW_WTH0, 0
+                            M_lcdwrite0 LCDREG_AW_WTH0
                             ; destroys A
-4202: 3E5A     [1493]       ld	    a, LCDREG_AW_WTH0
-4204: D350     [1504]       out	    (PORT_LCDCMD), a
-4206: 3E00     [1511]       ld	    a, 0
-4208: D351     [1522]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AW_WTH0
+                            ; destroys A
+42CD: 3E5A     [1427]       ld	    a, LCDREG_AW_WTH0
+42CF: D350     [1438]       out	    (PORT_LCDCMD), a
+                            M_out0  (PORT_LCDDAT)
+                            ; destroys A
+42D1: AF       [1442]       xor	    a
+42D2: D351     [1453]       out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_AW_WTH1, 4
                             ; destroys A
-420A: 3E5B     [1529]       ld	    a, LCDREG_AW_WTH1
-420C: D350     [1540]       out	    (PORT_LCDCMD), a
-420E: 3E04     [1547]       ld	    a, 4
-4210: D351     [1558]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AW_WTH1
+                            ; destroys A
+42D4: 3E5B     [1460]       ld	    a, LCDREG_AW_WTH1
+42D6: D350     [1471]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 4
+                            ; destroys A
+42D8: 3E04     [1478]       ld	    a, 4
+42DA: D351     [1489]       out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_AW_HT0, 88
                             ; destroys A
-4212: 3E5C     [1565]       ld	    a, LCDREG_AW_HT0
-4214: D350     [1576]       out	    (PORT_LCDCMD), a
-4216: 3E58     [1583]       ld	    a, 88
-4218: D351     [1594]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AW_HT0
+                            ; destroys A
+42DC: 3E5C     [1496]       ld	    a, LCDREG_AW_HT0
+42DE: D350     [1507]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 88
+                            ; destroys A
+42E0: 3E58     [1514]       ld	    a, 88
+42E2: D351     [1525]       out	    (PORT_LCDDAT), a
                             M_lcdwrite LCDREG_AW_HT1, 2
                             ; destroys A
-421A: 3E5D     [1601]       ld	    a, LCDREG_AW_HT1
-421C: D350     [1612]       out	    (PORT_LCDCMD), a
-421E: 3E02     [1619]       ld	    a, 2
-4220: D351     [1630]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AW_HT1
+                            ; destroys A
+42E4: 3E5D     [1532]       ld	    a, LCDREG_AW_HT1
+42E6: D350     [1543]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 2
+                            ; destroys A
+42E8: 3E02     [1550]       ld	    a, 2
+42EA: D351     [1561]       out	    (PORT_LCDDAT), a
                             ;	Memory_XY_Mode();
                             ;	Memory_16bpp_Mode();
                             M_lcdwrite LCDREG_AW_COLOR, 0x01
                             ; destroys A
-4222: 3E5E     [1637]       ld	    a, LCDREG_AW_COLOR
-4224: D350     [1648]       out	    (PORT_LCDCMD), a
-4226: 3E01     [1655]       ld	    a, 0x01
-4228: D351     [1666]       out	    (PORT_LCDDAT), a
+                            M_out   (PORT_LCDCMD), LCDREG_AW_COLOR
+                            ; destroys A
+42EC: 3E5E     [1568]       ld	    a, LCDREG_AW_COLOR
+42EE: D350     [1579]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), 0x01
+                            ; destroys A
+42F0: 3E01     [1586]       ld	    a, 0x01
+42F2: D351     [1597]       out	    (PORT_LCDDAT), a
                             ;	Select_Main_Window_16bpp();
                             ; Unaccountably, the sample code calls this again, even though it was done earlier, and is
                             ; the default, so we skip it.
                             ; Display_ON();
                             M_out   (PORT_LCDCMD), LCDREG_DPCR
                             ; destroys A
-422A: 3E12     [1673]       ld	    a, LCDREG_DPCR
-422C: D350     [1684]       out	    (PORT_LCDCMD), a
-422E: DB51     [1695]       in	    a, (PORT_LCDDAT)
-4230: F640     [1702]       or	    0x40
-4232: D351     [1713]       out	    (PORT_LCDDAT), a
+42F4: 3E12     [1604]       ld	    a, LCDREG_DPCR
+42F6: D350     [1615]       out	    (PORT_LCDCMD), a
+42F8: DB51     [1626]       in	    a, (PORT_LCDDAT)
+42FA: F640     [1633]       or	    0x40
+42FC: D351     [1644]       out	    (PORT_LCDDAT), a
                             ; delay_ms(20);
-4234: 2E14     [1720]       ld	    l, 20
-4236: CDC342   [1737]       call    delay_ms
-4239: E1       [1747]       pop	    hl
-423A: C9       [1757]       ret
+42FE: 2E14     [1651]       ld	    l, 20
+4300: CDE545   [1668]       call    delay_ms
+                            ; Clear the screen
+4303: 110000   [1678]       ld	    de, 0
+4306: 210000   [1688]       ld	    hl, 0
+4309: CD3B43   [1705]       call    lcd_set_fgcolor	    ; set FG color to black
+430C: CD6F43   [1722]       call    lcd_line_start_xy	    ; set start to 0,0
+430F: 11FF03   [1732]       ld	    de, LCD_WIDTH-1
+4312: 215702   [1742]       ld	    hl, LCD_HEIGHT-1
+4315: CD8C43   [1759]       call    lcd_line_end_xy	    ; set end to maxX,maxY
+                            M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT ; draw filled rectangle to clear screen
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DCR1
+                            ; destroys A
+4318: 3E76     [1766]       ld	    a, LCDREG_DCR1
+431A: D350     [1777]       out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), DCR1_FILLRECT
+                            ; destroys A
+431C: 3EE0     [1784]       ld	    a, DCR1_FILLRECT
+431E: D351     [1795]       out	    (PORT_LCDDAT), a
+4320: CD3A44   [1812]       call    lcd_wait_idle
+4323: CD2943   [1829]       call    lcd_bl_on		    ; turn on backlight
+4326: E1       [1839]       pop	    hl
+4327: D1       [1849]       pop	    de
+4328: C9       [1859]       ret
                         #endlocal
                         
                         ; void lcd_bl_on()
                         ; - turn on LCD backlight
-423B:                   lcd_bl_on::
-423B: 3E05     [ 7]         ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
-423D: D322     [18]         out	    (PORT_SIOACTL), a
-423F: 3EEA     [25]         ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
-4241: D322     [36]         out	    (PORT_SIOACTL), a
-4243: C9       [46]         ret
+4329:                   lcd_bl_on::
+4329: 3E05     [ 7]         ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
+432B: D322     [18]         out	    (PORT_SIOACTL), a
+432D: 3E6A     [25]         ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS
+432F: D322     [36]         out	    (PORT_SIOACTL), a
+4331: C9       [46]         ret
                         
                         ; void lcd_bl_off()
                         ; - turn off LCD backlight
-4244:                   lcd_bl_off::
-4244: 3E05     [ 7]         ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
-4246: D322     [18]         out	    (PORT_SIOACTL), a
-4248: 3E6A     [25]         ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS
-424A: D322     [36]         out	    (PORT_SIOACTL), a
-424C: C9       [46]         ret
+4332:                   lcd_bl_off::
+4332: 3E05     [ 7]         ld	    a, SIOWR0_CMD_NOP | SIOWR0_PTR_R5
+4334: D322     [18]         out	    (PORT_SIOACTL), a
+4336: 3EEA     [25]         ld	    a, SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
+4338: D322     [36]         out	    (PORT_SIOACTL), a
+433A: C9       [46]         ret
+                        
+                        ; void lcd_set_fgcolor(uint8_t r, uint8_t g, uint8_t b)
+                        ; - sets foreground drawing color to (r,g,b)
+                        ; - "r" in D, "g" in E, "b" in H
+                        ; - R,G,B uses upper 5,6,5 bits of precision only (i.e. 16bpp color)
+433B:                   lcd_set_fgcolor::
+                            M_lcdwrite LCDREG_FGCR, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCR
+                            ; destroys A
+433B: 3ED2     [ 7]         ld	    a, LCDREG_FGCR
+433D: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+433F: 7A       [22]         ld	    a, d
+4340: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_FGCG, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCG
+                            ; destroys A
+4342: 3ED3     [40]         ld	    a, LCDREG_FGCG
+4344: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+4346: 7B       [55]         ld	    a, e
+4347: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_FGCB, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCB
+                            ; destroys A
+4349: 3ED4     [73]         ld	    a, LCDREG_FGCB
+434B: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+434D: 7C       [88]         ld	    a, h
+434E: D351     [99]         out	    (PORT_LCDDAT), a
+4350: C9       [109]        ret
+                        
+                        ; void lcd_rand_fgcolor()
+                        ; - randomizes foreground drawing color
+4351:                   lcd_rand_fgcolor::
+4351: E5       [11]         push    hl
+4352: CDC644   [28]         call    rand16
+                            M_lcdwrite LCDREG_FGCR, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCR
+                            ; destroys A
+4355: 3ED2     [35]         ld	    a, LCDREG_FGCR
+4357: D350     [46]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+4359: 7C       [50]         ld	    a, h
+435A: D351     [61]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_FGCG, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCG
+                            ; destroys A
+435C: 3ED3     [68]         ld	    a, LCDREG_FGCG
+435E: D350     [79]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+4360: 7D       [83]         ld	    a, l
+4361: D351     [94]         out	    (PORT_LCDDAT), a
+4363: CDC644   [111]        call    rand16
+                            M_lcdwrite LCDREG_FGCB, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_FGCB
+                            ; destroys A
+4366: 3ED4     [118]        ld	    a, LCDREG_FGCB
+4368: D350     [129]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+436A: 7C       [133]        ld	    a, h
+436B: D351     [144]        out	    (PORT_LCDDAT), a
+436D: E1       [154]        pop	    hl
+436E: C9       [164]        ret
+                        
+                        ; void lcd_line_start_xy(uint16_t x, uint16_t y)
+                        ; - "x" in DE, "y" in HL
+436F:                   lcd_line_start_xy::
+                            M_lcdwrite LCDREG_DLHSR0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLHSR0
+                            ; destroys A
+436F: 3E68     [ 7]         ld	    a, LCDREG_DLHSR0
+4371: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+4373: 7B       [22]         ld	    a, e
+4374: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLHSR1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLHSR1
+                            ; destroys A
+4376: 3E69     [40]         ld	    a, LCDREG_DLHSR1
+4378: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+437A: 7A       [55]         ld	    a, d
+437B: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLVSR0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLVSR0
+                            ; destroys A
+437D: 3E6A     [73]         ld	    a, LCDREG_DLVSR0
+437F: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+4381: 7D       [88]         ld	    a, l
+4382: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLVSR1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLVSR1
+                            ; destroys A
+4384: 3E6B     [106]        ld	    a, LCDREG_DLVSR1
+4386: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+4388: 7C       [121]        ld	    a, h
+4389: D351     [132]        out	    (PORT_LCDDAT), a
+438B: C9       [142]        ret
+                        
+                        ; void lcd_line_end_xy(uint16_t x, uint16_t y)
+                        ; - "x" in DE, "y" in HL
+438C:                   lcd_line_end_xy::
+                            M_lcdwrite LCDREG_DLHER0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLHER0
+                            ; destroys A
+438C: 3E6C     [ 7]         ld	    a, LCDREG_DLHER0
+438E: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+4390: 7B       [22]         ld	    a, e
+4391: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLHER1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLHER1
+                            ; destroys A
+4393: 3E6D     [40]         ld	    a, LCDREG_DLHER1
+4395: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+4397: 7A       [55]         ld	    a, d
+4398: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLVER0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLVER0
+                            ; destroys A
+439A: 3E6E     [73]         ld	    a, LCDREG_DLVER0
+439C: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+439E: 7D       [88]         ld	    a, l
+439F: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DLVER1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DLVER1
+                            ; destroys A
+43A1: 3E6F     [106]        ld	    a, LCDREG_DLVER1
+43A3: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+43A5: 7C       [121]        ld	    a, h
+43A6: D351     [132]        out	    (PORT_LCDDAT), a
+43A8: C9       [142]        ret
+                        
+                        ; void lcd_triangle_xy(uint16_t x, uint16_t y)
+                        ; - "x" in DE, "y" in HL
+                        ; - this sets the third point for a triangle (first two are the "line start" and "line end" points)
+43A9:                   lcd_triangle_xy::
+                            M_lcdwrite LCDREG_DTPH0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DTPH0
+                            ; destroys A
+43A9: 3E70     [ 7]         ld	    a, LCDREG_DTPH0
+43AB: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+43AD: 7B       [22]         ld	    a, e
+43AE: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DTPH1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DTPH1
+                            ; destroys A
+43B0: 3E71     [40]         ld	    a, LCDREG_DTPH1
+43B2: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+43B4: 7A       [55]         ld	    a, d
+43B5: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DTPV0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DTPV0
+                            ; destroys A
+43B7: 3E72     [73]         ld	    a, LCDREG_DTPV0
+43B9: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+43BB: 7D       [88]         ld	    a, l
+43BC: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DTPV1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DTPV1
+                            ; destroys A
+43BE: 3E73     [106]        ld	    a, LCDREG_DTPV1
+43C0: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+43C2: 7C       [121]        ld	    a, h
+43C3: D351     [132]        out	    (PORT_LCDDAT), a
+43C5: C9       [142]        ret
+                        
+                        ; void lcd_text_xy(uint16_t x, uint16_t y)
+                        ; - "x" in DE, "y" in HL
+43C6:                   lcd_text_xy::
+                            M_lcdwrite LCDREG_F_CURX0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_F_CURX0
+                            ; destroys A
+43C6: 3E63     [ 7]         ld	    a, LCDREG_F_CURX0
+43C8: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+43CA: 7B       [22]         ld	    a, e
+43CB: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_F_CURX1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_F_CURX1
+                            ; destroys A
+43CD: 3E64     [40]         ld	    a, LCDREG_F_CURX1
+43CF: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+43D1: 7A       [55]         ld	    a, d
+43D2: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_F_CURY0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_F_CURY0
+                            ; destroys A
+43D4: 3E65     [73]         ld	    a, LCDREG_F_CURY0
+43D6: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+43D8: 7D       [88]         ld	    a, l
+43D9: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_F_CURY1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_F_CURY1
+                            ; destroys A
+43DB: 3E66     [106]        ld	    a, LCDREG_F_CURY1
+43DD: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+43DF: 7C       [121]        ld	    a, h
+43E0: D351     [132]        out	    (PORT_LCDDAT), a
+43E2: C9       [142]        ret
+                        
+                        ; void lcd_ellipse_xy(uint16_t x, uint16_t y)
+                        ; - "x" in DE, "y" in HL
+43E3:                   lcd_ellipse_xy::
+                            M_lcdwrite LCDREG_DEHR0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DEHR0
+                            ; destroys A
+43E3: 3E7B     [ 7]         ld	    a, LCDREG_DEHR0
+43E5: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+43E7: 7B       [22]         ld	    a, e
+43E8: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DEHR1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DEHR1
+                            ; destroys A
+43EA: 3E7C     [40]         ld	    a, LCDREG_DEHR1
+43EC: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+43EE: 7A       [55]         ld	    a, d
+43EF: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DEVR0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DEVR0
+                            ; destroys A
+43F1: 3E7D     [73]         ld	    a, LCDREG_DEVR0
+43F3: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+43F5: 7D       [88]         ld	    a, l
+43F6: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_DEVR1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_DEVR1
+                            ; destroys A
+43F8: 3E7E     [106]        ld	    a, LCDREG_DEVR1
+43FA: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+43FC: 7C       [121]        ld	    a, h
+43FD: D351     [132]        out	    (PORT_LCDDAT), a
+43FF: C9       [142]        ret
+                        
+                        ; void lcd_ellipse_radii(uint16_t rx, uint16_t ry)
+                        ; - "rx" in DE, "ry" in HL
+4400:                   lcd_ellipse_radii::
+                            M_lcdwrite LCDREG_ELL_A0, e
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_ELL_A0
+                            ; destroys A
+4400: 3E77     [ 7]         ld	    a, LCDREG_ELL_A0
+4402: D350     [18]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), e
+                            ; destroys A
+4404: 7B       [22]         ld	    a, e
+4405: D351     [33]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_ELL_A1, d
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_ELL_A1
+                            ; destroys A
+4407: 3E78     [40]         ld	    a, LCDREG_ELL_A1
+4409: D350     [51]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), d
+                            ; destroys A
+440B: 7A       [55]         ld	    a, d
+440C: D351     [66]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_ELL_B0, l
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_ELL_B0
+                            ; destroys A
+440E: 3E79     [73]         ld	    a, LCDREG_ELL_B0
+4410: D350     [84]         out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), l
+                            ; destroys A
+4412: 7D       [88]         ld	    a, l
+4413: D351     [99]         out	    (PORT_LCDDAT), a
+                            M_lcdwrite LCDREG_ELL_B1, h
+                            ; destroys A
+                            M_out   (PORT_LCDCMD), LCDREG_ELL_B1
+                            ; destroys A
+4415: 3E7A     [106]        ld	    a, LCDREG_ELL_B1
+4417: D350     [117]        out	    (PORT_LCDCMD), a
+                            M_out   (PORT_LCDDAT), h
+                            ; destroys A
+4419: 7C       [121]        ld	    a, h
+441A: D351     [132]        out	    (PORT_LCDDAT), a
+441C: C9       [142]        ret
+                        
+                        ; void lcd_puts(uint8_t *text)
+                        ; - write the NUL-terminated string at "text" to LCD
+                        #local
+441D:                   lcd_puts::
+441D: E5       [11]         push    hl
+441E: C5       [22]         push    bc
+                            M_out   (PORT_LCDCMD), LCDREG_MRWDP
+                            ; destroys A
+441F: 3E04     [29]         ld	    a, LCDREG_MRWDP
+4421: D350     [40]         out	    (PORT_LCDCMD), a
+4423:                   next_byte:
+4423: 7E       [ 7]         ld	    a, (hl)
+4424: 23       [13]         inc	    hl
+4425: B7       [17]         or	    a		; fast test a==0
+4426: 280C     [24|29]      jr	    z, done
+4428: 47       [28]         ld	    b, a
+4429:                   wait_fifo_room:
+                            ; wait until memory FIFO is non-full
+4429: DB50     [11]         in	    a, (PORT_LCDCMD)
+442B: E680     [18]         and	    LCDSTAT_WRFULL
+442D: 20FA     [25|30]      jr	    nz, wait_fifo_room
+                            ; write output character
+442F: 78       [29]         ld	    a, b
+4430: D351     [40]         out	    (PORT_LCDDAT), a	; send byte to LCD panel
+4432: 18EF     [52]         jr	    next_byte
+4434:                   done:
+4434: CD3A44   [17]         call    lcd_wait_idle
+4437: C1       [27]         pop	    bc
+4438: E1       [37]         pop	    hl
+4439: C9       [47]         ret
+                        #endlocal
+                        
+                        ; void lcd_wait_idle()
+                        ; - waits until geometry engine, BTE, text/graphic write complete
+443A:                   lcd_wait_idle::
+443A: DB50     [11]         in	    a, (PORT_LCDCMD)
+443C: E608     [18]         and	    LCDSTAT_BUSY
+443E: 20FA     [25|30]      jr	    nz, lcd_wait_idle
+4440: C9       [35]         ret
+                        
+                        ; void lcd_rand_line_coords()
+                        ; - set up random coordinates for line start & line end
+                        #local
+4441:                   lcd_rand_line_coords::
+4441: C5       [11]         push    bc
+4442: D5       [22]         push    de
+4443: E5       [33]         push    hl
+4444:                   do_line_coords:
+4444: 010004   [10]         ld	    bc, LCD_WIDTH
+4447: CDE244   [27]         call    rand16_modn
+444A: EB       [31]         ex	    de, hl
+444B: 015802   [41]         ld	    bc, LCD_HEIGHT
+444E: CDE244   [58]         call    rand16_modn
+4451: CD6F43   [75]         call    lcd_line_start_xy	    ; random start X,Y
+4454: 010004   [85]         ld	    bc, LCD_WIDTH
+4457: CDE244   [102]        call    rand16_modn
+445A: EB       [106]        ex	    de, hl
+445B: 015802   [116]        ld	    bc, LCD_HEIGHT
+445E: CDE244   [133]        call    rand16_modn
+4461: CD8C43   [150]        call    lcd_line_end_xy	    ; random end X,Y
+4464: E1       [160]        pop	    hl
+4465: D1       [170]        pop	    de
+4466: C1       [180]        pop	    bc
+4467: C9       [190]        ret
+                        
+                        ; void lcd_rand_triangle_coords()
+                        ; - set up random coordinates for the three triangle vertices
+4468:                   lcd_rand_triangle_coords::
+4468: C5       [11]         push    bc
+4469: D5       [22]         push    de
+446A: E5       [33]         push    hl
+446B: 010004   [43]         ld	    bc, LCD_WIDTH
+446E: CDE244   [60]         call    rand16_modn
+4471: EB       [64]         ex	    de, hl
+4472: 015802   [74]         ld	    bc, LCD_HEIGHT
+4475: CDE244   [91]         call    rand16_modn
+4478: CDA943   [108]        call    lcd_triangle_xy	    ; random triangle 3rd vertex X,Y
+447B: 18C7     [120]        jr	    do_line_coords	    ; random triangle 1st & 2nd vertices
+                        #endlocal
+                        
+                        ; void lcd_rand_ellipse_coords()
+                        ; - set up random coordinates and size for ellipse/circle
+447D:                   lcd_rand_ellipse_coords::
+447D: C5       [11]         push    bc
+447E: D5       [22]         push    de
+447F: E5       [33]         push    hl
+4480: 010004   [43]         ld	    bc, LCD_WIDTH
+4483: CDE244   [60]         call    rand16_modn
+4486: EB       [64]         ex	    de, hl
+4487: 015802   [74]         ld	    bc, LCD_HEIGHT
+448A: CDE244   [91]         call    rand16_modn
+448D: CDE343   [108]        call    lcd_ellipse_xy	    ; random center X,Y
+4490: 010002   [118]        ld	    bc, LCD_WIDTH/2
+4493: CDE244   [135]        call    rand16_modn
+4496: EB       [139]        ex	    de, hl
+4497: 012C01   [149]        ld	    bc, LCD_HEIGHT/2
+449A: CDE244   [166]        call    rand16_modn
+449D: CD0044   [183]        call    lcd_ellipse_radii	    ; random radii
+44A0: E1       [193]        pop	    hl
+44A1: D1       [203]        pop	    de
+44A2: C1       [213]        pop	    bc
+44A3: C9       [223]        ret
                         
                         ; void bzero(uint8_t *ptr, uint16_t len)
                         ; NOTE: ptr in HL, len in BC
                         ; - zero "len" bytes starting at address "ptr"
                         #local
-424D:                   bzero::
-424D: D5       [11]         push    de
-424E: 78       [15]         ld	    a, b
-424F: B1       [19]         or	    c
-4250: 280C     [26|31]      jr	    z, done		; len is 0
-4252: 3600     [36]         ld	    (hl), 0		; zero first byte of DATA seg
-4254: 0B       [42]         dec	    bc
-4255: 78       [46]         ld	    a, b
-4256: B1       [50]         or	    c
-4257: 2805     [57|62]      jr	    z, done		; len is 1
-4259: 5D       [61]         ld	    e, l
-425A: 54       [65]         ld	    d, h
-425B: 13       [71]         inc	    de			; de = hl + 1
-425C: EDB0     [87|21]      ldir			; zero last len-1 bytes
-425E:                   done:
-425E: D1       [10]         pop	    de
-425F: C9       [20]         ret
+44A4:                   bzero::
+44A4: D5       [11]         push    de
+44A5: 78       [15]         ld	    a, b
+44A6: B1       [19]         or	    c
+44A7: 280C     [26|31]      jr	    z, done		; len is 0
+44A9: 3600     [36]         ld	    (hl), 0		; zero first byte of DATA seg
+44AB: 0B       [42]         dec	    bc
+44AC: 78       [46]         ld	    a, b
+44AD: B1       [50]         or	    c
+44AE: 2805     [57|62]      jr	    z, done		; len is 1
+44B0: 5D       [61]         ld	    e, l
+44B1: 54       [65]         ld	    d, h
+44B2: 13       [71]         inc	    de			; de = hl + 1
+44B3: EDB0     [87|21]      ldir			; zero last len-1 bytes
+44B5:                   done:
+44B5: D1       [10]         pop	    de
+44B6: C9       [20]         ret
                         #endlocal
                         
+44B7:                   rand_init::
+44B7: E5       [11]         push    hl
+44B8: 211920   [21]         ld	    hl, 0x2019
+44BB: 220146   [37]         ld	    (Rand16_seed1), hl
+44BE: 215FA0   [47]         ld	    hl, 0xA05F
+44C1: 220346   [63]         ld	    (Rand16_seed2), hl
+44C4: E1       [73]         pop	    hl
+44C5: C9       [83]         ret
+                        
+                        ; uint16_t rand16()
+                        ; Inputs:
+                        ;   (Rand16_seed1) contains a 16-bit seed value
+                        ;   (Rand16_seed2) contains a NON-ZERO 16-bit seed value
+                        ; Outputs:
+                        ;   HL is the result
+                        ;   BC, DE is preserved
+                        ; Destroys:
+                        ;   AF
+                        ; cycle: 4,294,901,760 (almost 4.3 billion)
+                        ; 160cc
+                        ; 26 bytes
+44C6:                   rand16:
+44C6: C5       [11]         push bc
+44C7: 2A0146   [27]         ld hl,(Rand16_seed1)
+44CA: 44       [31]         ld b,h
+44CB: 4D       [35]         ld c,l
+44CC: 29       [46]         add hl,hl
+44CD: 29       [57]         add hl,hl
+44CE: 2C       [61]         inc l
+44CF: 09       [72]         add hl,bc
+44D0: 220146   [88]         ld (Rand16_seed1),hl
+44D3: 2A0346   [104]        ld hl,(Rand16_seed2)
+44D6: 29       [115]        add hl,hl
+44D7: 9F       [119]        sbc a,a
+44D8: E62D     [126]        and %00101101
+44DA: AD       [130]        xor l
+44DB: 6F       [134]        ld l,a
+44DC: 220346   [150]        ld (Rand16_seed2),hl
+44DF: 09       [161]        add hl,bc
+44E0: C1       [171]        pop bc
+44E1: C9       [181]        ret
+                        
+                        ; uint16_t rand16_modn(uint16_t n)
+                        ; - pass "n" in BC
+                        ; - returns a 16-bit pseudo-random number on the interval [0, n) in HL
+44E2:                   rand16_modn::
+44E2: D5       [11]         push    de
+44E3: 50       [15]         ld	    d, b
+44E4: 59       [19]         ld	    e, c	; DE = BC
+44E5: CDC644   [36]         call    rand16	; HL = rand16()
+44E8: 7C       [40]         ld	    a, h
+44E9: 4D       [44]         ld	    c, l	; AC = HL
+44EA: CD1F45   [61]         call    div_ac_de	; (AC, HL) = divmod16(AC, DE)
+44ED: D1       [71]         pop	    de		; we don't want the quotient, only the remainder in HL
+44EE: C9       [81]         ret
+                        
+                        ; (uint16_t, uint16_t) divmod16(uint16_t n, uint16_t d)
+                        ; - divides "n" by "d", returning n / d and n % d
+                        ; - pass "n" in DE, "d" in BC
+                        ; - returns quotient (n/d) in DE, remainder (n%d) in HL
+                        #local
+44EF:                   divmod16_me::
+44EF: 3E10     [ 7]         ld	    a, 16	; max 16 iterations
+44F1: 210000   [17]         ld	    hl, 0
+44F4: 1803     [29]         jr	    start
+44F6:                   loop:
+44F6: 09       [11]         add	    hl, bc	; HL += "d"
+44F7:                   loop2:
+44F7: 3D       [ 4]         dec	    a		; decrement loop counter
+44F8: C8       [ 9|15]      ret	    z		; return if done
+44F9:                   start:
+44F9: CB23     [ 8]         sla	    e
+44FB: CB12     [16]         rl	    d		; shift DE left 1, high bit to carry flag
+44FD: ED6A     [31]         adc	    hl, hl	; HL = (HL << 1) + carry, with carry flag receiving shifted-out bit
+44FF: ED42     [46]         sbc	    hl, bc	; HL = HL - "d" - carry
+4501: 30F3     [53|58]      jr	    nc, loop	; jump if carry == 0
+4503: 1C       [57]         inc	    e		; set low bit of DE
+4504: 18F1     [69]         jr	    loop2
+                        #endlocal
+                        
+                        #local
+4506:                   divmod16_z80heaven::
+4506: 3E10     [ 7]          ld a,16        ;7
+4508: 210000   [17]          ld hl,0        ;10
+450B: C31045   [27]          jp $+5         ;10
+450E:                   DivLoop:
+450E: 09       [11]            add hl,bc    ;--
+450F: 3D       [15]            dec a        ;64
+4510: C8       [20|26]         ret z        ;86
+                        
+4511: CB23     [28]            sla e        ;128
+4513: CB12     [36]            rl d         ;128
+4515: ED6A     [51]            adc hl,hl    ;240
+4517: ED42     [66]            sbc hl,bc    ;240
+4519: 30F3     [73|78]         jr nc,DivLoop ;23|21
+451B: 1C       [77]            inc e        ;--
+451C: C30F45   [87]            jp DivLoop+1
+                        #endlocal
+                        
+                        ; The following routine divides AC by DE and places the quotient in AC and the remainder in HL.
+                        #local
+451F:                   div_ac_de::
+451F: 210000   [10]         ld	    hl, 0
+4522: 0610     [17]         ld	    b, 16
+                        
+4524:                   loop:
+4524: CB31     [ 8]         sll	    c
+4526: 17       [12]         rla
+4527: ED6A     [27]         adc	    hl, hl
+4529: ED52     [42]         sbc	    hl, de
+452B: 3002     [49|54]      jr	    nc, $+4
+452D: 19       [60]         add	    hl, de
+452E: 0D       [64]         dec	    c
+                            
+452F: 10F3     [72|77]      djnz    loop
+                            
+4531: C9       [82]         ret
+                        #endlocal
+                        
+                        ; uint8_t bin2hex(uint8_t val)
+                        ; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
+                        #local
+4532:                   bin2hex::
+4532: 7D       [ 4]         ld	    a, l
+4533: E60F     [11]         and	    0xF
+4535: FE0A     [18]         cp	    0xA
+4537: 3804     [25|30]      jr	    c, decimal
+4539: C637     [32]         add	    'A'-10
+453B: 6F       [36]         ld	    l, a
+453C: C9       [46]         ret
+453D:                   decimal:
+453D: C630     [ 7]         add	    '0'
+453F: 6F       [11]         ld	    l, a
+4540: C9       [21]         ret
+                        #endlocal
+                        
+                        ; void sio_putc(uint8_t ch)
+                        ; - write the specified character "ch" to port A
+                        #local
+4541:                   sio_putc::
+4541:                   waitTX:
+                            ; wait until transmitter is idle
+4541: DB22     [11]         in	    a, (PORT_SIOACTL)
+4543: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+4545: 28FA     [26|31]      jr	    z, waitTX
+                            ; write output character
+4547: 7D       [30]         ld	    a, l
+4548: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+454A: C9       [51]         ret
+                        #endlocal
+                        
+                        ; void sio_puts(uint8_t *text)
+                        ; - write the NUL-terminated string at "text" to port A
+                        #local
+454B:                   sio_puts::
+454B: E5       [11]         push    hl
+454C: C5       [22]         push    bc
+454D:                   nextByte:
+454D: 7E       [ 7]         ld	    a, (hl)
+454E: 23       [13]         inc	    hl
+454F: B7       [17]         or	    a		; fast test a==0
+4550: 280C     [24|29]      jr	    z, done
+4552: 47       [28]         ld	    b, a
+4553:                   waitTX:
+                            ; wait until transmitter is idle
+4553: DB22     [11]         in	    a, (PORT_SIOACTL)
+4555: CB57     [19]         bit	    SIORR0_IDX_TBE, a
+4557: 28FA     [26|31]      jr	    z, waitTX
+                            ; write output character
+4559: 78       [30]         ld	    a, b
+455A: D320     [41]         out	    (PORT_SIOADAT), a	; send byte out serial port
+455C: 18EF     [53]         jr	    nextByte
+455E:                   done:
+455E: C1       [10]         pop	    bc
+455F: E1       [20]         pop	    hl
+4560: C9       [30]         ret
+                        #endlocal
+                        
+                        ; void sio_puthex8(uint8_t val)
+                        ; - writes the specified 8-bit value "val" as a pair of hex digits to port A
+4561:                   sio_puthex8::
+4561: E5       [11]         push    hl
+4562: 65       [15]         ld	    h, l
+4563: CB3D     [23]         srl	    l
+4565: CB3D     [31]         srl	    l
+4567: CB3D     [39]         srl	    l
+4569: CB3D     [47]         srl	    l
+456B: CD3245   [64]         call    bin2hex
+456E: CD4145   [81]         call    sio_putc
+4571: 6C       [85]         ld	    l, h
+4572: CD3245   [102]        call    bin2hex
+4575: CD4145   [119]        call    sio_putc
+4578: E1       [129]        pop	    hl
+4579: C9       [139]        ret
+                        
+                        ; void sio_puthex16(uint16_t val)
+                        ; - writes the specified 16-bit value "val" as a quad of hex digits to port A
+457A:                   sio_puthex16::
+457A: E5       [11]         push    hl
+457B: 6C       [15]         ld	    l, h
+457C: CD6145   [32]         call    sio_puthex8
+457F: E1       [42]         pop	    hl
+4580: 18DF     [54]         jr	    sio_puthex8
+                        
                         ; void seg_init()
-4260:                   seg_init::
-4260: AF       [ 4]         xor	    a
-4261: CDB742   [21]         call    seg0_write
-4264: CDBD42   [38]         call    seg1_write
-4267: C9       [48]         ret
+4582:                   seg_init::
+4582: AF       [ 4]         xor	    a
+4583: CDD945   [21]         call    seg0_write
+4586: CDDF45   [38]         call    seg1_write
+4589: C9       [48]         ret
                         
                         ; void seg_writehex(uint8_t val)
                         ; - write the two hex digits of "val" to the 7-segment displays
-4268:                   seg_writehex::
-4268: E5       [11]         push    hl
-4269: CD8F42   [28]         call    seg1_writehex
-426C: 7D       [32]         ld	    a, l
-426D: 07       [36]         rlca
-426E: 07       [40]         rlca
-426F: 07       [44]         rlca
-4270: 07       [48]         rlca
-4271: 6F       [52]         ld	    l, a
-4272: CD7742   [69]         call    seg0_writehex
-4275: E1       [79]         pop	    hl
-4276: C9       [89]         ret
+458A:                   seg_writehex::
+458A: E5       [11]         push    hl
+458B: CDB145   [28]         call    seg1_writehex
+458E: 7D       [32]         ld	    a, l
+458F: 07       [36]         rlca
+4590: 07       [40]         rlca
+4591: 07       [44]         rlca
+4592: 07       [48]         rlca
+4593: 6F       [52]         ld	    l, a
+4594: CD9945   [69]         call    seg0_writehex
+4597: E1       [79]         pop	    hl
+4598: C9       [89]         ret
                         
                         #local
                         ; void seg0_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-4277:                   seg0_writehex::
-4277: E5       [11]         push    hl
-4278: C5       [22]         push    bc
-4279: 01A742   [32]         ld	    bc, hex2seg_table
-427C: 7D       [36]         ld	    a, l
-427D: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-427F: 6F       [47]         ld	    l, a
-4280: 2600     [54]         ld	    h, 0
-4282: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-4283: 3ADD42   [78]         ld	    a, (Seg0_data)
-4286: E680     [85]         and	    SEG_DP
-4288: B6       [92]         or	    (hl)    ; a = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
-4289: CDB742   [109]        call    seg0_write
-428C: C1       [119]        pop	    bc
-428D: E1       [129]        pop	    hl
-428E: C9       [139]        ret
+4599:                   seg0_writehex::
+4599: E5       [11]         push    hl
+459A: C5       [22]         push    bc
+459B: 01C945   [32]         ld	    bc, hex2seg_table
+459E: 7D       [36]         ld	    a, l
+459F: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+45A1: 6F       [47]         ld	    l, a
+45A2: 2600     [54]         ld	    h, 0
+45A4: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+45A5: 3AFF45   [78]         ld	    a, (Seg0_data)
+45A8: E680     [85]         and	    SEG_DP
+45AA: B6       [92]         or	    (hl)    ; a = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
+45AB: CDD945   [109]        call    seg0_write
+45AE: C1       [119]        pop	    bc
+45AF: E1       [129]        pop	    hl
+45B0: C9       [139]        ret
                         
                         ; void seg1_writehex(uint8_t val)
                         ; - write hex digit in lower nybble of "val" to 7-segment display
-428F:                   seg1_writehex::
-428F: E5       [11]         push    hl
-4290: C5       [22]         push    bc
-4291: 01A742   [32]         ld	    bc, hex2seg_table
-4294: 7D       [36]         ld	    a, l
-4295: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
-4297: 6F       [47]         ld	    l, a
-4298: 2600     [54]         ld	    h, 0
-429A: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-429B: 3ADE42   [78]         ld	    a, (Seg1_data)
-429E: E680     [85]         and	    SEG_DP
-42A0: B6       [92]         or	    (hl)    ; a = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
-42A1: CDBD42   [109]        call    seg1_write
-42A4: C1       [119]        pop	    bc
-42A5: E1       [129]        pop	    hl
-42A6: C9       [139]        ret
+45B1:                   seg1_writehex::
+45B1: E5       [11]         push    hl
+45B2: C5       [22]         push    bc
+45B3: 01C945   [32]         ld	    bc, hex2seg_table
+45B6: 7D       [36]         ld	    a, l
+45B7: E60F     [43]         and	    0xF	    ; mask off upper nybble of l
+45B9: 6F       [47]         ld	    l, a
+45BA: 2600     [54]         ld	    h, 0
+45BC: 09       [65]         add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
+45BD: 3A0046   [78]         ld	    a, (Seg1_data)
+45C0: E680     [85]         and	    SEG_DP
+45C2: B6       [92]         or	    (hl)    ; a = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
+45C3: CDDF45   [109]        call    seg1_write
+45C6: C1       [119]        pop	    bc
+45C7: E1       [129]        pop	    hl
+45C8: C9       [139]        ret
                         
-42A7:                   hex2seg_table:
+45C9:                   hex2seg_table:
                             ; 0
-42A7: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
+45C9: 3F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
                             ; 1
-42A8: 06                    .byte SEG_B | SEG_C
+45CA: 06                    .byte SEG_B | SEG_C
                             ; 2
-42A9: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
+45CB: 5B                    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
                             ; 3
-42AA: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
+45CC: 4F                    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
                             ; 4
-42AB: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
+45CD: 66                    .byte SEG_F | SEG_G | SEG_B | SEG_C
                             ; 5
-42AC: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
+45CE: 6D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
                             ; 6
-42AD: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+45CF: 7D                    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; 7
-42AE: 07                    .byte SEG_A | SEG_B | SEG_C
+45D0: 07                    .byte SEG_A | SEG_B | SEG_C
                             ; 8
-42AF: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
+45D1: 7F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
                             ; 9
-42B0: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
+45D2: 6F                    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
                             ; A
-42B1: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
+45D3: 77                    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
                             ; b
-42B2: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
+45D4: 7C                    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
                             ; C
-42B3: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
+45D5: 39                    .byte SEG_A | SEG_D | SEG_E | SEG_F
                             ; d
-42B4: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
+45D6: 5E                    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
                             ; E
-42B5: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
+45D7: 79                    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
                             ; F
-42B6: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
+45D8: 71                    .byte SEG_A | SEG_E | SEG_F | SEG_G
                         #endlocal
                         
                         ; void seg0_write(uint8_t bits)
                         ; - parameter passed in A
                         ; - write raw bits to first 7-segment display register
-42B7:                   seg0_write::
-42B7: 32DD42   [13]         ld	    (Seg0_data), a
-42BA: D300     [24]         out	    (PORT_SEG0), a
-42BC: C9       [34]         ret
+45D9:                   seg0_write::
+45D9: 32FF45   [13]         ld	    (Seg0_data), a
+45DC: D300     [24]         out	    (PORT_SEG0), a
+45DE: C9       [34]         ret
                         
                         ; void seg1_write(uint8_t bits)
                         ; - parameter passed in A
                         ; - write raw bits to second 7-segment display register
-42BD:                   seg1_write::
-42BD: 32DE42   [13]         ld	    (Seg1_data), a
-42C0: D310     [24]         out	    (PORT_SEG1), a
-42C2: C9       [34]         ret
+45DF:                   seg1_write::
+45DF: 320046   [13]         ld	    (Seg1_data), a
+45E2: D310     [24]         out	    (PORT_SEG1), a
+45E4: C9       [34]         ret
                         
                         ; void delay_ms(uint8_t ms)
                         ; - delay for at least the specified number of milliseconds
                         #local
-42C3:                   delay_ms::
-42C3: 2C       [ 4]         inc	    l
-42C4: 2D       [ 8]         dec	    l
-42C5: C8       [13|19]      ret	    z		; delay of 0 returns immediately
-42C6: C5       [24]         push    bc
-42C7: 45       [28]         ld	    b, l
-42C8:                   loop:
-42C8: CDCF42   [17]         call    delay_1ms
-42CB: 10FB     [25|30]      djnz    loop
-42CD: C1       [35]         pop	    bc
-42CE: C9       [45]         ret
+45E5:                   delay_ms::
+45E5: 2C       [ 4]         inc	    l
+45E6: 2D       [ 8]         dec	    l
+45E7: C8       [13|19]      ret	    z		; delay of 0 returns immediately
+45E8: C5       [24]         push    bc
+45E9: 45       [28]         ld	    b, l
+45EA:                   loop:
+45EA: CDF145   [17]         call    delay_1ms
+45ED: 10FB     [25|30]      djnz    loop
+45EF: C1       [35]         pop	    bc
+45F0: C9       [45]         ret
                         #endlocal
                         
                         ; void delay_1ms()
                         ; - delay for 1ms (technically, 0.9999ms)
                         #local
-42CF:                   delay_1ms::
-42CF: C5       [11]         push    bc		; 11 T-states
+45F1:                   delay_1ms::
+45F1: C5       [11]         push    bc		; 11 T-states
                         ; To delay 1ms, we want to wait 10,000 T-states (@10MHz)
                         ; The loop is (38*b + 13*(b-1) + 8) T-states long
                         ; Rearranging: 51*b - 5
                         ; Solve for b: b = (10000 + 5 / 51) = 196.17
-42D0: 06C3     [18]         ld	    b, 195	; 7 T-states
-42D2:                   loop:
-42D2: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
-42D5: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
-42D8: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
-42DA: C1       [56]         pop	    bc		; 10 T-states
-42DB: 00       [60]         nop			; 4 T-states
-42DC: C9       [70]         ret			; 10 T-states
+45F2: 06C3     [18]         ld	    b, 195	; 7 T-states
+45F4:                   loop:
+45F4: DD7E01   [19]         ld	    a, (ix+1)	; 19 T-states
+45F7: DD7E01   [38]         ld	    a, (ix+1)	; 19 T-states
+45FA: 10F8     [46|51]      djnz    loop	; (b-1)*13+8 T-states
+45FC: C1       [56]         pop	    bc		; 10 T-states
+45FD: 00       [60]         nop			; 4 T-states
+45FE: C9       [70]         ret			; 10 T-states
                         ; We also assume the routine is CALLed, for 17 T-states.
                         ; Total delay is therefore:
                         ;   17 + 11 + 7 + 51*195 - 5 + 10 + 4 + 10 = 9,999
@@ -1070,11 +2246,13 @@
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                         ; data segment immediately follows code
                         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-42DD:                   #data DATA,TEXT_end
+45FF:                   #data DATA,TEXT_end
                         ; define static variables here
-42DD: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
-42DE: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
+45FF: 00                Seg0_data:: defs 1	; current value of first 7-segment display byte
+4600: 00                Seg1_data:: defs 1	; current value of second 7-segment display byte
+4601: 0000              Rand16_seed1:: defs 2	; seed value for rand16() routine
+4603: 0000              Rand16_seed2:: defs 2	; seed value for rand16() routine
 
 
-total time: 0.0135 sec.
+total time: 0.0200 sec.
 no errors
