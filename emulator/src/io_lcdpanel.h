@@ -1,24 +1,24 @@
 //
-//  io_joyseg.hpp
+//  io_lcdpanel.h
 //  zed-80-emulator
 //
-//  Created by Daniel Collens on 2018-11-05.
-//  Copyright © 2018 The Head. All rights reserved.
-//
+//  Created by Daniel Collens on 2019-05-16.
 
-#ifndef io_joyseg_hpp
-#define io_joyseg_hpp
+#ifndef io_lcdpanel_h
+#define io_lcdpanel_h
 
 #import "ViewController.h"
 
 #include "iodevice.h"
+#include "ra8876.h"
 
-class JoySegDevice : public IoDevice {
+class LcdPanelDevice : public IoDevice {
+    RA8876 _ra8876;
     ViewController *_uiDelegate;
-
+    
 public:
-    JoySegDevice() : _uiDelegate(nil) {}
-
+    LcdPanelDevice() : _uiDelegate(nil) {}
+    
     // Print a brief message describing this device.
     virtual void describe(std::ostream &out) const;
     
@@ -30,4 +30,4 @@ public:
     }
 };
 
-#endif /* io_joyseg_hpp */
+#endif /* io_lcdpanel_h */

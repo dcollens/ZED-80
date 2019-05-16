@@ -1,5 +1,5 @@
 //
-//  SevenSegmentView.m
+//  SevenSegmentView.mm
 //  gui
 //
 //  Created by Lawrence Kesteloot on 4/30/19.
@@ -8,14 +8,10 @@
 
 #import "SevenSegmentView.h"
 
-@interface SevenSegmentView () {
+@implementation SevenSegmentView {
     NSImage *_imageBackground;
     NSImage *_imageSegments[8];
 }
-
-@end
-
-@implementation SevenSegmentView
 
 - (instancetype)init {
     self = [super init];
@@ -30,18 +26,23 @@
     return self;
 }
 
-- (NSSize)size {
+- (NSSize)intrinsicContentSize {
     return _imageBackground.size;
 }
-
 
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
 
-    [_imageBackground drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositingOperationCopy fraction:1.0];
+    [_imageBackground drawAtPoint:NSZeroPoint
+                         fromRect:NSZeroRect
+                        operation:NSCompositingOperationCopy
+                         fraction:1.0];
     for (int i = 0; i < 8; i++) {
         if ((_value & (1 << i)) != 0) {
-            [_imageSegments[i] drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositingOperationSourceAtop fraction:1.0];
+            [_imageSegments[i] drawAtPoint:NSZeroPoint
+                                  fromRect:NSZeroRect
+                                 operation:NSCompositingOperationSourceAtop
+                                  fraction:1.0];
         }
     }
 }

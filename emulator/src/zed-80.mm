@@ -6,10 +6,10 @@
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#import <iostream>
+#include <iostream>
 
-#import "zed-80.hpp"
-#import "strutils.hpp"
+#include "zed-80.hpp"
+#include "strutils.hpp"
 
 using std::cout;
 using std::cerr;
@@ -25,7 +25,7 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
 }
 
 ZED80::ZED80()
-    : _uiDelegate(nullptr)
+    : _uiDelegate(nil)
 {
     auto romData = make_unique<vector<uint8_t>>(ROM_SIZE);
     _ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
@@ -33,13 +33,15 @@ ZED80::ZED80()
     _mmu = make_shared<MMU>(std::move(romData), std::move(_ramData), _sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
+    _lcdPanelDevice = make_shared<LcdPanelDevice>();
     _iommu->setDevice(0, _joySegDevice);
     _iommu->setDevice(1, _joySegDevice);
-    _iommu->setDevice(6, _mmu);
-    _iommu->setDevice(7, _sysRegDevice);
     // TODO: iommu->setDevice(2, sioDevice);
     // TODO: iommu->setDevice(3, pioDevice);
     // TODO: iommu->setDevice(4, ctcDevice);
+    _iommu->setDevice(5, _lcdPanelDevice);
+    _iommu->setDevice(6, _mmu);
+    _iommu->setDevice(7, _sysRegDevice);
 
     _mmu->describe(cout);
     _iommu->describe(cout);
@@ -58,6 +60,7 @@ void ZED80::setRom(unique_ptr<vector<uint8_t>> &&rom) {
 void ZED80::setUiDelegate(ViewController *uiDelegate) {
     _uiDelegate = uiDelegate;
     _joySegDevice->setUiDelegate(uiDelegate);
+    _lcdPanelDevice->setUiDelegate(uiDelegate);
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {

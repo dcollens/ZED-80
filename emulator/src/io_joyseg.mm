@@ -29,7 +29,3 @@ uint64_t JoySegDevice::tickCallback(int numTicks, uint64_t pins) {
     }
     return pins;
 }
-
-void JoySegDevice::setUiDelegate(ViewController *uiDelegate) {
-    _uiDelegate = uiDelegate;
-}

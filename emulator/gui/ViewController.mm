@@ -8,11 +8,11 @@
 
 #import <fstream>
 #import "ViewController.h"
+#import "LcdPanelView.h"
 #import "SevenSegmentView.h"
 #import "AppDelegate.h"
-#import "zed-80.hpp"
 
-#define SEVEN_SEGMENT_COUNT 2
+#include "zed-80.hpp"
 
 using std::cout;
 using std::cerr;
@@ -20,19 +20,14 @@ using std::endl;
 using std::unique_ptr;
 using std::make_unique;
 using std::make_shared;
+using std::array;
 using std::vector;
 using std::string;
 using std::ifstream;
 
-@interface ViewController () {
-    ZED80 _zed80;
-    NSTimer *_emulatorRunTimer;
-    SevenSegmentView *_sevenSegment[SEVEN_SEGMENT_COUNT];
-}
+static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
 
-@end
-
-@implementation ViewController
+static constexpr CGFloat V_PADDING = 8;
 
 static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     ifstream file(fileName, ifstream::in | ifstream::binary);
@@ -40,11 +35,11 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
         cerr << "Can't open \"" << fileName << "\" for input" << endl;
         return nullptr;
     }
-
+    
     file.seekg(0, ifstream::end);
     auto fileSize = file.tellg();
     file.seekg(0);
-
+    
     auto data = make_unique<vector<uint8_t>>(fileSize);
     file.read(reinterpret_cast<char *>(data->data()), data->size());
     if (file.fail()) {
@@ -54,14 +49,31 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     return data;
 }
 
+@implementation ViewController {
+    ZED80 _zed80;
+    NSTimer *_emulatorRunTimer;
+    LcdPanelView *_lcdPanelView;
+    array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    _emulatorRunTimer = nil;
+    _lcdPanelView = [LcdPanelView new];
+    [self.view addSubview:_lcdPanelView];
+    
     for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
-        _sevenSegment[i] = [[SevenSegmentView alloc] init];
+        _sevenSegment[i] = [SevenSegmentView new];
         [self.view addSubview:_sevenSegment[i]];
     }
+    
+    // Resize to fit around content.
+    NSRect frame = self.view.frame;
+    frame.size.width = _lcdPanelView.intrinsicContentSize.width;
+    frame.size.height = _lcdPanelView.intrinsicContentSize.height
+            + V_PADDING
+            + _sevenSegment[0].intrinsicContentSize.height;
+    self.view.frame = frame;
 
     _zed80.setUiDelegate(self);
 
@@ -73,20 +85,18 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     }
 }
 
-- (void)setRepresentedObject:(id)representedObject {
-    [super setRepresentedObject:representedObject];
-
-    // Update the view, if already loaded.
-}
-
 - (void)viewWillLayout {
     [super viewWillLayout];
 
+    NSRect lcdFrame;
+    lcdFrame.origin = NSZeroPoint;
+    lcdFrame.size = _lcdPanelView.intrinsicContentSize;
+    _lcdPanelView.frame = lcdFrame;
+    
     for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
-        NSSize size = _sevenSegment[i].size;
+        NSSize size = _sevenSegment[i].intrinsicContentSize;
         NSRect frame;
-        frame.origin.x = i*size.width;
-        frame.origin.y = 0;
+        frame.origin = NSMakePoint(i * size.width, lcdFrame.size.height + V_PADDING);
         frame.size = size;
 
         _sevenSegment[i].frame = frame;
@@ -115,10 +125,11 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     NSLog(@"Running emulator");
     uint32_t periodMs = 10;
 
-    _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs/1000.0 repeats:YES block:^(NSTimer * _Nonnull timer) {
-
-        self->_zed80.smallRun(periodMs);
-    }];
+    _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs / 1000.0
+                                                        repeats:YES
+                                                          block:^(NSTimer * _Nonnull timer) {
+                                                              self->_zed80.smallRun(periodMs);
+                                                          }];
 }
 
 - (IBAction)emulatorStop:(id)sender {

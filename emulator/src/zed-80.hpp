@@ -9,11 +9,13 @@
 #ifndef zed_80_hpp
 #define zed_80_hpp
 
-#import "mmu.hpp"
-#import "iommu.hpp"
-#import "z80.h"
-#import "io_joyseg.hpp"
 #import "ViewController.h"
+
+#include "mmu.hpp"
+#include "iommu.hpp"
+#include "z80.h"
+#include "io_joyseg.hpp"
+#include "io_lcdpanel.h"
 
 using std::unique_ptr;
 
@@ -23,6 +25,7 @@ class ZED80 {
     unique_ptr<vector<uint8_t>> _romData;
     shared_ptr<SysRegDevice>    _sysRegDevice;
     shared_ptr<JoySegDevice>    _joySegDevice;
+    shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
     shared_ptr<MMU>             _mmu;
     unique_ptr<IOMMU>           _iommu;
     z80_t                       _cpu;

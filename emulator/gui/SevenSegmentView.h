@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface SevenSegmentView : NSView
 
 @property (nonatomic) uint8_t value;
-@property (nonatomic) NSSize size;
 
 @end
 

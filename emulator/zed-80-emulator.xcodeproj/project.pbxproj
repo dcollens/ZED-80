@@ -21,6 +21,9 @@
 		4A1B3FF22278144700714B35 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 		4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
 		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
+		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
+		95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95622B75228DBF1D007C57C0 /* ra8876.cpp */; };
+		95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B77228DC02F007C57C0 /* io_lcdpanel.mm */; };
 		95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
 		95FE9DB72182A99700476561 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.mm */; };
 		95FE9DC32182AAEF00476561 /* chips.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.mm */; };
@@ -57,6 +60,12 @@
 		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
 		4A7A0CE2227961BD00279249 /* SevenSegmentView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SevenSegmentView.h; sourceTree = "<group>"; };
 		4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SevenSegmentView.mm; sourceTree = "<group>"; };
+		95622B71228DBC02007C57C0 /* LcdPanelView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LcdPanelView.mm; sourceTree = "<group>"; };
+		95622B72228DBC02007C57C0 /* LcdPanelView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LcdPanelView.h; sourceTree = "<group>"; };
+		95622B74228DBCD5007C57C0 /* ra8876.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ra8876.h; sourceTree = "<group>"; };
+		95622B75228DBF1D007C57C0 /* ra8876.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ra8876.cpp; sourceTree = "<group>"; };
+		95622B77228DC02F007C57C0 /* io_lcdpanel.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_lcdpanel.mm; sourceTree = "<group>"; };
+		95622B78228DC02F007C57C0 /* io_lcdpanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_lcdpanel.h; sourceTree = "<group>"; };
 		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
@@ -101,15 +110,17 @@
 			children = (
 				4A1B3FDB2278083C00714B35 /* AppDelegate.h */,
 				4A1B3FDC2278083C00714B35 /* AppDelegate.mm */,
+				95622B72228DBC02007C57C0 /* LcdPanelView.h */,
+				95622B71228DBC02007C57C0 /* LcdPanelView.mm */,
+				4A7A0CE2227961BD00279249 /* SevenSegmentView.h */,
+				4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */,
 				4A1B3FDE2278083C00714B35 /* ViewController.h */,
 				4A1B3FDF2278083C00714B35 /* ViewController.mm */,
 				4A1B3FE12278083D00714B35 /* Assets.xcassets */,
-				4A1B3FE32278083D00714B35 /* Main.storyboard */,
+				4A1B3FE92278083D00714B35 /* gui.entitlements */,
 				4A1B3FE62278083D00714B35 /* Info.plist */,
 				4A1B3FE72278083D00714B35 /* main.m */,
-				4A1B3FE92278083D00714B35 /* gui.entitlements */,
-				4A7A0CE2227961BD00279249 /* SevenSegmentView.h */,
-				4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */,
+				4A1B3FE32278083D00714B35 /* Main.storyboard */,
 			);
 			path = gui;
 			sourceTree = "<group>";
@@ -135,26 +146,30 @@
 		95FE9DB52182A99700476561 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				4A1B3F922277D94400714B35 /* io_sysreg.mm */,
-				4A1B3F932277D94500714B35 /* io_sysreg.hpp */,
 				95FE9DC12182AAC200476561 /* _z80_decoder.h */,
 				95FE9DC02182AA4900476561 /* ay38910.h */,
+				95FE9DC22182AAEF00476561 /* chips.mm */,
+				95C4D3232190CBD700007662 /* io_joyseg.hpp */,
+				95C4D3222190CBD700007662 /* io_joyseg.mm */,
+				95622B78228DC02F007C57C0 /* io_lcdpanel.h */,
+				95622B77228DC02F007C57C0 /* io_lcdpanel.mm */,
+				4A1B3F932277D94500714B35 /* io_sysreg.hpp */,
+				4A1B3F922277D94400714B35 /* io_sysreg.mm */,
+				95C4D3252190CC0100007662 /* iodevice.h */,
+				95FE9DCE21848E8700476561 /* iommu.hpp */,
+				95FE9DCD21848E8700476561 /* iommu.mm */,
+				95FE9DB62182A99700476561 /* main.mm */,
+				95FE9DC52183AE9600476561 /* mmu.hpp */,
+				95FE9DC42183AE9600476561 /* mmu.mm */,
+				95622B74228DBCD5007C57C0 /* ra8876.h */,
+				95622B75228DBF1D007C57C0 /* ra8876.cpp */,
+				95FE9DCB2183D12B00476561 /* strutils.hpp */,
+				95FE9DCA2183D12B00476561 /* strutils.mm */,
 				95FE9DBF2182AA4900476561 /* z80.h */,
 				95FE9DBD2182AA4900476561 /* z80ctc.h */,
 				95FE9DBE2182AA4900476561 /* z80pio.h */,
-				95FE9DB62182A99700476561 /* main.mm */,
-				95FE9DC22182AAEF00476561 /* chips.mm */,
-				95FE9DC42183AE9600476561 /* mmu.mm */,
-				95FE9DC52183AE9600476561 /* mmu.hpp */,
-				95FE9DC72183C8DD00476561 /* zed-80.mm */,
 				95FE9DC82183C8DD00476561 /* zed-80.hpp */,
-				95FE9DCA2183D12B00476561 /* strutils.mm */,
-				95FE9DCB2183D12B00476561 /* strutils.hpp */,
-				95C4D3252190CC0100007662 /* iodevice.h */,
-				95FE9DCD21848E8700476561 /* iommu.mm */,
-				95FE9DCE21848E8700476561 /* iommu.hpp */,
-				95C4D3222190CBD700007662 /* io_joyseg.mm */,
-				95C4D3232190CBD700007662 /* io_joyseg.hpp */,
+				95FE9DC72183C8DD00476561 /* zed-80.mm */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -255,12 +270,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */,
+				95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */,
+				95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */,
 				4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */,
 				4A1B3FEE2278144700714B35 /* chips.mm in Sources */,
 				4A1B3FEF2278144700714B35 /* mmu.mm in Sources */,
 				4A1B3FF02278144700714B35 /* zed-80.mm in Sources */,
 				4A1B3FF12278144700714B35 /* strutils.mm in Sources */,
 				4A1B3FF22278144700714B35 /* iommu.mm in Sources */,
+				95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */,
 				4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */,
 				4A1B3FE02278083C00714B35 /* ViewController.mm in Sources */,
 				4A1B3FE82278083D00714B35 /* main.m in Sources */,
