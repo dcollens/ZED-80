@@ -136,4 +136,22 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     [self cancelEmulatorTimer];
 }
 
+// Magically called via first responder from menu item.
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+    BOOL enabled;
+
+    SEL action = menuItem.action;
+    if (action == @selector(emulatorRun:)) {
+        enabled = _emulatorRunTimer == nil;
+    } else if (action == @selector(emulatorStop:)) {
+        enabled = _emulatorRunTimer != nil;
+    } else {
+        // We can't bubble up (super doesn't implement this method),
+        // so return YES as per instructions ("Enabling Menu Items").
+        enabled = YES;
+    }
+
+    return enabled;
+}
+
 @end
