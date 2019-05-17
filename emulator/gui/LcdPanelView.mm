@@ -52,12 +52,17 @@ static constexpr size_t PANEL_HEIGHT = 600;
     // For some reason, hanging onto the NSGraphicsContext between re-draw cycles did not work, so
     // we make a fresh one each time we need it.
     NSGraphicsContext *gfxContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:_imageRep];
+
+    // Make a second context for the purpose of flipping everything upside down. This
+    // also flips the text itself, but our isFlipped method flips that back.
+    gfxContext = [NSGraphicsContext graphicsContextWithCGContext:gfxContext.CGContext flipped:YES];
     CGContextRef cgContext = gfxContext.CGContext;
     
     // Set up global graphics context parameters.
     CGContextSetAllowsAntialiasing(cgContext, false);
     CGContextSetShouldAntialias(cgContext, false);
     CGContextSetLineWidth(cgContext, 1);
+
     return gfxContext;
 }
 
@@ -72,6 +77,11 @@ static constexpr size_t PANEL_HEIGHT = 600;
                     fromRect:NSZeroRect
                    operation:NSCompositingOperationCopy
                     fraction:1];
+}
+
+// Make origin in upper-left.
+- (BOOL)isFlipped {
+    return YES;
 }
 
 - (void)drawLineFrom:(NSPoint)p1 to:(NSPoint)p2 withColor:(NSColor *)c {
