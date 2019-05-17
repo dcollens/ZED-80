@@ -31,6 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
             withRadii:(NSSize)radii
                 color:(NSColor *)c;
 
+- (void)drawGlyph:(uint8_t)ch
+          atPoint:(NSPoint)p
+withForegroundColor:(NSColor *)fg
+  backgroundColor:(NSColor *)bg;
+
 @end
 
 NS_ASSUME_NONNULL_END

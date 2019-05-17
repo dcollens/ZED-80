@@ -161,4 +161,15 @@ static constexpr size_t PANEL_HEIGHT = 600;
     [self setNeedsDisplay:YES];
 }
 
+- (void)drawGlyph:(uint8_t)ch
+          atPoint:(NSPoint)p
+withForegroundColor:(NSColor *)fg
+  backgroundColor:(NSColor *)bg
+{
+    // TODO: NYI
+    NSLog(@"LcdPanelView: ignoring attempt to draw glyph \"%c\"", ch);
+    
+    [self setNeedsDisplay:YES];
+}
+
 @end

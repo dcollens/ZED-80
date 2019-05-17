@@ -35,6 +35,8 @@ public:
         
         virtual void draw_ellipse(Color c, Point center, Point radii) = 0;
         virtual void fill_ellipse(Color c, Point center, Point radii) = 0;
+
+        virtual void draw_text(uint8_t ch, Point p, Color fg, Color bg, bool transparent_bg) = 0;
     };
 
 private:
@@ -50,15 +52,22 @@ private:
     Color get_bg_color() const;
     
     Point get_pt(uint8_t base_reg) const;
+    void set_pt(Point p, uint8_t base_reg);
+    
+    Point get_awul_pt() const;
+    Point get_aw_sz() const;
     
     Point get_lintri_pt1() const;
     Point get_lintri_pt2() const;
     Point get_lintri_pt3() const;
     
     Point get_text_pt() const;
-    
+    void set_text_pt(Point p);
+
     Point get_ellipse_pt() const;
     Point get_ellipse_radii() const;
+    
+    void advance_text_position();
     
 public:
     RA8876(Gfx_ops &gfx_ops);

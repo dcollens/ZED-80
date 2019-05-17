@@ -181,6 +181,21 @@ RA8876::Point RA8876::get_pt(uint8_t base_reg) const {
                  _regs.at(base_reg + 2) | (uint16_t(_regs.at(base_reg + 3)) << 8));
 }
 
+void RA8876::set_pt(Point p, uint8_t base_reg) {
+    _regs.at(base_reg) = p.x & 0xFF;
+    _regs.at(base_reg + 1) = (p.x >> 8) & 0x1F;
+    _regs.at(base_reg + 2) = p.y & 0xFF;
+    _regs.at(base_reg + 3) = (p.y >> 8) & 0x1F;
+}
+
+RA8876::Point RA8876::get_awul_pt() const {
+    return get_pt(REG_AWUL_X0);
+}
+
+RA8876::Point RA8876::get_aw_sz() const {
+    return get_pt(REG_AW_WTH0);
+}
+
 RA8876::Point RA8876::get_lintri_pt1() const {
     return get_pt(REG_DLHSR0);
 }
@@ -195,11 +210,49 @@ RA8876::Point RA8876::get_text_pt() const {
     return get_pt(REG_F_CURX0);
 }
 
+void RA8876::set_text_pt(Point p) {
+    set_pt(p, REG_F_CURX0);
+}
+
 RA8876::Point RA8876::get_ellipse_pt() const {
     return get_pt(REG_DEHR0);
 }
 RA8876::Point RA8876::get_ellipse_radii() const {
     return get_pt(REG_ELL_A0);
+}
+
+void RA8876::advance_text_position() {
+    int char_width = 0;
+    int char_height = 0;
+    switch ((_regs.at(REG_CCR0) >> 4) & 0x3) {
+        case 0:
+            char_width = 8;
+            char_height = 16;
+            break;
+        case 1:
+            char_width = 12;
+            char_height = 24;
+            break;
+        case 2:
+            char_width = 16;
+            char_height = 32;
+            break;
+    }
+    
+    Point p = get_text_pt();
+    p.x += char_width
+        + (_regs.at(REG_F2FSSR) & 0x3F);    // character to character space setting
+    
+    // Wrap to the next line at the right-hand edge of the active window
+    Point awpt = get_awul_pt();
+    Point awsz = get_aw_sz();
+    if (p.x + char_width > awpt.x + awsz.x) {
+        // Wrap line.
+        p.x = awpt.x;
+        p.y += char_height
+            + (_regs.at(REG_FLDR) & 0x1F);  // character line gap setting
+    }
+    set_text_pt(p);
 }
 
 void RA8876::write_data(uint8_t value) {
@@ -385,7 +438,15 @@ void RA8876::write_data(uint8_t value) {
             }
             break;
         case REG_MRWDP:
-            cout << "RA8876: ignoring attempt to write to Memory Data Read/Write Port ($04)" << endl;
+            if ((_regs.at(REG_ICR) & 0x04) == 0) {
+                cout << "RA8876: ignoring attempt to write to Memory Data Read/Write Port in graphics mode" << endl;
+            } else {
+                // Text mode.
+                bool transparent_bg = (_regs.at(REG_CCR1) & 0x04) != 0;
+                _gfx_ops.draw_text(value, get_text_pt(), get_fg_color(), get_bg_color(),
+                                   transparent_bg);
+                advance_text_position();
+            }
             break;
         default:
             cout << "RA8876: ignoring write of $" << to_hex(value)

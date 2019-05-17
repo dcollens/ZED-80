@@ -107,3 +107,13 @@ void LcdPanelDevice::Gfx_ops::fill_ellipse(Color c, Point center, Point radii) {
                     withRadii:NSMakeSize(radii.x, radii.y)
                         color:nscolor(c)];
 }
+
+void LcdPanelDevice::Gfx_ops::draw_text(uint8_t ch, Point p, Color fg, Color bg,
+                                        bool transparent_bg)
+{
+    NSColor *bgColor = transparent_bg ? NSColor.clearColor : nscolor(bg);
+    [_panelView drawGlyph:ch
+                  atPoint:NSMakePoint(p.x, p.y)
+      withForegroundColor:nscolor(fg)
+          backgroundColor:bgColor];
+}

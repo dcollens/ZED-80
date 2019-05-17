@@ -37,6 +37,8 @@ class LcdPanelDevice : public IoDevice {
         
         void draw_ellipse(Color c, Point center, Point radii) override;
         void fill_ellipse(Color c, Point center, Point radii) override;
+        
+        void draw_text(uint8_t ch, Point p, Color fg, Color bg, bool transparent_bg) override;
     };
     
     Gfx_ops _gfx_ops;
