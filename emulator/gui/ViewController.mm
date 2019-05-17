@@ -6,13 +6,12 @@
 //  Copyright © 2019 The Head. All rights reserved.
 //
 
-#import <fstream>
+#include <fstream>
+#include "zed-80.hpp"
+
 #import "ViewController.h"
-#import "LcdPanelView.h"
 #import "SevenSegmentView.h"
 #import "AppDelegate.h"
-
-#include "zed-80.hpp"
 
 using std::cout;
 using std::cerr;
@@ -52,7 +51,6 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 @implementation ViewController {
     ZED80 _zed80;
     NSTimer *_emulatorRunTimer;
-    LcdPanelView *_lcdPanelView;
     array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
 }
 
@@ -77,11 +75,23 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 
     _zed80.setUiDelegate(self);
 
-    auto romData = loadFile("/Users/lk/mine/zed-80/src/zed-80/rom_only_test.rom");
+    auto romData = loadFile(
+                            //"/Users/lk/mine/zed-80/src/zed-80/rom_only_test.rom"
+                            //"/Users/dcollens/Documents/zed-80/src/zed-80/rom_only_test.rom"
+                            //"/Users/dcollens/Documents/zed-80/src/zed-80/rom_ram_test.rom"
+                            "/Users/dcollens/Documents/zed-80/src/zed-80/rom_monitor.rom"
+                            );
     if (romData == nullptr) {
-        NSLog(@"Can't load file");
+        NSLog(@"Can't load ROM file");
     } else {
-        _zed80.setRom(std::move(romData));
+        _zed80.writeMemory(ROM_BASE, romData->size(), *romData);
+    }
+    
+    auto ramData = loadFile("/Users/dcollens/Documents/zed-80/src/zed-80/lcd_test.bin");
+    if (ramData == nullptr) {
+        NSLog(@"Can't load RAM file");
+    } else {
+        _zed80.writeMemory(RAM_BASE, ramData->size(), *ramData);
     }
 }
 
@@ -123,7 +133,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     [self cancelEmulatorTimer];
 
     NSLog(@"Running emulator");
-    uint32_t periodMs = 10;
+    int periodMs = 10;
 
     _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs / 1000.0
                                                         repeats:YES

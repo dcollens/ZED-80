@@ -24,13 +24,9 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80()
-    : _uiDelegate(nil)
-{
-    auto romData = make_unique<vector<uint8_t>>(ROM_SIZE);
-    _ramData = make_unique<vector<uint8_t>>(RAM_SIZE);
+ZED80::ZED80() : _uiDelegate(nil) {
     _sysRegDevice = make_shared<SysRegDevice>();
-    _mmu = make_shared<MMU>(std::move(romData), std::move(_ramData), _sysRegDevice);
+    _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
@@ -42,6 +38,8 @@ ZED80::ZED80()
     _iommu->setDevice(5, _lcdPanelDevice);
     _iommu->setDevice(6, _mmu);
     _iommu->setDevice(7, _sysRegDevice);
+    // TODO: iommu->setDevice(8, sdcardDevice);
+    // TODO: iommu->setDevice(9, kbdDevice);
 
     _mmu->describe(cout);
     _iommu->describe(cout);
@@ -51,10 +49,6 @@ ZED80::ZED80()
     desc.user_data = this;
     
     z80_init(&_cpu, &desc);
-}
-
-void ZED80::setRom(unique_ptr<vector<uint8_t>> &&rom) {
-    _mmu->setRom(std::move(rom));
 }
 
 void ZED80::setUiDelegate(ViewController *uiDelegate) {
@@ -87,8 +81,8 @@ void ZED80::run() {
     }
 }
 
-void ZED80::smallRun(uint32_t ms) {
-    uint32_t ticks = uint32_t(uint64_t(ms)*CLOCK_HZ/1000);
+void ZED80::smallRun(uint64_t ms) {
+    uint32_t ticks = uint32_t(ms * CLOCK_HZ / 1000);
 
     ticks = z80_exec(&_cpu, ticks);
 //    cout << "CPU: ran for " << ticks << " ticks" << endl;

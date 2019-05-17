@@ -11,9 +11,20 @@
 #include "z80.h"
 
 void MMU::describe(std::ostream &out) const {
-    out << "MMU: mapped ROM at $0000, RAM at $" << to_hex(RAM_BASE) << endl;
+    out << "MMU: mapped ROM at $" << to_hex(ROM_BASE) << ", RAM at $" << to_hex(RAM_BASE) << endl;
 }
-    
+
+void MMU::writeMemory(paddr_t address, size_t length, vector<uint8_t> const &data) {
+    for (paddr_t offset = 0; offset < length; ++offset) {
+        paddr_t writeAddress = address + offset;
+        if (writeAddress < RAM_BASE) {
+            _rom.at(writeAddress) = data.at(offset);
+        } else {
+            _ram.at(writeAddress - RAM_BASE) = data.at(offset);
+        }
+    }
+}
+
 uint64_t MMU::tickCallback(int numTicks, uint64_t pins) {
     uint8_t ioAddr = Z80_GET_ADDR(pins) & 0xFF;
 
@@ -22,6 +33,8 @@ uint64_t MMU::tickCallback(int numTicks, uint64_t pins) {
     } else if ((pins & Z80_WR) != 0) {
         uint8_t physPage = ioAddr & 0x03;
         _map[physPage] = Z80_GET_DATA(pins) & 0x0F;
+        cout << "MMU: updated physical page " << int(physPage)
+             << " to address $" << to_hex(_map[physPage]) << endl;
     }
 
     return pins;

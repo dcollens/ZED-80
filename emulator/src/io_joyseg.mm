@@ -24,6 +24,15 @@ uint64_t JoySegDevice::tickCallback(int numTicks, uint64_t pins) {
     if ((pins & Z80_RD) != 0) {
         // TODO: Joysticks
         cout << "JOY: ignoring IO read from port $" << to_hex(ioAddr) << endl;
+        uint8_t data;
+        if ((ioAddr >> 4) == 0) {
+            // JOY1
+            data = 0x1F;
+        } else {
+            // JOY2
+            data = 0x7F;
+        }
+        Z80_SET_DATA(pins, data);
     } else if ((pins & Z80_WR) != 0) {
         [_uiDelegate setSevenSegment:(ioAddr >> 4) to:Z80_GET_DATA(pins)];
     }

@@ -10,6 +10,27 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface LcdPanelView : NSView
 
+- (void)drawLineFrom:(NSPoint)p1 to:(NSPoint)p2 withColor:(NSColor *)c;
+
+- (void)drawRect:(NSRect)rect withColor:(NSColor *)c;
+- (void)fillRect:(NSRect)rect withColor:(NSColor *)c;
+
+- (void)drawTriangleFrom:(NSPoint)p1
+                      to:(NSPoint)p2
+                      to:(NSPoint)p3
+               withColor:(NSColor *)c;
+- (void)fillTriangleFrom:(NSPoint)p1
+                      to:(NSPoint)p2
+                      to:(NSPoint)p3
+               withColor:(NSColor *)c;
+
+- (void)drawEllipseAt:(NSPoint)center
+            withRadii:(NSSize)radii
+                color:(NSColor *)c;
+- (void)fillEllipseAt:(NSPoint)center
+            withRadii:(NSSize)radii
+                color:(NSColor *)c;
+
 @end
 
 NS_ASSUME_NONNULL_END

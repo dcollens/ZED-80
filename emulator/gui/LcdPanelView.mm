@@ -14,8 +14,6 @@ static constexpr size_t PANEL_HEIGHT = 600;
 @implementation LcdPanelView {
     NSBitmapImageRep *      _imageRep;
     NSImage *               _panelImage;
-    NSGraphicsContext *     _panelCtx;
-    CGContextRef            _gfx;
 }
 
 - (instancetype)init {
@@ -37,20 +35,27 @@ static constexpr size_t PANEL_HEIGHT = 600;
     _panelImage = [NSImage new];
     [_panelImage addRepresentation:_imageRep];
 
-    _panelCtx = [NSGraphicsContext graphicsContextWithBitmapImageRep:_imageRep];
-
-    _gfx = _panelCtx.CGContext;
+    CGContextRef gfx = self.gfxContext.CGContext;
     
-    CGContextSetShouldAntialias(_gfx, false);
-    CGContextSetRGBFillColor(_gfx, 0, 0, 0, 1);
-    CGContextSetRGBStrokeColor(_gfx, 0, 0, 0, 1);
-    CGContextFillRect(_gfx, self.bounds);
-
-    // TODO: This is just a test to show how we would draw into the image.
-    CGContextSetRGBFillColor(_gfx, 1, 1, 1, 1);
-    CGContextFillRect(_gfx, CGRectMake(100, 100, 100, 100));
+    // Black out the screen.
+    CGContextSetRGBFillColor(gfx, 0, 0, 0, 1);
+    CGContextSetRGBStrokeColor(gfx, 0, 0, 0, 1);
+    CGContextFillRect(gfx, self.bounds);
 
     return self;
+}
+
+- (NSGraphicsContext *)gfxContext {
+    // For some reason, hanging onto the NSGraphicsContext between re-draw cycles did not work, so
+    // we make a fresh one each time we need it.
+    NSGraphicsContext *gfxContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:_imageRep];
+    CGContextRef cgContext = gfxContext.CGContext;
+    
+    // Set up global graphics context parameters.
+    CGContextSetAllowsAntialiasing(cgContext, false);
+    CGContextSetShouldAntialias(cgContext, false);
+    CGContextSetLineWidth(cgContext, 1);
+    return gfxContext;
 }
 
 - (NSSize)intrinsicContentSize {
@@ -64,6 +69,96 @@ static constexpr size_t PANEL_HEIGHT = 600;
                     fromRect:NSZeroRect
                    operation:NSCompositingOperationCopy
                     fraction:1];
+}
+
+- (void)drawLineFrom:(NSPoint)p1 to:(NSPoint)p2 withColor:(NSColor *)c {
+    CGContextRef gfx = self.gfxContext.CGContext;
+
+    CGContextSetStrokeColorWithColor(gfx, c.CGColor);
+    CGContextBeginPath(gfx);
+    CGContextMoveToPoint(gfx, p1.x, p1.y);
+    CGContextAddLineToPoint(gfx, p2.x, p2.y);
+    CGContextStrokePath(gfx);
+    
+    [self setNeedsDisplay:YES];
+}
+
+- (void)drawRect:(NSRect)rect withColor:(NSColor *)c {
+    CGContextRef gfx = self.gfxContext.CGContext;
+    
+    CGContextSetStrokeColorWithColor(gfx, c.CGColor);
+    CGContextStrokeRect(gfx, rect);
+    
+    [self setNeedsDisplay:YES];
+}
+
+- (void)fillRect:(NSRect)rect withColor:(NSColor *)c {
+    CGContextRef gfx = self.gfxContext.CGContext;
+    
+    CGContextSetFillColorWithColor(gfx, c.CGColor);
+    CGContextFillRect(gfx, rect);
+    
+    [self setNeedsDisplay:YES];
+}
+
+- (void)drawTriangleFrom:(NSPoint)p1
+                      to:(NSPoint)p2
+                      to:(NSPoint)p3
+               withColor:(NSColor *)c
+{
+    CGContextRef gfx = self.gfxContext.CGContext;
+
+    CGContextSetStrokeColorWithColor(gfx, c.CGColor);
+    CGContextMoveToPoint(gfx, p1.x, p1.y);
+    CGContextAddLineToPoint(gfx, p2.x, p2.y);
+    CGContextAddLineToPoint(gfx, p3.x, p3.y);
+    CGContextClosePath(gfx);
+    CGContextStrokePath(gfx);
+
+    [self setNeedsDisplay:YES];
+}
+
+- (void)fillTriangleFrom:(NSPoint)p1
+                      to:(NSPoint)p2
+                      to:(NSPoint)p3
+               withColor:(NSColor *)c
+{
+    CGContextRef gfx = self.gfxContext.CGContext;
+    
+    CGContextSetFillColorWithColor(gfx, c.CGColor);
+    CGContextMoveToPoint(gfx, p1.x, p1.y);
+    CGContextAddLineToPoint(gfx, p2.x, p2.y);
+    CGContextAddLineToPoint(gfx, p3.x, p3.y);
+    CGContextClosePath(gfx);
+    CGContextFillPath(gfx);
+    
+    [self setNeedsDisplay:YES];
+}
+
+- (void)drawEllipseAt:(NSPoint)center
+            withRadii:(NSSize)radii
+                color:(NSColor *)c
+{
+    CGContextRef gfx = self.gfxContext.CGContext;
+    
+    CGContextSetStrokeColorWithColor(gfx, c.CGColor);
+    CGContextStrokeEllipseInRect(gfx, NSMakeRect(center.x - radii.width, center.y - radii.height,
+                                                 radii.width * 2, radii.height * 2));
+
+    [self setNeedsDisplay:YES];
+}
+
+- (void)fillEllipseAt:(NSPoint)center
+            withRadii:(NSSize)radii
+                color:(NSColor *)c
+{
+    CGContextRef gfx = self.gfxContext.CGContext;
+    
+    CGContextSetFillColorWithColor(gfx, c.CGColor);
+    CGContextFillEllipseInRect(gfx, NSMakeRect(center.x - radii.width, center.y - radii.height,
+                                               radii.width * 2, radii.height * 2));
+    
+    [self setNeedsDisplay:YES];
 }
 
 @end

@@ -21,6 +21,7 @@ using std::unique_ptr;
 
 class ZED80 {
     static constexpr uint64_t   CLOCK_HZ = 10000000;
+    
     unique_ptr<vector<uint8_t>> _ramData;
     unique_ptr<vector<uint8_t>> _romData;
     shared_ptr<SysRegDevice>    _sysRegDevice;
@@ -37,11 +38,15 @@ class ZED80 {
     
 public:
     ZED80();
-    void setRom(unique_ptr<vector<uint8_t>> &&rom);
+    
+    void writeMemory(paddr_t address, size_t length, vector<uint8_t> const &data) {
+        _mmu->writeMemory(address, length, data);
+    }
+    
     void setUiDelegate(ViewController *uiDelegate);
 
     void run();
-    void smallRun(uint32_t ms);
+    void smallRun(uint64_t ms);
 };
 
 #endif /* zed_80_hpp */
