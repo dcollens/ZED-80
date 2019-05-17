@@ -21,6 +21,7 @@
 		4A1B3FF22278144700714B35 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 		4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
 		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
+		4ABCA28D228F71840060E314 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 4ABCA28C228F71840060E314 /* Fonts */; };
 		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
 		95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95622B75228DBF1D007C57C0 /* ra8876.cpp */; };
 		95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B77228DC02F007C57C0 /* io_lcdpanel.mm */; };
@@ -60,6 +61,7 @@
 		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
 		4A7A0CE2227961BD00279249 /* SevenSegmentView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SevenSegmentView.h; sourceTree = "<group>"; };
 		4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SevenSegmentView.mm; sourceTree = "<group>"; };
+		4ABCA28C228F71840060E314 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = resources/Fonts; sourceTree = "<group>"; };
 		95622B71228DBC02007C57C0 /* LcdPanelView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LcdPanelView.mm; sourceTree = "<group>"; };
 		95622B72228DBC02007C57C0 /* LcdPanelView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LcdPanelView.h; sourceTree = "<group>"; };
 		95622B74228DBCD5007C57C0 /* ra8876.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ra8876.h; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 		95FE9DAA2182A99700476561 = {
 			isa = PBXGroup;
 			children = (
+				4ABCA28C228F71840060E314 /* Fonts */,
 				95FE9DB52182A99700476561 /* src */,
 				4A1B3FDA2278083C00714B35 /* gui */,
 				95FE9DB42182A99700476561 /* Products */,
@@ -257,6 +260,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4ABCA28D228F71840060E314 /* Fonts in Resources */,
 				4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */,
 				4A1B3FE52278083D00714B35 /* Main.storyboard in Resources */,
 			);

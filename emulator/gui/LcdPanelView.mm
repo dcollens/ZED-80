@@ -14,6 +14,7 @@ static constexpr size_t PANEL_HEIGHT = 600;
 @implementation LcdPanelView {
     NSBitmapImageRep *      _imageRep;
     NSImage *               _panelImage;
+    NSFont *                _font;
 }
 
 - (instancetype)init {
@@ -34,6 +35,8 @@ static constexpr size_t PANEL_HEIGHT = 600;
     
     _panelImage = [NSImage new];
     [_panelImage addRepresentation:_imageRep];
+
+    _font = [NSFont fontWithName:@"Modern DOS 8x16" size:16.0];
 
     CGContextRef gfx = self.gfxContext.CGContext;
     
@@ -85,7 +88,7 @@ static constexpr size_t PANEL_HEIGHT = 600;
 
 - (void)drawRect:(NSRect)rect withColor:(NSColor *)c {
     CGContextRef gfx = self.gfxContext.CGContext;
-    
+
     CGContextSetStrokeColorWithColor(gfx, c.CGColor);
     CGContextStrokeRect(gfx, rect);
     
@@ -166,9 +169,16 @@ static constexpr size_t PANEL_HEIGHT = 600;
 withForegroundColor:(NSColor *)fg
   backgroundColor:(NSColor *)bg
 {
-    // TODO: NYI
-    NSLog(@"LcdPanelView: ignoring attempt to draw glyph \"%c\"", ch);
-    
+    NSString *text = [NSString stringWithFormat:@"%c", ch];
+    NSDictionary<NSAttributedStringKey, id> *attr = @{
+        NSForegroundColorAttributeName: fg,
+        NSBackgroundColorAttributeName: bg,
+        NSFontAttributeName: _font,
+    };
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext:self.gfxContext];
+    [text drawAtPoint:p withAttributes:attr];
+    [NSGraphicsContext restoreGraphicsState];
     [self setNeedsDisplay:YES];
 }
 
