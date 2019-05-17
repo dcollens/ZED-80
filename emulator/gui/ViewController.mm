@@ -75,21 +75,25 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 
     _zed80.setUiDelegate(self);
 
-    auto romData = loadFile(
-                            //"/Users/lk/mine/zed-80/src/zed-80/rom_only_test.rom"
-                            //"/Users/dcollens/Documents/zed-80/src/zed-80/rom_only_test.rom"
-                            //"/Users/dcollens/Documents/zed-80/src/zed-80/rom_ram_test.rom"
-                            "/Users/dcollens/Documents/zed-80/src/zed-80/rom_monitor.rom"
-                            );
+    std::string treeDir;
+    if ([NSUserName() isEqualToString:@"lk"]) {
+        treeDir = "/Users/lk/mine";
+    } else {
+        treeDir = "/Users/dcollens/Documents";
+    }
+
+    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_monitor.rom";
+    auto romData = loadFile(romPathname);
     if (romData == nullptr) {
-        NSLog(@"Can't load ROM file");
+        NSLog(@"Can't load ROM file \"%s\"", romPathname.c_str());
     } else {
         _zed80.writeMemory(ROM_BASE, romData->size(), *romData);
     }
     
-    auto ramData = loadFile("/Users/dcollens/Documents/zed-80/src/zed-80/lcd_test.bin");
+    std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_test.bin";
+    auto ramData = loadFile(ramPathname);
     if (ramData == nullptr) {
-        NSLog(@"Can't load RAM file");
+        NSLog(@"Can't load RAM file \"%s\"", ramPathname.c_str());
     } else {
         _zed80.writeMemory(RAM_BASE, ramData->size(), *ramData);
     }
