@@ -10,6 +10,7 @@
 
 #import "ZedView.h"
 #import "SevenSegmentView.h"
+#import "KeycodeMap.h"
 
 static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
 static constexpr CGFloat V_PADDING = 8;
@@ -54,6 +55,33 @@ static constexpr CGFloat V_PADDING = 8;
     }
 }
 
+- (BOOL)acceptsFirstResponder {
+    // So we can get key events.
+    return YES;
+}
+
+- (void)keyDown:(NSEvent *)event {
+    NSArray *codes = [g_KeyPressScanCodes objectForKey:[NSNumber numberWithInteger:[event keyCode]]];
+    if (codes == nil) {
+        NSLog(@"Warning: No scan codes for key code %d", [event keyCode]);
+    } else {
+        [self submitScanCodes:codes];
+    }
+}
+
+- (void)keyUp:(NSEvent *)event {
+    NSArray *codes = [g_KeyReleaseScanCodes objectForKey:[NSNumber numberWithInteger:[event keyCode]]];
+    if (codes == nil) {
+        NSLog(@"Warning: No scan codes for key code %d", [event keyCode]);
+    } else {
+        [self submitScanCodes:codes];
+    }
+}
+
+- (void)flagsChanged:(NSEvent *)event {
+    NSLog(@"flags changed: %lx", (unsigned long)[event modifierFlags]);
+}
+
 - (NSSize)intrinsicContentSize {
     return NSMakeSize(_lcdPanelView.intrinsicContentSize.width,
                       _lcdPanelView.intrinsicContentSize.height
@@ -68,6 +96,10 @@ static constexpr CGFloat V_PADDING = 8;
     }
 
     _sevenSegment[port].value = value;
+}
+
+- (void)submitScanCodes:(NSArray *)codes {
+    NSLog(@"scan codes: %@", codes);
 }
 
 @end
