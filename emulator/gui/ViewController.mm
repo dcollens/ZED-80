@@ -24,10 +24,6 @@ using std::vector;
 using std::string;
 using std::ifstream;
 
-static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
-
-static constexpr CGFloat V_PADDING = 8;
-
 static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     ifstream file(fileName, ifstream::in | ifstream::binary);
     if (file.fail()) {
@@ -51,26 +47,19 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 @implementation ViewController {
     ZED80 _zed80;
     NSTimer *_emulatorRunTimer;
-    array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
+}
+
+- (void)loadView {
+    _zedView = [ZedView new];
+    self.view = _zedView;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    _lcdPanelView = [LcdPanelView new];
-    [self.view addSubview:_lcdPanelView];
-    
-    for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
-        _sevenSegment[i] = [SevenSegmentView new];
-        [self.view addSubview:_sevenSegment[i]];
-    }
-    
     // Resize to fit around content.
     NSRect frame = self.view.frame;
-    frame.size.width = _lcdPanelView.intrinsicContentSize.width;
-    frame.size.height = _lcdPanelView.intrinsicContentSize.height
-            + V_PADDING
-            + _sevenSegment[0].intrinsicContentSize.height;
+    frame.size = _zedView.intrinsicContentSize;
     self.view.frame = frame;
 
     _zed80.setUiDelegate(self);
@@ -101,29 +90,6 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 
 - (void)viewWillLayout {
     [super viewWillLayout];
-
-    NSRect lcdFrame;
-    lcdFrame.origin = NSZeroPoint;
-    lcdFrame.size = _lcdPanelView.intrinsicContentSize;
-    _lcdPanelView.frame = lcdFrame;
-    
-    for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
-        NSSize size = _sevenSegment[i].intrinsicContentSize;
-        NSRect frame;
-        frame.origin = NSMakePoint(i * size.width, lcdFrame.size.height + V_PADDING);
-        frame.size = size;
-
-        _sevenSegment[i].frame = frame;
-    }
-}
-
-- (void)setSevenSegment:(uint8_t)port to:(uint8_t)value {
-    if (port >= SEVEN_SEGMENT_COUNT) {
-        NSLog(@"Invalid seven segment port %d", int(port));
-        return;
-    }
-
-    _sevenSegment[port].value = value;
 }
 
 - (void)cancelEmulatorTimer {

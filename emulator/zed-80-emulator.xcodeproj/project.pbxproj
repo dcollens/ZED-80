@@ -20,6 +20,7 @@
 		4A1B3FF12278144700714B35 /* strutils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.mm */; };
 		4A1B3FF22278144700714B35 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 		4A1B3FF32278144700714B35 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
+		4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A47D170228FCA5D00B2AD1B /* ZedView.mm */; };
 		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
 		4ABCA28D228F71840060E314 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 4ABCA28C228F71840060E314 /* Fonts */; };
 		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
@@ -59,6 +60,8 @@
 		4A1B3FE62278083D00714B35 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A1B3FE72278083D00714B35 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4A1B3FE92278083D00714B35 /* gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gui.entitlements; sourceTree = "<group>"; };
+		4A47D16F228FCA5D00B2AD1B /* ZedView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZedView.h; sourceTree = "<group>"; };
+		4A47D170228FCA5D00B2AD1B /* ZedView.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = ZedView.mm; sourceTree = "<group>"; };
 		4A7A0CE2227961BD00279249 /* SevenSegmentView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SevenSegmentView.h; sourceTree = "<group>"; };
 		4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SevenSegmentView.mm; sourceTree = "<group>"; };
 		4ABCA28C228F71840060E314 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = resources/Fonts; sourceTree = "<group>"; };
@@ -123,6 +126,8 @@
 				4A1B3FE62278083D00714B35 /* Info.plist */,
 				4A1B3FE72278083D00714B35 /* main.m */,
 				4A1B3FE32278083D00714B35 /* Main.storyboard */,
+				4A47D16F228FCA5D00B2AD1B /* ZedView.h */,
+				4A47D170228FCA5D00B2AD1B /* ZedView.mm */,
 			);
 			path = gui;
 			sourceTree = "<group>";
@@ -275,6 +280,7 @@
 			files = (
 				4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */,
 				95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */,
+				4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */,
 				95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */,
 				4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */,
 				4A1B3FEE2278144700714B35 /* chips.mm in Sources */,

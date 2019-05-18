@@ -56,7 +56,7 @@ public:
 
     void setUiDelegate(ViewController *uiDelegate) {
         _uiDelegate = uiDelegate;
-        _gfx_ops.set_panel_view(uiDelegate.lcdPanelView);
+        _gfx_ops.set_panel_view(uiDelegate.zedView.lcdPanelView);
     }
 };
 

@@ -34,7 +34,7 @@ uint64_t JoySegDevice::tickCallback(int numTicks, uint64_t pins) {
         }
         Z80_SET_DATA(pins, data);
     } else if ((pins & Z80_WR) != 0) {
-        [_uiDelegate setSevenSegment:(ioAddr >> 4) to:Z80_GET_DATA(pins)];
+        [_uiDelegate.zedView setSevenSegment:(ioAddr >> 4) to:Z80_GET_DATA(pins)];
     }
     return pins;
 }

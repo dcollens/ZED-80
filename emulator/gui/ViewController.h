@@ -8,13 +8,11 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "LcdPanelView.h"
+#import "ZedView.h"
 
 @interface ViewController : NSViewController
 
-@property (nonatomic,readonly) LcdPanelView *lcdPanelView;
-
-- (void)setSevenSegment:(uint8_t)port to:(uint8_t)value;
+@property (nonatomic,readonly) ZedView *zedView;
 
 @end
 
