@@ -1,13 +1,13 @@
 //
-//  strutils.hpp
+//  strutils.h
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-26.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#ifndef strutils_hpp
-#define strutils_hpp
+#ifndef strutils_h
+#define strutils_h
 
 #include <string>
 #include <iomanip>
@@ -20,4 +20,4 @@ std::string to_hex(T i) {
     return stream.str();
 }
 
-#endif /* strutils_hpp */
+#endif /* strutils_h */

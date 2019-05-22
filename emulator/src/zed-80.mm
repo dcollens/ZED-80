@@ -1,5 +1,5 @@
 //
-//  zed-80.cpp
+//  zed-80.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-26.
@@ -8,8 +8,8 @@
 
 #include <iostream>
 
-#include "zed-80.hpp"
-#include "strutils.hpp"
+#include "zed-80.h"
+#include "strutils.h"
 
 using std::cout;
 using std::cerr;
@@ -29,12 +29,13 @@ ZED80::ZED80() : _uiDelegate(nil) {
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
+    _ctcDevice = make_shared<CtcDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
     _iommu->setDevice(0, _joySegDevice);
     _iommu->setDevice(1, _joySegDevice);
-    // TODO: iommu->setDevice(2, sioDevice);
-    // TODO: iommu->setDevice(3, pioDevice);
-    // TODO: iommu->setDevice(4, ctcDevice);
+    // TODO: _iommu->setDevice(2, _sioDevice);
+    // TODO: _iommu->setDevice(3, _pioDevice);
+    _iommu->setDevice(4, _ctcDevice);
     _iommu->setDevice(5, _lcdPanelDevice);
     _iommu->setDevice(6, _mmu);
     _iommu->setDevice(7, _sysRegDevice);
@@ -58,6 +59,13 @@ void ZED80::setUiDelegate(ViewController *uiDelegate) {
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
+    // First, tick the cycle-accurate devices once for each elapsed tick.
+    CtcDevice &ctcDevice = *_ctcDevice;
+    for (int i = 0; i < numTicks; ++i) {
+        pins = ctcDevice.singleTickCallback(pins);
+    }
+    
+    // Next, decode any active memory or IO request.
     vaddr_t const addr = Z80_GET_ADDR(pins);
     if ((pins & Z80_MREQ) != 0) {
         if ((pins & Z80_RD) != 0) {
@@ -68,7 +76,24 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
     } else if ((pins & Z80_IORQ) != 0) {
         pins = _iommu->tickCallback(numTicks, pins);
     }
-    return pins;
+    
+    // Finally, handle the interrupt chain.
+    Z80_DAISYCHAIN_BEGIN(pins)
+    {
+        // The IEI/IEO pins on the schematic are wired up so that the device interrupt priority
+        // order is (highest priority to lowest):
+        // - SIO
+        // - PIO
+        // - CTC
+        
+        // TODO: SIO interrupt processing
+        // TODO: PIO interrupt processing
+        pins = ctcDevice.interruptDaisyChain(pins);
+    }
+    Z80_DAISYCHAIN_END(pins);
+    
+    // Make sure we mask off any lingering pseudo-pins from peripheral devices.
+    return pins & Z80_PIN_MASK;
 }
 
 void ZED80::run() {
@@ -82,7 +107,7 @@ void ZED80::run() {
 }
 
 void ZED80::smallRun(uint64_t ms) {
-    uint32_t ticks = uint32_t(ms * CLOCK_HZ / 1000);
+    uint32_t ticks = uint32_t(ms * CPU_CLOCK_HZ / 1000);
 
     ticks = z80_exec(&_cpu, ticks);
 //    cout << "CPU: ran for " << ticks << " ticks" << endl;

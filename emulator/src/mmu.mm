@@ -1,13 +1,13 @@
 //
-//  mmu.cpp
+//  mmu.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-26.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#include "mmu.hpp"
-#include "strutils.hpp"
+#include "mmu.h"
+#include "strutils.h"
 #include "z80.h"
 
 void MMU::describe(std::ostream &out) const {

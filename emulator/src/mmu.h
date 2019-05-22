@@ -1,20 +1,20 @@
 //
-//  mmu.hpp
+//  mmu.h
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-26.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#ifndef mmu_hpp
-#define mmu_hpp
+#ifndef mmu_h
+#define mmu_h
 
 #include <memory>
 #include <array>
 #include <vector>
 #include "iodevice.h"
-#include "strutils.hpp"
-#include "io_sysreg.hpp"
+#include "strutils.h"
+#include "io_sysreg.h"
 
 using std::unique_ptr;
 using std::shared_ptr;
@@ -79,10 +79,10 @@ public:
     }
 
     // Print a brief message describing this device.
-    virtual void describe(std::ostream &out) const;
+    virtual void describe(std::ostream &out) const override;
     
     // Called at each step of the main CPU emulation.
-    virtual uint64_t tickCallback(int numTicks, uint64_t pins);
+    virtual uint64_t tickCallback(int numTicks, uint64_t pins) override;
 
 private:
     // Convert virtual address to physical address.
@@ -105,4 +105,4 @@ private:
     }
 };
 
-#endif /* mmu_hpp */
+#endif /* mmu_h */

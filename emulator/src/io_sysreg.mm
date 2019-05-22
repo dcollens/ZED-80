@@ -1,13 +1,13 @@
 //
-//  io_sysreg.cpp
+//  io_sysreg.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-11-05.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#include "io_sysreg.hpp"
-#include "strutils.hpp"
+#include "io_sysreg.h"
+#include "strutils.h"
 #include "z80.h"
 
 using std::cout;

@@ -49,10 +49,10 @@ public:
     LcdPanelDevice();
     
     // Print a brief message describing this device.
-    virtual void describe(std::ostream &out) const;
+    virtual void describe(std::ostream &out) const override;
     
     // Called at each step of the main CPU emulation.
-    virtual uint64_t tickCallback(int numTicks, uint64_t pins);
+    virtual uint64_t tickCallback(int numTicks, uint64_t pins) override;
 
     void setUiDelegate(ViewController *uiDelegate) {
         _uiDelegate = uiDelegate;

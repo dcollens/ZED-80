@@ -1,13 +1,13 @@
 //
-//  io_joyseg.cpp
+//  io_joyseg.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-11-05.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#include "io_joyseg.hpp"
-#include "strutils.hpp"
+#include "io_joyseg.h"
+#include "strutils.h"
 #include "z80.h"
 
 using std::cout;

@@ -1,13 +1,13 @@
 //
-//  iommu.hpp
+//  iommu.h
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-27.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#ifndef iommu_hpp
-#define iommu_hpp
+#ifndef iommu_h
+#define iommu_h
 
 #include <memory>
 
@@ -37,4 +37,4 @@ public:
     uint64_t tickCallback(int numTicks, uint64_t pins);
 };
 
-#endif /* iommu_hpp */
+#endif /* iommu_h */

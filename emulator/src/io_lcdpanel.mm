@@ -7,7 +7,7 @@
 //
 
 #include "io_lcdpanel.h"
-#include "strutils.hpp"
+#include "strutils.h"
 #include "z80.h"
 
 using std::cout;

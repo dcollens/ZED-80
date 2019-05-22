@@ -1,5 +1,5 @@
 //
-//  main.cpp
+//  main.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-25.

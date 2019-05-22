@@ -8,7 +8,7 @@
 
 #include <iostream>
 #include "ra8876.h"
-#include "strutils.hpp"
+#include "strutils.h"
 
 using std::cout;
 using std::endl;

@@ -1,31 +1,31 @@
 //
-//  zed-80.hpp
+//  zed-80.h
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-26.
 //  Copyright © 2018 The Head. All rights reserved.
 //
 
-#ifndef zed_80_hpp
-#define zed_80_hpp
+#ifndef zed_80_h
+#define zed_80_h
 
 #import "ViewController.h"
 
-#include "mmu.hpp"
-#include "iommu.hpp"
+#include "mmu.h"
+#include "iommu.h"
 #include "z80.h"
-#include "io_joyseg.hpp"
+#include "io_joyseg.h"
 #include "io_lcdpanel.h"
+#include "io_ctc.h"
 
 using std::unique_ptr;
 
 class ZED80 {
-    static constexpr uint64_t   CLOCK_HZ = 10000000;
+    static constexpr uint64_t   CPU_CLOCK_HZ = 10000000;
     
-    unique_ptr<vector<uint8_t>> _ramData;
-    unique_ptr<vector<uint8_t>> _romData;
     shared_ptr<SysRegDevice>    _sysRegDevice;
     shared_ptr<JoySegDevice>    _joySegDevice;
+    shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
     shared_ptr<MMU>             _mmu;
     unique_ptr<IOMMU>           _iommu;
@@ -49,4 +49,4 @@ public:
     void smallRun(uint64_t ms);
 };
 
-#endif /* zed_80_hpp */
+#endif /* zed_80_h */

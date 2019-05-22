@@ -1,5 +1,5 @@
 //
-//  io_sysreg.hpp
+//  io_sysreg.h
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-11-05.
@@ -27,10 +27,10 @@ public:
     SysRegDevice() : _value(0) {}
 
     // Print a brief message describing this device.
-    virtual void describe(std::ostream &out) const;
+    virtual void describe(std::ostream &out) const override;
     
     // Called at each step of the main CPU emulation.
-    virtual uint64_t tickCallback(int numTicks, uint64_t pins);
+    virtual uint64_t tickCallback(int numTicks, uint64_t pins) override;
 
     // MMU enable
     bool isMmuEnabled() const {

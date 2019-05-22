@@ -1,5 +1,5 @@
 //
-//  iommu.cpp
+//  iommu.mm
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2018-10-27.
@@ -8,8 +8,8 @@
 
 #include <iostream>
 
-#include "iommu.hpp"
-#include "strutils.hpp"
+#include "iommu.h"
+#include "strutils.h"
 #include "z80.h"
 
 using std::endl;

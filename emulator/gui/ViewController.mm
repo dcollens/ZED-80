@@ -7,7 +7,7 @@
 //
 
 #include <fstream>
-#include "zed-80.hpp"
+#include "zed-80.h"
 
 #import "ViewController.h"
 #import "SevenSegmentView.h"
