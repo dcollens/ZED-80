@@ -71,6 +71,7 @@
 		95622B75228DBF1D007C57C0 /* ra8876.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ra8876.cpp; sourceTree = "<group>"; };
 		95622B77228DC02F007C57C0 /* io_lcdpanel.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_lcdpanel.mm; sourceTree = "<group>"; };
 		95622B78228DC02F007C57C0 /* io_lcdpanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_lcdpanel.h; sourceTree = "<group>"; };
+		95622B7A2290CEFC007C57C0 /* KeycodeMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeycodeMap.h; sourceTree = "<group>"; };
 		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = io_joyseg.hpp; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
@@ -115,19 +116,20 @@
 			children = (
 				4A1B3FDB2278083C00714B35 /* AppDelegate.h */,
 				4A1B3FDC2278083C00714B35 /* AppDelegate.mm */,
+				95622B7A2290CEFC007C57C0 /* KeycodeMap.h */,
 				95622B72228DBC02007C57C0 /* LcdPanelView.h */,
 				95622B71228DBC02007C57C0 /* LcdPanelView.mm */,
 				4A7A0CE2227961BD00279249 /* SevenSegmentView.h */,
 				4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */,
 				4A1B3FDE2278083C00714B35 /* ViewController.h */,
 				4A1B3FDF2278083C00714B35 /* ViewController.mm */,
+				4A47D16F228FCA5D00B2AD1B /* ZedView.h */,
+				4A47D170228FCA5D00B2AD1B /* ZedView.mm */,
 				4A1B3FE12278083D00714B35 /* Assets.xcassets */,
 				4A1B3FE92278083D00714B35 /* gui.entitlements */,
 				4A1B3FE62278083D00714B35 /* Info.plist */,
 				4A1B3FE72278083D00714B35 /* main.m */,
 				4A1B3FE32278083D00714B35 /* Main.storyboard */,
-				4A47D16F228FCA5D00B2AD1B /* ZedView.h */,
-				4A47D170228FCA5D00B2AD1B /* ZedView.mm */,
 			);
 			path = gui;
 			sourceTree = "<group>";

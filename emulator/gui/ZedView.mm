@@ -15,13 +15,9 @@
 static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
 static constexpr CGFloat V_PADDING = 8;
 
-@interface ZedView () {
+@implementation ZedView {
     std::array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
 }
-
-@end
-
-@implementation ZedView
 
 - (instancetype)init {
     self = [super init];
