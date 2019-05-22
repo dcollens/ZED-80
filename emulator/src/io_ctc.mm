@@ -7,8 +7,6 @@
 //
 
 #include "io_ctc.h"
-#include "strutils.h"
-#include "z80.h"
 
 using std::cout;
 using std::endl;

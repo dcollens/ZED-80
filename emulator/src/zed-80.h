@@ -17,6 +17,7 @@
 #include "io_joyseg.h"
 #include "io_lcdpanel.h"
 #include "io_ctc.h"
+#include "io_pio.h"
 
 using std::unique_ptr;
 
@@ -25,6 +26,7 @@ class ZED80 {
     
     shared_ptr<SysRegDevice>    _sysRegDevice;
     shared_ptr<JoySegDevice>    _joySegDevice;
+    shared_ptr<PioDevice>       _pioDevice;
     shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
     shared_ptr<MMU>             _mmu;

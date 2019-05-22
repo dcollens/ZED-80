@@ -29,12 +29,13 @@ ZED80::ZED80() : _uiDelegate(nil) {
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
+    _pioDevice = make_shared<PioDevice>();
     _ctcDevice = make_shared<CtcDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
     _iommu->setDevice(0, _joySegDevice);
     _iommu->setDevice(1, _joySegDevice);
     // TODO: _iommu->setDevice(2, _sioDevice);
-    // TODO: _iommu->setDevice(3, _pioDevice);
+    _iommu->setDevice(3, _pioDevice);
     _iommu->setDevice(4, _ctcDevice);
     _iommu->setDevice(5, _lcdPanelDevice);
     _iommu->setDevice(6, _mmu);
@@ -59,8 +60,10 @@ void ZED80::setUiDelegate(ViewController *uiDelegate) {
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
-    // First, tick the cycle-accurate devices once for each elapsed tick.
     CtcDevice &ctcDevice = *_ctcDevice;
+    PioDevice &pioDevice = *_pioDevice;
+    
+    // First, tick the cycle-accurate devices once for each elapsed tick.
     for (int i = 0; i < numTicks; ++i) {
         pins = ctcDevice.singleTickCallback(pins);
     }
@@ -81,13 +84,10 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
     Z80_DAISYCHAIN_BEGIN(pins)
     {
         // The IEI/IEO pins on the schematic are wired up so that the device interrupt priority
-        // order is (highest priority to lowest):
-        // - SIO
-        // - PIO
-        // - CTC
+        // order is (highest priority to lowest): SIO, PIO, CTC.
         
         // TODO: SIO interrupt processing
-        // TODO: PIO interrupt processing
+        pins = pioDevice.interruptDaisyChain(pins);
         pins = ctcDevice.interruptDaisyChain(pins);
     }
     Z80_DAISYCHAIN_END(pins);

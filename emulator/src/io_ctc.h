@@ -62,4 +62,4 @@ public:
     }
 };
 
-#endif /* io_joyseg_h */
+#endif /* io_ctc_h */
