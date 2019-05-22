@@ -453,21 +453,14 @@ snd_writeall::
     push    hl
     ex	    de, hl		; DE = data
     ld	    l, 0		; L = regnum
-    ld	    b, 8		; B = loop count
-write8:
+    ld	    b, 16		; B = loop count
+writeNext:
     ld	    a, (de)		; A = *data
     ld	    h, a
     call    snd_write		; snd_write(regnum, *data)
     inc	    l			; ++regnum
     inc	    de			; ++data
-    djnz    write8
-    ld	    a, 18
-    cp	    l
-    jr	    z, done
-    ld	    l, 10		; next bank of registers starts at 10
-    ld	    b, 8		; set up loop for second time
-    jr	    write8
-done:
+    djnz    writeNext
     pop	    hl
     pop	    de
     pop	    bc

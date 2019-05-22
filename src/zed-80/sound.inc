@@ -15,14 +15,14 @@ SNDREG_CTPF	    equ 4		; channel C tone period, fine
 SNDREG_CTPC	    equ 5		; channel C tone period, coarse
 SNDREG_NOISE	    equ 6		; noise period
 SNDREG_ENABLE	    equ 7		; enables and IO directions
-SNDREG_AAMP	    equ 10		; channel A amplitude
-SNDREG_BAMP	    equ 11		; channel B amplitude
-SNDREG_CAMP	    equ 12		; channel C amplitude
-SNDREG_ENVF	    equ 13		; envelope period, fine
-SNDREG_ENVC	    equ 14		; envelope period, coarse
-SNDREG_ENVS	    equ 15		; envelope shape & cycle
-SNDREG_PORTA	    equ 16		; IO port A data
-SNDREG_PORTB	    equ 17		; IO port B data
+SNDREG_AAMP	    equ 8		; channel A amplitude
+SNDREG_BAMP	    equ 9		; channel B amplitude
+SNDREG_CAMP	    equ 10		; channel C amplitude
+SNDREG_ENVF	    equ 11		; envelope period, fine
+SNDREG_ENVC	    equ 12		; envelope period, coarse
+SNDREG_ENVS	    equ 13		; envelope shape & cycle
+SNDREG_PORTA	    equ 14		; IO port A data
+SNDREG_PORTB	    equ 15		; IO port B data
 
 ; SNDREG_ENABLE fields
 SNDENA_ATONE	    equ 0x01		; ~ channel A tone enable
