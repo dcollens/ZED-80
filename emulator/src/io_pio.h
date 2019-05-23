@@ -3,18 +3,22 @@
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2019-05-22.
-//Copyright © 2019 The Head. All rights reserved.
+//  Copyright © 2019 The Head. All rights reserved.
 //
 
 #ifndef io_pio_h
 #define io_pio_h
+
+#include <array>
 
 #include "iodevice.h"
 #include "z80.h"
 #include "z80pio.h"
 
 class PioDevice : public IoDevice {
-    z80pio_t            _z80pio;
+    z80pio_t                                _z80pio;
+    std::array<uint8_t,Z80PIO_NUM_PORTS>    _portInputs;
+    std::array<uint8_t,Z80PIO_NUM_PORTS>    _portOutputs;
     
     static uint8_t pioInputCallback(int portId, void *userData);
     static void pioOutputCallback(int portId, uint8_t data, void *userData);
@@ -39,6 +43,9 @@ public:
     inline uint64_t interruptDaisyChain(uint64_t pins) {
         return z80pio_int(&_z80pio, pins);
     }
+    
+    void setPortInputs(int portId, uint8_t data) { _portInputs.at(portId) = data; }
+    uint8_t getPortOutputs(int portId) const { return _portOutputs.at(portId); }
 };
 
 #endif /* io_pio_h */

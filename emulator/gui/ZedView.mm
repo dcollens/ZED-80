@@ -75,7 +75,7 @@ static constexpr CGFloat V_PADDING = 8;
 }
 
 - (void)flagsChanged:(NSEvent *)event {
-    NSLog(@"flags changed: %lx", (unsigned long)[event modifierFlags]);
+    NSLog(@"Keyboard modifier flags changed: 0x%08lX", (unsigned long)[event modifierFlags]);
 }
 
 - (NSSize)intrinsicContentSize {

@@ -130,7 +130,7 @@ init::
     call    snd_test	    ; boot sound
 ;    call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
 ;    call    sio_test
-;    call    figure8
+    call    figure8
 ;    call    countup
 ;    call    pio_test
     call    joy_test	    ; may as well run the joystick test if we get here

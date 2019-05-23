@@ -18,20 +18,25 @@
 #include "io_lcdpanel.h"
 #include "io_ctc.h"
 #include "io_pio.h"
+#include "audiodevice.h"
 
 using std::unique_ptr;
 
 class ZED80 {
-    static constexpr uint64_t   CPU_CLOCK_HZ = 10000000;
+    static constexpr uint32_t   CPU_CLOCK_HZ = 10000000;    // 10MHz
+    
+    static constexpr uint32_t   AUDIO_CLOCK_DIVISOR = 5;    // 2MHz audio clock
     
     shared_ptr<SysRegDevice>    _sysRegDevice;
     shared_ptr<JoySegDevice>    _joySegDevice;
     shared_ptr<PioDevice>       _pioDevice;
     shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
+    AudioDevice                 _audioDevice;
     shared_ptr<MMU>             _mmu;
     unique_ptr<IOMMU>           _iommu;
     z80_t                       _cpu;
+
     ViewController *            _uiDelegate;
 
     static uint64_t z80TickCallback(int numTicks, uint64_t pins, void *userData);

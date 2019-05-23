@@ -29,6 +29,9 @@ PioDevice::PioDevice() {
     pioDesc.user_data = this;
     
     z80pio_init(&_z80pio, &pioDesc);
+    
+    _portInputs.fill(0);
+    _portOutputs.fill(0);
 }
 
 // Print a brief message describing this device.
@@ -52,10 +55,11 @@ uint64_t PioDevice::tickCallback(int numTicks, uint64_t pins) {
 }
 
 uint8_t PioDevice::inputCallback(int portId) {
-    cout << "PIO: ignoring attempted read from port " << char('A' + portId) << endl;
-    return 0;
+    // Emulation of PIO device is requesting current values of the PIO port pins.
+    return _portInputs.at(portId);
 }
 
 void PioDevice::outputCallback(int portId, uint8_t data) {
-    cout << "PIO: ignoring write of $" << to_hex(data) << " to port " << char('A' + portId) << endl;
+    // Emulation of PIO device is updating us about the output state of the PIO port pins.
+    _portOutputs.at(portId) = data;
 }

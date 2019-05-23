@@ -24,7 +24,6 @@ uint64_t SysRegDevice::tickCallback(int numTicks, uint64_t pins) {
         Z80_SET_DATA(pins, _value);
     } else if ((pins & Z80_WR) != 0) {
         _value = Z80_GET_DATA(pins);
-        cout << "SysReg: setting value $" << to_hex(_value) << endl;
     }
     return pins;
 }

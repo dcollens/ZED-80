@@ -24,7 +24,7 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80() : _uiDelegate(nil) {
+ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(nil) {
     _sysRegDevice = make_shared<SysRegDevice>();
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
@@ -43,14 +43,15 @@ ZED80::ZED80() : _uiDelegate(nil) {
     // TODO: iommu->setDevice(8, sdcardDevice);
     // TODO: iommu->setDevice(9, kbdDevice);
 
-    _mmu->describe(cout);
+    cout << "Z80: " << (CPU_CLOCK_HZ / 1000000) << "MHz clock" << endl;
     _iommu->describe(cout);
+    _audioDevice.describe(cout);
+    cout << endl;
 
-    z80_desc_t desc;
-    desc.tick_cb = z80TickCallback;
-    desc.user_data = this;
-    
-    z80_init(&_cpu, &desc);
+    z80_desc_t cpuDesc;
+    cpuDesc.tick_cb = z80TickCallback;
+    cpuDesc.user_data = this;
+    z80_init(&_cpu, &cpuDesc);
 }
 
 void ZED80::setUiDelegate(ViewController *uiDelegate) {
@@ -67,6 +68,7 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
     for (int i = 0; i < numTicks; ++i) {
         pins = ctcDevice.singleTickCallback(pins);
     }
+    _audioDevice.tickCallback(numTicks);
     
     // Next, decode any active memory or IO request.
     vaddr_t const addr = Z80_GET_ADDR(pins);
@@ -78,6 +80,9 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
         }
     } else if ((pins & Z80_IORQ) != 0) {
         pins = _iommu->tickCallback(numTicks, pins);
+        // If the BC1/BDIR pins have changed since the last simulator step, run an IO cycle
+        // on the audio chip.
+        _audioDevice.checkIorq(*_sysRegDevice, pioDevice);
     }
     
     // Finally, handle the interrupt chain.

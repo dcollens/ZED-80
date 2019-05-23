@@ -3,7 +3,7 @@
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2019-05-22.
-//Copyright © 2019 The Head. All rights reserved.
+//  Copyright © 2019 The Head. All rights reserved.
 //
 
 #ifndef io_ctc_h

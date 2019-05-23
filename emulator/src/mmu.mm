@@ -11,7 +11,7 @@
 #include "z80.h"
 
 void MMU::describe(std::ostream &out) const {
-    out << "MMU: mapped ROM at $" << to_hex(ROM_BASE) << ", RAM at $" << to_hex(RAM_BASE) << endl;
+    out << "MMU with ROM at $" << to_hex(ROM_BASE) << ", RAM at $" << to_hex(RAM_BASE);
 }
 
 void MMU::writeMemory(paddr_t address, size_t length, vector<uint8_t> const &data) {

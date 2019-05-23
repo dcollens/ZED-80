@@ -27,6 +27,9 @@
 		950A23A32295B74A00A3D55B /* io_ctc.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A02295B74A00A3D55B /* io_ctc.mm */; };
 		950A23A62295CAD200A3D55B /* io_pio.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A42295CAD200A3D55B /* io_pio.mm */; };
 		950A23A72295CAD200A3D55B /* io_pio.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A42295CAD200A3D55B /* io_pio.mm */; };
+		950A23AA2296E8C800A3D55B /* audiodevice.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A82296E8C800A3D55B /* audiodevice.mm */; };
+		950A23AB2296E8C800A3D55B /* audiodevice.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A82296E8C800A3D55B /* audiodevice.mm */; };
+		950A23AE2296FDE300A3D55B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 950A23AD2296FDE300A3D55B /* AudioToolbox.framework */; };
 		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
 		95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95622B75228DBF1D007C57C0 /* ra8876.cpp */; };
 		95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B77228DC02F007C57C0 /* io_lcdpanel.mm */; };
@@ -73,6 +76,9 @@
 		950A23A12295B74A00A3D55B /* io_ctc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_ctc.h; sourceTree = "<group>"; };
 		950A23A42295CAD200A3D55B /* io_pio.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_pio.mm; sourceTree = "<group>"; };
 		950A23A52295CAD200A3D55B /* io_pio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_pio.h; sourceTree = "<group>"; };
+		950A23A82296E8C800A3D55B /* audiodevice.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = audiodevice.mm; sourceTree = "<group>"; };
+		950A23A92296E8C800A3D55B /* audiodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = audiodevice.h; sourceTree = "<group>"; };
+		950A23AD2296FDE300A3D55B /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		95622B71228DBC02007C57C0 /* LcdPanelView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LcdPanelView.mm; sourceTree = "<group>"; };
 		95622B72228DBC02007C57C0 /* LcdPanelView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LcdPanelView.h; sourceTree = "<group>"; };
 		95622B74228DBCD5007C57C0 /* ra8876.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ra8876.h; sourceTree = "<group>"; };
@@ -106,6 +112,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				950A23AE2296FDE300A3D55B /* AudioToolbox.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,6 +149,14 @@
 			path = gui;
 			sourceTree = "<group>";
 		};
+		950A23AC2296FDE300A3D55B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				950A23AD2296FDE300A3D55B /* AudioToolbox.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		95FE9DAA2182A99700476561 = {
 			isa = PBXGroup;
 			children = (
@@ -149,6 +164,7 @@
 				95FE9DB52182A99700476561 /* src */,
 				4A1B3FDA2278083C00714B35 /* gui */,
 				95FE9DB42182A99700476561 /* Products */,
+				950A23AC2296FDE300A3D55B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -165,6 +181,8 @@
 			isa = PBXGroup;
 			children = (
 				95FE9DC12182AAC200476561 /* _z80_decoder.h */,
+				950A23A92296E8C800A3D55B /* audiodevice.h */,
+				950A23A82296E8C800A3D55B /* audiodevice.mm */,
 				95FE9DC02182AA4900476561 /* ay38910.h */,
 				95FE9DC22182AAEF00476561 /* chips.mm */,
 				950A23A12295B74A00A3D55B /* io_ctc.h */,
@@ -294,6 +312,7 @@
 			files = (
 				4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */,
 				95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */,
+				950A23AB2296E8C800A3D55B /* audiodevice.mm in Sources */,
 				950A23A32295B74A00A3D55B /* io_ctc.mm in Sources */,
 				4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */,
 				95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */,
@@ -324,6 +343,7 @@
 				95FE9DC32182AAEF00476561 /* chips.mm in Sources */,
 				950A23A62295CAD200A3D55B /* io_pio.mm in Sources */,
 				95FE9DC92183C8DD00476561 /* zed-80.mm in Sources */,
+				950A23AA2296E8C800A3D55B /* audiodevice.mm in Sources */,
 				95FE9DCF21848E8700476561 /* iommu.mm in Sources */,
 				950A23A22295B74A00A3D55B /* io_ctc.mm in Sources */,
 			);
