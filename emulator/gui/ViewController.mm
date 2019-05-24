@@ -24,7 +24,46 @@ using std::vector;
 using std::string;
 using std::ifstream;
 
+// Return the pathname without the extension ("file.x" becomes "file").
+// If the pathname does not have an extension, it is returned unchanged.
+string stripExtension(string const &pathname) {
+    auto slash = pathname.rfind('/');
+    auto dot = pathname.rfind('.');
+    if (dot == pathname.npos || (slash != pathname.npos && dot < slash)) {
+        // No extension.
+        return pathname;
+    }
+
+    return pathname.substr(0, dot);
+}
+
+// The modification date of the file, or nil on error.
+static NSDate *modificationDateOfFile(string const &fileName) {
+    NSString *nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
+
+    NSDictionary<NSFileAttributeKey, id> *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:nsFileName error:nil];
+    if (attrs == nil) {
+        return nil;
+    }
+
+    return attrs.fileModificationDate;
+}
+
 static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
+    // Make sure the ROM or BIN is up to date.
+    NSDate *binDate = modificationDateOfFile(fileName);
+    if (binDate == nil) {
+        NSLog(@"Warning: Can't get date of %s", fileName.c_str());
+    } else {
+        string asmFileName = stripExtension(fileName) + ".asm";
+        NSDate *asmDate = modificationDateOfFile(asmFileName);
+        if (asmDate == nil) {
+            NSLog(@"Warning: Can't get date of %s", asmFileName.c_str());
+        } else if ([binDate compare:asmDate] == NSOrderedAscending) {
+            NSLog(@"Warning: %s is older than its source %s", fileName.c_str(), asmFileName.c_str());
+        }
+    }
+
     ifstream file(fileName, ifstream::in | ifstream::binary);
     if (file.fail()) {
         cerr << "Can't open \"" << fileName << "\" for input" << endl;
