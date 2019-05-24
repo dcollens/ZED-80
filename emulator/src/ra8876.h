@@ -77,6 +77,8 @@ public:
     
     uint8_t read_status() const { return _status; }
     uint8_t read_data() const;
+    
+    void reset();
 };
 
 #endif /* ra8876_h */

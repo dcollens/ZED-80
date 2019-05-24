@@ -46,6 +46,8 @@ public:
     
     void setPortInputs(int portId, uint8_t data) { _portInputs.at(portId) = data; }
     uint8_t getPortOutputs(int portId) const { return _portOutputs.at(portId); }
+    
+    void reset();
 };
 
 #endif /* io_pio_h */

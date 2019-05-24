@@ -119,6 +119,11 @@ void ZED80::smallRun(uint64_t ms) {
 }
 
 void ZED80::reset() {
+    _audioDevice.reset();
     _sysRegDevice->reset();
+    _joySegDevice->reset();
+    _pioDevice->reset();
+    _ctcDevice->reset();
+    _lcdPanelDevice->reset();
     z80_reset(&_cpu);
 }

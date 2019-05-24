@@ -58,6 +58,10 @@ public:
         _uiDelegate = uiDelegate;
         _gfx_ops.set_panel_view(uiDelegate.zedView.lcdPanelView);
     }
+    
+    void reset() {
+        _ra8876.reset();
+    }
 };
 
 #endif /* io_lcdpanel_h */

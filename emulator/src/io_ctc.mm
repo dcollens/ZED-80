@@ -34,3 +34,8 @@ uint64_t CtcDevice::tickCallback(int numTicks, uint64_t pins) {
     pins &= Z80_PIN_MASK;
     return pins;
 }
+
+void CtcDevice::reset() {
+    _ctc_pins = 0;
+    z80ctc_reset(&_z80ctc);
+}

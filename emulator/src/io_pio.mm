@@ -63,3 +63,9 @@ void PioDevice::outputCallback(int portId, uint8_t data) {
     // Emulation of PIO device is updating us about the output state of the PIO port pins.
     _portOutputs.at(portId) = data;
 }
+
+void PioDevice::reset() {
+    _portInputs.fill(0);
+    _portOutputs.fill(0);
+    z80pio_reset(&_z80pio);
+}

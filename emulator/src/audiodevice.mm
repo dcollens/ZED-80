@@ -145,3 +145,10 @@ void AudioDevice::audioQueueOutputCallback(AudioQueueRef audioQueue, AudioQueueB
     buffer->mAudioDataByteSize = 0;
     _audioBuffers.emplace_back(buffer);
 }
+
+void AudioDevice::reset() {
+    AudioQueueReset(_audioQueue);
+    _clockCount = 0;
+    _pins = 0;
+    ay38910_reset(&_chip);
+}

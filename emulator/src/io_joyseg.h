@@ -28,6 +28,8 @@ public:
     void setUiDelegate(ViewController *uiDelegate) {
         _uiDelegate = uiDelegate;
     }
+    
+    void reset();
 };
 
 #endif /* io_joyseg_h */

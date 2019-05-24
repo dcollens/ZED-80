@@ -38,3 +38,9 @@ uint64_t JoySegDevice::tickCallback(int numTicks, uint64_t pins) {
     }
     return pins;
 }
+
+void JoySegDevice::reset() {
+    for (int i = 0; i < 2; ++i) {
+        [_uiDelegate.zedView setSevenSegment:i to:0];
+    }
+}

@@ -60,6 +60,8 @@ public:
     inline uint64_t interruptDaisyChain(uint64_t pins) {
         return z80ctc_int(&_z80ctc, pins);
     }
+    
+    void reset();
 };
 
 #endif /* io_ctc_h */

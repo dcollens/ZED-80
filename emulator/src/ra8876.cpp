@@ -151,10 +151,14 @@ static constexpr uint8_t REG_SDRCR = 0xE4;      // SDRAM Control Register
 #pragma clang diagnostic pop
 
 RA8876::RA8876(Gfx_ops &gfx_ops) : _gfx_ops(gfx_ops) {
+    reset();
+}
+
+void RA8876::reset() {
     _status = 0;
     _address = 0;
     _regs.fill(0);
-
+    
     soft_reset();
 }
 
