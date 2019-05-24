@@ -764,11 +764,20 @@ nextByte:
     set	    KBD_SCNST_RLSBIT, c	; scan_state |= KBD_SCANST_RLS
     jr	    nextByte
 notKeyUp:			; input_byte in A&L was not 0xF0
+    cp	    0xE0		; test A == 0xE0?
+    jr	    nz, notExtCode
+    set	    KBD_SCNST_EXTBIT, c	; scan_state |= KBD_SCANST_EXT
+    jr	    nextByte
+notExtCode:			; input_byte in A&L was not 0xE0, nor 0xF0
+    bit	    KBD_SCNST_EXTBIT, c	; test (scan_state & KBD_SCANST_EXT) == 0?
+    jr	    nz, parseExt	; parse next byte as extended scan code if flag set
+    ; parse input_byte in A&L using Kbd_scan_tbl
     cp	    Kbd_scan_tbl_sz	; test input_byte < Kbd_scan_tbl_sz?
     jr	    nc, start		; input_byte out of range: ignore this byte sequence and start over
     ld	    h, 0		; HL = input_byte
     ld	    de, Kbd_scan_tbl
     add	    hl, de		; HL = &Kbd_scan_tbl[input_byte]
+found:
     ld	    a, (hl)		; A = keycode = Kbd_scan_tbl[input_byte]
     or	    a			; test keycode == KEY_NONE?
     jr	    z, start		; KEY_NONE: ignore this byte sequence and start over
@@ -781,6 +790,35 @@ return:				; return keycode
     pop	    bc
     ld	    l, a
     ret
+
+parseExt:			; input_byte in A&L is to be parsed via Kbd_ext_tbl
+    ld	    b, Kbd_ext_tbl_sz	; loop Kbd_ext_tbl_sz iterations
+    ld	    hl, Kbd_ext_tbl	; HL = Kbd_ext_tbl
+extLoop:
+    cp	    (hl)		; test *HL == input_byte
+    inc	    hl			; does not affect flags
+    jr	    z, found		; if equal, continue search
+    inc	    hl
+    djnz    extLoop
+    jr	    start		; not found, discard byte sequence and start over
+
+
+; The data structure for scan code mappings is as follows:
+; We use a table of 132 bytes, each corresponding to the first (or next) byte of a scan code.
+; Each value in the table is one of:
+;   1. A KEY_xxx value representing a recognized key. Scan code processing stops and the
+;      associated key-up or key-down event is returned to the upper layer.
+;   2. KEY_NONE, meaning that no scan code can begin with this prefix, which simply resets the
+;      scan code parser state, ignoring any input bytes processed so far.
+; Any scan code byte >= 132 (i.e. outside the table) maps to KEY_NONE.
+;
+; For input byte $F0, a flag is stored indicating that the resulting scan code will be for a
+; key-up event, and the KEY_RELEASED flag is ORed onto the resulting scan code byte when parsing
+; is complete.
+;
+; For input byte $E0, a second flag is stored indicating that the extended scan code table must
+; be searched. (See below.)
+;
 Kbd_scan_tbl:
     .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE    ;00-07
     .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_TAB, KEY_TICK, KEY_NONE	    ;08-0F
@@ -799,7 +837,38 @@ Kbd_scan_tbl:
     .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_ESC, KEY_NONE	    ;70-77
     .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE    ;78-7F
     .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE					    ;80-83
-Kbd_scan_tbl_sz equ $-Kbd_scan_tbl
+Kbd_scan_tbl_sz	    equ $-Kbd_scan_tbl
+
+; The extended scan code table has the following format:
+;     struct {
+;	  uint8_t scan_byte
+;         uint8_t key_code
+;     } entries[Kbd_ext_tbl_sz]
+;
+; Entries in this table are sorted by scan_byte, so they can be searched by binary search if
+; desired (but the number of entries is expected to be 5 initially, suggesting a linear search is
+; fine). Any input bytes with no entry in the extended scan code table behave as if an entry
+; mapping them to KEY_NONE had been found (i.e. terminate processing and discard input).
+;
+Kbd_ext_tbl:
+    .byte 0x6B, KEY_LEFT
+    .byte 0x71, KEY_DEL
+    .byte 0x72, KEY_DOWN
+    .byte 0x74, KEY_RIGHT
+    .byte 0x75, KEY_UP
+Kbd_ext_tbl_sz	    equ ($-Kbd_ext_tbl) / 2
+
+; You may be wondering how exotic scan codes like Print Screen or Pause will be handled by the
+; above tables.
+;
+; Print Screen ($E0,$12,$E0,$7C) will be treated as two key down events that both map to KEY_NONE
+; in the extended scan code table, thus it will be ignored. Likewise, its associated key-up
+; sequence will be treated as two key-up sequences that are both ignored.
+;
+; Pause ($E1,$14,$77,$E1,$F0,$14,$F0,$77) will be treated as a KEY_NONE ($E1) followed by
+; Left Control down ($14), NumberLock down ($77), KEY_NONE ($E1), Left Control up ($F0,$14),
+; and NumberLock up ($F0, $77). These will all be ignored.
+
 #endlocal
 
 ; uint8_t bin2hex(uint8_t val)

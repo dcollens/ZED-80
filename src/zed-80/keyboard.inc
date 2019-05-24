@@ -69,35 +69,3 @@ KEY_RELEASED_BIT equ 7
 KBD_SCNST_IDL	equ 0x00	    ; idle, awaiting a new scan code
 KBD_SCNST_EXTBIT equ 0		    ; next byte shall be looked up in extended scan code table
 KBD_SCNST_RLSBIT equ 7		    ; parsed a $F0 code, indicating a key-up event
-
-; The data structure for scan code mappings is as follows:
-; We use a table of 132 bytes, each corresponding to the first (or next) byte of a scan code.
-; Each value in the table is one of:
-;   1. A KEY_xxx value representing a recognized key. Scan code processing stops and the
-;      associated key-up or key-down event is returned to the upper layer.
-;   2. KEY_NONE, meaning that no scan code can begin with this prefix, which simply resets the
-;      scan code parser state, ignoring any input bytes processed so far.
-; Any scan code byte >= 132 (i.e. outside the table) maps to KEY_NONE.
-;
-; For input byte $F0, a flag is stored indicating that the resulting scan code will be for a
-; key-up event, and the KEY_RELEASED flag is ORed onto the resulting scan code byte when parsing
-; is complete.
-;
-; For input byte $E0, a second flag is stored indicating that the extended scan code table must
-; be searched. This table has the following format:
-;     struct {
-;	  uint8_t scan_byte
-;         uint8_t key_code
-;     } entries[KBD_EXT_SCAN_TBL_CNT]
-; Entries in this table are sorted by scan_byte, so they can be searched by binary search if
-; desired (but the number of entries is expected to be 5 initially, suggesting a linear search is
-; fine). Any input bytes with no entry in the extended scan code table behave as if an entry
-; mapping them to KEY_NONE had been found (i.e. terminate processing and discard input).
-;
-; You may be wondering how exotic scan codes like Print Screen or Pause will be handled.
-; Print Screen ($E0,$12,$E0,$7C) will be treated as two key down events that both map to KEY_NONE
-; in the extended scan code table, thus it will be ignored. Likewise, its associated key-up
-; sequence will be treated as two key-up sequences that are both ignored.
-; Pause ($E1,$14,$77,$E1,$F0,$14,$F0,$77) will be treated as a KEY_NONE ($E1) followed by
-; Left Control down ($14), NumberLock down ($77), KEY_NONE ($E1), Left Control up ($F0,$14),
-; and NumberLock up ($F0, $77). These will all be ignored.
