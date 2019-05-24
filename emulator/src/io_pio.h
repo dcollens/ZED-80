@@ -14,8 +14,12 @@
 #include "iodevice.h"
 #include "z80.h"
 #include "z80pio.h"
+#include "io_keyboard.h"
+
+using std::shared_ptr;
 
 class PioDevice : public IoDevice {
+    shared_ptr<KeyboardDevice>              _keyboardDevice;
     z80pio_t                                _z80pio;
     std::array<uint8_t,Z80PIO_NUM_PORTS>    _portInputs;
     std::array<uint8_t,Z80PIO_NUM_PORTS>    _portOutputs;
@@ -27,7 +31,7 @@ class PioDevice : public IoDevice {
     void outputCallback(int portId, uint8_t data);
 
 public:
-    PioDevice();
+    PioDevice(shared_ptr<KeyboardDevice> keyboardDevice);
     
     // Print a brief message describing this device.
     virtual void describe(std::ostream &out) const override;
@@ -46,7 +50,7 @@ public:
     
     void setPortInputs(int portId, uint8_t data) { _portInputs.at(portId) = data; }
     uint8_t getPortOutputs(int portId) const { return _portOutputs.at(portId); }
-    
+
     void reset();
 };
 

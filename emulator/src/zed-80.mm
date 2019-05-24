@@ -29,7 +29,8 @@ ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(ni
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
-    _pioDevice = make_shared<PioDevice>();
+    _keyboardDevice = make_shared<KeyboardDevice>();
+    _pioDevice = make_shared<PioDevice>(_keyboardDevice);
     _ctcDevice = make_shared<CtcDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
     _iommu->setDevice(0, _joySegDevice);
@@ -41,7 +42,7 @@ ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(ni
     _iommu->setDevice(6, _mmu);
     _iommu->setDevice(7, _sysRegDevice);
     // TODO: iommu->setDevice(8, sdcardDevice);
-    // TODO: iommu->setDevice(9, kbdDevice);
+    _iommu->setDevice(9, _keyboardDevice);
 
     cout << "Z80: " << (CPU_CLOCK_HZ / 1000000) << "MHz clock" << endl;
     _iommu->describe(cout);
@@ -58,6 +59,10 @@ void ZED80::setUiDelegate(ViewController *uiDelegate) {
     _uiDelegate = uiDelegate;
     _joySegDevice->setUiDelegate(uiDelegate);
     _lcdPanelDevice->setUiDelegate(uiDelegate);
+}
+
+void ZED80::receivedKeyboardScanCode(uint8_t scanCode) {
+    _keyboardDevice->receivedScanCode(scanCode);
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
@@ -125,5 +130,6 @@ void ZED80::reset() {
     _pioDevice->reset();
     _ctcDevice->reset();
     _lcdPanelDevice->reset();
+    _keyboardDevice->reset();
     z80_reset(&_cpu);
 }

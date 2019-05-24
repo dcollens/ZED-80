@@ -22,6 +22,7 @@
 		4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A47D170228FCA5D00B2AD1B /* ZedView.mm */; };
 		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
 		4ABCA28D228F71840060E314 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 4ABCA28C228F71840060E314 /* Fonts */; };
+		4ACE91232297BC610056ADC0 /* io_keyboard.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4ACE91222297BC610056ADC0 /* io_keyboard.mm */; };
 		950A23A32295B74A00A3D55B /* io_ctc.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A02295B74A00A3D55B /* io_ctc.mm */; };
 		950A23A72295CAD200A3D55B /* io_pio.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A42295CAD200A3D55B /* io_pio.mm */; };
 		950A23AB2296E8C800A3D55B /* audiodevice.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A82296E8C800A3D55B /* audiodevice.mm */; };
@@ -49,6 +50,8 @@
 		4A7A0CE2227961BD00279249 /* SevenSegmentView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SevenSegmentView.h; sourceTree = "<group>"; };
 		4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SevenSegmentView.mm; sourceTree = "<group>"; };
 		4ABCA28C228F71840060E314 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = resources/Fonts; sourceTree = "<group>"; };
+		4ACE91212297BC610056ADC0 /* io_keyboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_keyboard.h; sourceTree = "<group>"; };
+		4ACE91222297BC610056ADC0 /* io_keyboard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_keyboard.mm; sourceTree = "<group>"; };
 		950A23A02295B74A00A3D55B /* io_ctc.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_ctc.mm; sourceTree = "<group>"; };
 		950A23A12295B74A00A3D55B /* io_ctc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_ctc.h; sourceTree = "<group>"; };
 		950A23A42295CAD200A3D55B /* io_pio.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_pio.mm; sourceTree = "<group>"; };
@@ -156,6 +159,8 @@
 				950A23A02295B74A00A3D55B /* io_ctc.mm */,
 				95C4D3232190CBD700007662 /* io_joyseg.h */,
 				95C4D3222190CBD700007662 /* io_joyseg.mm */,
+				4ACE91212297BC610056ADC0 /* io_keyboard.h */,
+				4ACE91222297BC610056ADC0 /* io_keyboard.mm */,
 				95622B78228DC02F007C57C0 /* io_lcdpanel.h */,
 				95622B77228DC02F007C57C0 /* io_lcdpanel.mm */,
 				950A23A52295CAD200A3D55B /* io_pio.h */,
@@ -262,6 +267,7 @@
 				4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */,
 				95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */,
 				4A1B3FED2278144700714B35 /* io_sysreg.mm in Sources */,
+				4ACE91232297BC610056ADC0 /* io_keyboard.mm in Sources */,
 				4A1B3FEE2278144700714B35 /* chips.mm in Sources */,
 				4A1B3FEF2278144700714B35 /* mmu.mm in Sources */,
 				4A1B3FF02278144700714B35 /* zed-80.mm in Sources */,

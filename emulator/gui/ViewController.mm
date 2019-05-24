@@ -83,13 +83,16 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     return data;
 }
 
+@interface ViewController () <ZedViewDelegate>
+@end
+
 @implementation ViewController {
     ZED80 _zed80;
     NSTimer *_emulatorRunTimer;
 }
 
 - (void)loadView {
-    _zedView = [ZedView new];
+    _zedView = [[ZedView alloc] initWithDelegate:self];
     self.view = _zedView;
 }
 
@@ -110,8 +113,8 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
         treeDir = "/Users/dcollens/Documents";
     }
 
-//    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_monitor.rom";
-    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_ram_test.rom";
+    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_monitor.rom";
+//    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_ram_test.rom";
     auto romData = loadFile(romPathname);
     if (romData == nullptr) {
         NSLog(@"Can't load ROM file \"%s\"", romPathname.c_str());
@@ -176,6 +179,11 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     }
 
     return enabled;
+}
+
+// ZedViewDelegate:
+- (void)receivedKeyboardScanCode:(uint8_t)scanCode {
+    _zed80.receivedKeyboardScanCode(scanCode);
 }
 
 @end

@@ -12,8 +12,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol ZedViewDelegate
+
+- (void)receivedKeyboardScanCode:(uint8_t)scanCode;
+
+@end
+
 // Top-level view for emulator window.
 @interface ZedView : NSView
+
+- (instancetype)initWithDelegate:(id<ZedViewDelegate>)delegate;
 
 @property (nonatomic,readonly) LcdPanelView *lcdPanelView;
 

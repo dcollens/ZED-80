@@ -16,11 +16,14 @@ static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
 static constexpr CGFloat V_PADDING = 8;
 
 @implementation ZedView {
+    id<ZedViewDelegate> __weak _delegate;
     std::array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
 }
 
-- (instancetype)init {
+- (instancetype)initWithDelegate:(id<ZedViewDelegate>)delegate {
     self = [super init];
+
+    _delegate = delegate;
 
     for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
         _sevenSegment[i] = [SevenSegmentView new];
@@ -95,7 +98,9 @@ static constexpr CGFloat V_PADDING = 8;
 }
 
 - (void)submitScanCodes:(NSArray *)codes {
-    NSLog(@"scan codes: %@", codes);
+    for (NSNumber *n in codes) {
+        [_delegate receivedKeyboardScanCode:uint8_t([n intValue])];
+    }
 }
 
 @end

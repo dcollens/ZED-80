@@ -16,6 +16,7 @@
 #include "z80.h"
 #include "io_joyseg.h"
 #include "io_lcdpanel.h"
+#include "io_keyboard.h"
 #include "io_ctc.h"
 #include "io_pio.h"
 #include "audiodevice.h"
@@ -32,6 +33,7 @@ class ZED80 {
     shared_ptr<PioDevice>       _pioDevice;
     shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
+    shared_ptr<KeyboardDevice>  _keyboardDevice;
     AudioDevice                 _audioDevice;
     shared_ptr<MMU>             _mmu;
     unique_ptr<IOMMU>           _iommu;
@@ -51,6 +53,8 @@ public:
     }
     
     void setUiDelegate(ViewController *uiDelegate);
+
+    void receivedKeyboardScanCode(uint8_t scanCode);
 
     void run();
     void smallRun(uint64_t ms);

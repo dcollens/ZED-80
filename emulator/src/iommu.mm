@@ -29,17 +29,12 @@ void IOMMU::describe(std::ostream &out) const {
 
 uint64_t IOMMU::tickCallback(int numTicks, uint64_t pins) {
     uint8_t ioAddr = Z80_GET_ADDR(pins) & 0xFF;
-    if (ioAddr < 128) {
-        // '138 IO decoder selected.
-        uint8_t iorqNum = ioAddr >> 4;
-        auto device = _devices[iorqNum];
-        if (device == nullptr) {
-            cout << "IORQ: ignoring request for IO device at port $" << to_hex(ioAddr) << endl;
-        } else {
-            pins = device->tickCallback(numTicks, pins);
-        }
+    uint8_t iorqNum = ioAddr >> 4;
+    auto device = _devices[iorqNum];
+    if (device == nullptr) {
+        cout << "IORQ: ignoring request for IO device at port $" << to_hex(ioAddr) << endl;
     } else {
-        cerr << "IORQ: ignoring request for IO device at port $" << to_hex(ioAddr) << endl;
+        pins = device->tickCallback(numTicks, pins);
     }
     return pins;
 }
