@@ -17,6 +17,7 @@ using std::shared_ptr;
 
 typedef uint8_t iorq_t;
 
+// Maps portions of the IO space to an IO device.
 class IOMMU {
 public:
     static constexpr int N_IORQ = 16;

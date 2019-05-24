@@ -54,6 +54,7 @@ public:
 
     void run();
     void smallRun(uint64_t ms);
+    void reset();
 };
 
 #endif /* zed_80_h */

@@ -353,6 +353,12 @@
                                                 <action selector="emulatorStop:" target="Ady-hI-5gd" id="mxx-OC-YlL"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Reset" id="aWb-DM-oFB">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="emulatorReset:" target="Ady-hI-5gd" id="281-cU-rMH"/>
+                                            </connections>
+                                        </menuItem>
                                     </items>
                                 </menu>
                             </menuItem>

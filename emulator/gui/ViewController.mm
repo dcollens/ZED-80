@@ -117,6 +117,10 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     [self cancelEmulatorTimer];
 }
 
+- (IBAction)emulatorReset:(id)sender {
+    self->_zed80.reset();
+}
+
 // Magically called via first responder from menu item.
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
     BOOL enabled;

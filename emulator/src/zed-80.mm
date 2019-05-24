@@ -117,3 +117,8 @@ void ZED80::smallRun(uint64_t ms) {
     ticks = z80_exec(&_cpu, ticks);
 //    cout << "CPU: ran for " << ticks << " ticks" << endl;
 }
+
+void ZED80::reset() {
+    _sysRegDevice->reset();
+    z80_reset(&_cpu);
+}
