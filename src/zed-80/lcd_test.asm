@@ -23,6 +23,7 @@
 #include "z84c20.inc"
 #include "z84c30.inc"
 #include "z84c40.inc"
+#include "keyboard.inc"
 #include "ascii.inc"
 
 DCR0_DRAWLINE	equ LCDDCR0_DRWLIN | LCDDCR0_RUN
@@ -106,14 +107,15 @@ init::
     call    bzero
     call    seg_init
     call    rand_init
+    call    kbd_init
     call    lcd_init		    ; initialize LCD subsystem
     call    lcd_test_text
-    ld	    b, 250
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
-    call    delay_ms
-    call    lcd_test_drawing
+;    ld	    b, 250
+;    call    delay_ms
+;    call    delay_ms
+;    call    delay_ms
+;    call    delay_ms
+;    call    lcd_test_drawing
     ret
 
 hello_message::
@@ -164,10 +166,18 @@ lcd_test_text::
     ld	    hl, hello_message
     call    lcd_puts
     ld	    de, 0
-    ld	    hl, 16
+    ld	    hl, 15
     call    lcd_text_xy
     ld	    hl, copyright_message
     call    lcd_puts
+    ld	    de, 0
+    ld	    hl, 30
+    call    lcd_text_xy
+loop:
+    call    kbd_get_keycode	    ; get next key
+    bit	    KEY_RELEASED_BIT, l	    ; test (keycode & KEY_RELEASED) == 0?
+    call    z, lcd_putc		    ; print the key to the screen if it's a key-down code
+    jr	    loop
     pop	    hl
     pop	    de
     ret
@@ -462,6 +472,22 @@ done:
     ret
 #endlocal
 
+; void lcd_putc(uint8_t ch)
+; - write the single character in "ch" to LCD
+#local
+lcd_putc::
+    M_out   (PORT_LCDCMD), LCDREG_MRWDP
+wait_fifo_room:
+    ; wait until memory FIFO is non-full
+    in	    a, (PORT_LCDCMD)
+    and	    LCDSTAT_WRFULL
+    jr	    nz, wait_fifo_room
+    ; write output character
+    ld	    a, l
+    out	    (PORT_LCDDAT), a	; send byte to LCD panel
+    ; call lcd_wait_idle
+; FALLING THROUGH!!!
+
 ; void lcd_wait_idle()
 ; - waits until geometry engine, BTE, text/graphic write complete
 lcd_wait_idle::
@@ -469,6 +495,7 @@ lcd_wait_idle::
     and	    LCDSTAT_BUSY
     jr	    nz, lcd_wait_idle
     ret
+#endlocal
 
 ; void lcd_rand_line_coords()
 ; - set up random coordinates for line start & line end
@@ -673,6 +700,108 @@ loop:
     djnz    loop
     
     ret
+#endlocal
+
+; void kbd_init()
+#local
+kbd_init::
+    push    hl
+    push    bc
+    ; configure PIO port A
+    ld	    bc, 0x0400 | PORT_PIOACTL
+    ld	    hl, pioA_cfg
+    otir
+    call    pio_srclr		; clear shift register at startup
+    pop	    bc
+    pop	    hl
+    ret
+pioA_cfg:
+    .byte PIOC_MODE | PIOMODE_CONTROL
+    .byte 0xF7	    ; A3 is an output (~SRCLR), everything else is an input
+    .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH | PIOICTL_MASKNXT
+    .byte 0xDF	    ; interrupt on A5 only (SRSTRT)
+#endlocal
+
+; uint8_t kbd_get_byte()
+; - read and return the next input byte from the PS/2 keyboard port
+; - blocks until a byte is available
+#local
+kbd_get_byte::
+poll:
+    in	    a, (PORT_PIOADAT)	; read PIO port A
+    and	    0x20		; if SRSTRT is low, keep polling
+    jr	    z, poll
+    in	    a, (PORT_KBD)	; read keyboard latch
+    cpl				; invert signal (shift register is fed from ~KDAT)
+    ld	    l, a
+    ; clear shift register to prepare for next byte
+; FALLING THROUGH!!!
+
+; void pio_srclr()
+; - clear shift register by toggling ~SRCLR line, leaving it HIGH
+pio_srclr::
+    xor	    a
+    out	    (PORT_PIOADAT), a
+    ld	    a, 0x08	; bit 3
+    out	    (PORT_PIOADAT), a
+    ret
+#endlocal
+
+; uint8_t kbd_get_keycode()
+; - reads one or more bytes from the PS/2 keyboard port, parses them and returns a KEY_xxx code
+;   indicating which key was pressed/released
+; - blocks until a valid key event is received
+#local
+kbd_get_keycode::
+    push    bc
+    push    de
+    push    hl
+start:
+    ld	    c, KBD_SCNST_IDL	; C = scan_state (initially idle, i.e. 0)
+nextByte:
+    call    kbd_get_byte	; L = next scan code byte
+    ld	    a, l		; test for key-up byte
+    cp	    0xF0		; test A == 0xF0?
+    jr	    nz, notKeyUp
+    set	    KBD_SCNST_RLSBIT, c	; scan_state |= KBD_SCANST_RLS
+    jr	    nextByte
+notKeyUp:			; input_byte in A&L was not 0xF0
+    cp	    Kbd_scan_tbl_sz	; test input_byte < Kbd_scan_tbl_sz?
+    jr	    nc, start		; input_byte out of range: ignore this byte sequence and start over
+    ld	    h, 0		; HL = input_byte
+    ld	    de, Kbd_scan_tbl
+    add	    hl, de		; HL = &Kbd_scan_tbl[input_byte]
+    ld	    a, (hl)		; A = keycode = Kbd_scan_tbl[input_byte]
+    or	    a			; test keycode == KEY_NONE?
+    jr	    z, start		; KEY_NONE: ignore this byte sequence and start over
+    bit	    KBD_SCNST_RLSBIT, c	; test (scan_state & KBD_SCANST_RLS) == 0?
+    jr	    z, return		; bit clear, return keycode
+    or	    KEY_RELEASED	; keycode |= KEY_RELEASED
+return:				; return keycode
+    pop	    hl
+    pop	    de
+    pop	    bc
+    ld	    l, a
+    ret
+Kbd_scan_tbl:
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE    ;00-07
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_TAB, KEY_TICK, KEY_NONE	    ;08-0F
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_Q, KEY_1, KEY_NONE	    ;10-17
+    .byte KEY_NONE, KEY_NONE, KEY_Z, KEY_S, KEY_A, KEY_W, KEY_2, KEY_NONE		    ;18-1F
+    .byte KEY_NONE, KEY_C, KEY_X, KEY_D, KEY_E, KEY_4, KEY_3, KEY_NONE			    ;20-27
+    .byte KEY_NONE, KEY_SPACE, KEY_V, KEY_F, KEY_T, KEY_R, KEY_5, KEY_NONE		    ;28-2F
+    .byte KEY_NONE, KEY_N, KEY_B, KEY_H, KEY_G, KEY_Y, KEY_6, KEY_NONE			    ;30-37
+    .byte KEY_NONE, KEY_NONE, KEY_M, KEY_J, KEY_U, KEY_7, KEY_8, KEY_NONE		    ;38-3F
+    .byte KEY_NONE, KEY_COMMA, KEY_K, KEY_I, KEY_O, KEY_0, KEY_9, KEY_NONE		    ;40-47
+    .byte KEY_NONE, KEY_DOT, KEY_SLASH, KEY_L, KEY_SEMI, KEY_P, KEY_DASH, KEY_NONE	    ;48-4F
+    .byte KEY_NONE, KEY_NONE, KEY_APOST, KEY_NONE, KEY_LSQB, KEY_EQUAL, KEY_NONE, KEY_NONE  ;50-57
+    .byte KEY_NONE, KEY_NONE, KEY_ENTER, KEY_RSQB, KEY_NONE, KEY_BKSL, KEY_NONE, KEY_NONE   ;58-5F
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_BS, KEY_NONE	    ;60-67
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE    ;68-6F
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_ESC, KEY_NONE	    ;70-77
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE    ;78-7F
+    .byte KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE					    ;80-83
+Kbd_scan_tbl_sz equ $-Kbd_scan_tbl
 #endlocal
 
 ; uint8_t bin2hex(uint8_t val)
