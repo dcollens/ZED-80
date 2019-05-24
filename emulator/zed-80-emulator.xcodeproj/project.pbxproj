@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4A1B3F942277D94500714B35 /* io_sysreg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3F922277D94400714B35 /* io_sysreg.mm */; };
 		4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDC2278083C00714B35 /* AppDelegate.mm */; };
 		4A1B3FE02278083C00714B35 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A1B3FDF2278083C00714B35 /* ViewController.mm */; };
 		4A1B3FE22278083D00714B35 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A1B3FE12278083D00714B35 /* Assets.xcassets */; };
@@ -23,36 +22,14 @@
 		4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A47D170228FCA5D00B2AD1B /* ZedView.mm */; };
 		4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A0CE3227961BD00279249 /* SevenSegmentView.mm */; };
 		4ABCA28D228F71840060E314 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 4ABCA28C228F71840060E314 /* Fonts */; };
-		950A23A22295B74A00A3D55B /* io_ctc.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A02295B74A00A3D55B /* io_ctc.mm */; };
 		950A23A32295B74A00A3D55B /* io_ctc.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A02295B74A00A3D55B /* io_ctc.mm */; };
-		950A23A62295CAD200A3D55B /* io_pio.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A42295CAD200A3D55B /* io_pio.mm */; };
 		950A23A72295CAD200A3D55B /* io_pio.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A42295CAD200A3D55B /* io_pio.mm */; };
-		950A23AA2296E8C800A3D55B /* audiodevice.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A82296E8C800A3D55B /* audiodevice.mm */; };
 		950A23AB2296E8C800A3D55B /* audiodevice.mm in Sources */ = {isa = PBXBuildFile; fileRef = 950A23A82296E8C800A3D55B /* audiodevice.mm */; };
 		950A23AE2296FDE300A3D55B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 950A23AD2296FDE300A3D55B /* AudioToolbox.framework */; };
 		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
 		95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95622B75228DBF1D007C57C0 /* ra8876.cpp */; };
 		95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B77228DC02F007C57C0 /* io_lcdpanel.mm */; };
-		95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C4D3222190CBD700007662 /* io_joyseg.mm */; };
-		95FE9DB72182A99700476561 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DB62182A99700476561 /* main.mm */; };
-		95FE9DC32182AAEF00476561 /* chips.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC22182AAEF00476561 /* chips.mm */; };
-		95FE9DC62183AE9600476561 /* mmu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC42183AE9600476561 /* mmu.mm */; };
-		95FE9DC92183C8DD00476561 /* zed-80.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DC72183C8DD00476561 /* zed-80.mm */; };
-		95FE9DCC2183D12B00476561 /* strutils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCA2183D12B00476561 /* strutils.mm */; };
-		95FE9DCF21848E8700476561 /* iommu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95FE9DCD21848E8700476561 /* iommu.mm */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		95FE9DB12182A99700476561 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4A1B3F922277D94400714B35 /* io_sysreg.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = io_sysreg.mm; sourceTree = "<group>"; };
@@ -89,8 +66,6 @@
 		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_joyseg.h; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
-		95FE9DB32182A99700476561 /* zed-80-emulator */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "zed-80-emulator"; sourceTree = BUILT_PRODUCTS_DIR; };
-		95FE9DB62182A99700476561 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		95FE9DBD2182AA4900476561 /* z80ctc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80ctc.h; sourceTree = "<group>"; };
 		95FE9DBE2182AA4900476561 /* z80pio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80pio.h; sourceTree = "<group>"; };
 		95FE9DBF2182AA4900476561 /* z80.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80.h; sourceTree = "<group>"; };
@@ -113,13 +88,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				950A23AE2296FDE300A3D55B /* AudioToolbox.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		95FE9DB02182A99700476561 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,7 +139,6 @@
 		95FE9DB42182A99700476561 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				95FE9DB32182A99700476561 /* zed-80-emulator */,
 				4A1B3FD92278083C00714B35 /* gui.app */,
 			);
 			name = Products;
@@ -198,7 +165,6 @@
 				95C4D3252190CC0100007662 /* iodevice.h */,
 				95FE9DCE21848E8700476561 /* iommu.h */,
 				95FE9DCD21848E8700476561 /* iommu.mm */,
-				95FE9DB62182A99700476561 /* main.mm */,
 				95FE9DC52183AE9600476561 /* mmu.h */,
 				95FE9DC42183AE9600476561 /* mmu.mm */,
 				95622B74228DBCD5007C57C0 /* ra8876.h */,
@@ -234,23 +200,6 @@
 			productReference = 4A1B3FD92278083C00714B35 /* gui.app */;
 			productType = "com.apple.product-type.application";
 		};
-		95FE9DB22182A99700476561 /* zed-80-emulator */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 95FE9DBA2182A99700476561 /* Build configuration list for PBXNativeTarget "zed-80-emulator" */;
-			buildPhases = (
-				95FE9DAF2182A99700476561 /* Sources */,
-				95FE9DB02182A99700476561 /* Frameworks */,
-				95FE9DB12182A99700476561 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "zed-80-emulator";
-			productName = "zed-80-emulator";
-			productReference = 95FE9DB32182A99700476561 /* zed-80-emulator */;
-			productType = "com.apple.product-type.tool";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -268,9 +217,6 @@
 							};
 						};
 					};
-					95FE9DB22182A99700476561 = {
-						CreatedOnToolsVersion = 10.0;
-					};
 				};
 			};
 			buildConfigurationList = 95FE9DAE2182A99700476561 /* Build configuration list for PBXProject "zed-80-emulator" */;
@@ -286,7 +232,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				95FE9DB22182A99700476561 /* zed-80-emulator */,
 				4A1B3FD82278083C00714B35 /* gui */,
 			);
 		};
@@ -328,24 +273,6 @@
 				4A1B3FE02278083C00714B35 /* ViewController.mm in Sources */,
 				4A1B3FE82278083D00714B35 /* main.m in Sources */,
 				4A1B3FDD2278083C00714B35 /* AppDelegate.mm in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		95FE9DAF2182A99700476561 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				95FE9DCC2183D12B00476561 /* strutils.mm in Sources */,
-				95FE9DC62183AE9600476561 /* mmu.mm in Sources */,
-				4A1B3F942277D94500714B35 /* io_sysreg.mm in Sources */,
-				95FE9DB72182A99700476561 /* main.mm in Sources */,
-				95C4D3242190CBD700007662 /* io_joyseg.mm in Sources */,
-				95FE9DC32182AAEF00476561 /* chips.mm in Sources */,
-				950A23A62295CAD200A3D55B /* io_pio.mm in Sources */,
-				95FE9DC92183C8DD00476561 /* zed-80.mm in Sources */,
-				950A23AA2296E8C800A3D55B /* audiodevice.mm in Sources */,
-				95FE9DCF21848E8700476561 /* iommu.mm in Sources */,
-				950A23A22295B74A00A3D55B /* io_ctc.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -508,24 +435,6 @@
 			};
 			name = Release;
 		};
-		95FE9DBB2182A99700476561 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = SRYH2VZYUR;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		95FE9DBC2182A99700476561 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = SRYH2VZYUR;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -543,15 +452,6 @@
 			buildConfigurations = (
 				95FE9DB82182A99700476561 /* Debug */,
 				95FE9DB92182A99700476561 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		95FE9DBA2182A99700476561 /* Build configuration list for PBXNativeTarget "zed-80-emulator" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				95FE9DBB2182A99700476561 /* Debug */,
-				95FE9DBC2182A99700476561 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
