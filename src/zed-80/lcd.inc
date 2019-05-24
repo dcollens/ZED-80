@@ -5,6 +5,8 @@ PORT_LCDDAT	equ PORT_LCDBASE + 1	; port address for RA8876 data register
 ; Panel geometry
 LCD_WIDTH	equ 1024
 LCD_HEIGHT	equ 600
+LCD_TXT_WIDTH	equ 8
+LCD_TXT_HEIGHT	equ 16
 
 ; Status register values
 LCDSTAT_INTR	equ 0x01		; Interrupt pin state (active high)

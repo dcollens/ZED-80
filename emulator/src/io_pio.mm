@@ -3,7 +3,7 @@
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2019-05-22.
-//Copyright © 2019 The Head. All rights reserved.
+//  Copyright © 2019 The Head. All rights reserved.
 //
 
 #include "io_pio.h"
@@ -23,8 +23,8 @@ void PioDevice::pioOutputCallback(int portId, uint8_t data, void *userData) {
 }
 
 PioDevice::PioDevice(shared_ptr<KeyboardDevice> keyboardDevice)
-    : _keyboardDevice(keyboardDevice) {
-
+    : _keyboardDevice(keyboardDevice)
+{
     z80pio_desc_t pioDesc;
     pioDesc.in_cb = pioInputCallback;
     pioDesc.out_cb = pioOutputCallback;
@@ -60,7 +60,7 @@ uint8_t PioDevice::inputCallback(int portId) {
     // Emulation of PIO device is requesting current values of the PIO port pins.
     uint8_t value = _portInputs.at(portId);
 
-    if (portId == 0) {
+    if (portId == Z80PIO_PORT_A) {
         // Add keyboard start bit.
         if (_keyboardDevice->isScanCodeAvailable()) {
             value |= 0x20;
@@ -72,7 +72,7 @@ uint8_t PioDevice::inputCallback(int portId) {
 
 void PioDevice::outputCallback(int portId, uint8_t data) {
     // Emulation of PIO device is updating us about the output state of the PIO port pins.
-    if (portId == 0) {
+    if (portId == Z80PIO_PORT_A) {
         _keyboardDevice->setShiftRegisterClear((data & 0x08) == 0);
     }
     _portOutputs.at(portId) = data;

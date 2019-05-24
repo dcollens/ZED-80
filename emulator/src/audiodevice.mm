@@ -71,7 +71,7 @@ void AudioDevice::initializeAudioQueue() {
             break;
         }
         
-        _audioBuffers.emplace_back(buffer);
+        _audioBuffers.emplace(buffer);
     }
     
     result = AudioQueueStart(_audioQueue, NULL);
@@ -92,14 +92,14 @@ void AudioDevice::yieldSample(float sample) {
     data[buffer->mAudioDataByteSize / sizeof(float)] = sample;
     buffer->mAudioDataByteSize += sizeof(float);
     if (buffer->mAudioDataByteSize >= buffer->mAudioDataBytesCapacity) {
-        _audioBuffers.pop_front();
+        _audioBuffers.pop();
         auto result = AudioQueueEnqueueBuffer(_audioQueue, buffer, 0, NULL);
         if (result != 0) {
             cout << "AudioDevice: could not enqueue audio output buffer, error " << result
                  << " ($" << to_hex(result) << ")" << endl;
             // Put the buffer back, empty.
             buffer->mAudioDataByteSize = 0;
-            _audioBuffers.emplace_back(buffer);
+            _audioBuffers.emplace(buffer);
         }
     }
 }
@@ -143,7 +143,7 @@ void AudioDevice::checkIorq(SysRegDevice const &sysreg, PioDevice &pio) {
 
 void AudioDevice::audioQueueOutputCallback(AudioQueueRef audioQueue, AudioQueueBufferRef buffer) {
     buffer->mAudioDataByteSize = 0;
-    _audioBuffers.emplace_back(buffer);
+    _audioBuffers.emplace(buffer);
 }
 
 void AudioDevice::reset() {

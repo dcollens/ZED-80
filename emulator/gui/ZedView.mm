@@ -60,25 +60,25 @@ static constexpr CGFloat V_PADDING = 8;
 }
 
 - (void)keyDown:(NSEvent *)event {
-    NSArray *codes = [g_KeyPressScanCodes objectForKey:[NSNumber numberWithInteger:[event keyCode]]];
+    NSArray *codes = g_KeyPressScanCodes[[NSNumber numberWithInteger:event.keyCode]];
     if (codes == nil) {
-        NSLog(@"Warning: No scan codes for key code %d", [event keyCode]);
+        NSLog(@"Warning: No scan codes for key code %d", event.keyCode);
     } else {
         [self submitScanCodes:codes];
     }
 }
 
 - (void)keyUp:(NSEvent *)event {
-    NSArray *codes = [g_KeyReleaseScanCodes objectForKey:[NSNumber numberWithInteger:[event keyCode]]];
+    NSArray *codes = g_KeyReleaseScanCodes[[NSNumber numberWithInteger:event.keyCode]];
     if (codes == nil) {
-        NSLog(@"Warning: No scan codes for key code %d", [event keyCode]);
+        NSLog(@"Warning: No scan codes for key code %d", event.keyCode);
     } else {
         [self submitScanCodes:codes];
     }
 }
 
 - (void)flagsChanged:(NSEvent *)event {
-    NSLog(@"Keyboard modifier flags changed: 0x%08lX", (unsigned long)[event modifierFlags]);
+    NSLog(@"Keyboard modifier flags changed: 0x%08lX", (unsigned long)event.modifierFlags);
 }
 
 - (NSSize)intrinsicContentSize {
@@ -97,9 +97,9 @@ static constexpr CGFloat V_PADDING = 8;
     _sevenSegment[port].value = value;
 }
 
-- (void)submitScanCodes:(NSArray *)codes {
+- (void)submitScanCodes:(NSArray<NSNumber *> *)codes {
     for (NSNumber *n in codes) {
-        [_delegate receivedKeyboardScanCode:uint8_t([n intValue])];
+        [_delegate receivedKeyboardScanCode:n.unsignedCharValue];
     }
 }
 

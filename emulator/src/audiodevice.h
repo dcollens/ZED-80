@@ -11,7 +11,7 @@
 
 #include <AudioToolbox/AudioQueue.h>
 
-#include <deque>
+#include <queue>
 
 #include "io_sysreg.h"
 #include "io_pio.h"
@@ -33,7 +33,7 @@ class AudioDevice {
     uint64_t                        _pins;
     
     AudioQueueRef                   _audioQueue;
-    std::deque<AudioQueueBufferRef> _audioBuffers;
+    std::queue<AudioQueueBufferRef> _audioBuffers;
     
     void initializeAudioQueue();
 

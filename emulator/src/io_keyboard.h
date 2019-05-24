@@ -10,6 +10,7 @@
 #define io_keyboard_h
 
 #include <queue>
+
 #include "iodevice.h"
 
 class KeyboardDevice : public IoDevice {

@@ -122,8 +122,6 @@ hello_message::
     .text   "ZED-80 Personal Computer", NUL
 copyright_message::
     .text   0xA9, "1976 HeadCode", NUL
-crlf::
-    .text   CR, LF, NUL
 
 ; void lcd_test_drawing()
 ; - exercise the LCD panel drawing primitives
@@ -166,12 +164,12 @@ lcd_test_text::
     ld	    hl, hello_message
     call    lcd_puts
     ld	    de, 0
-    ld	    hl, 15
+    ld	    hl, LCD_TXT_HEIGHT
     call    lcd_text_xy
     ld	    hl, copyright_message
     call    lcd_puts
     ld	    de, 0
-    ld	    hl, 30
+    ld	    hl, 2 * LCD_TXT_HEIGHT
     call    lcd_text_xy
 loop:
     call    kbd_get_keycode	    ; get next key
