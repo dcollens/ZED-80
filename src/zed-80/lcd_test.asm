@@ -135,7 +135,7 @@ hello_message::
 copyright_message::
     .text   0xA9, "1976 HeadCode", NUL
 prompt::
-    .text   ">", NUL
+    .text   "> ", NUL
 
 ; void lcd_test_drawing()
 ; - exercise the LCD panel drawing primitives
@@ -190,15 +190,17 @@ lcd_test_text::
     call    lcd_crlf
     call    forth_init
 loop:
+    ld      de, 0xFFFF
+    ld      h, 0x00
+    call    lcd_set_fgcolor
     call    forth_dump_pstack
     ld	    hl, prompt
     call    lcd_puts
+    ld      de, 0xFFFF
+    ld      h, 0xFF
+    call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
-    ld      hl, Gets_buffer
-    call    lcd_puts
-    call    lcd_crlf
     ; call    forth_test
-    call    forth_test2
     jr      loop
     call    forth_shutdown
     pop	    hl
@@ -219,7 +221,9 @@ loop:
 forth_init::
     push    hl
 
-    ; Set up parameter stack.
+    ; Set up parameter stack. Note that it must always have at least
+    ; one item because the first thing we do is pop it off and stick
+    ; it into BC.
     ld      hl, Forth_pstack+FORTH_PSTACK_SIZE
     dec     hl
     ld      (hl), 0x12
@@ -293,29 +297,6 @@ done:
     ret
 #endlocal
 
-; void forth_test2()
-; XXX delete
-#local
-forth_test2::
-    push    hl
-    push    ix
-
-    ld      hl, Gets_buffer
-    call    parse_hex16
-
-    ; Push parsed value.
-    ld      ix, (Forth_psp)
-    dec     ix
-    dec     ix
-    ld      (ix+0), l
-    ld      (ix+1), h
-    ld      (Forth_psp), ix
-
-    pop     ix
-    pop     hl
-    ret
-#endlocal
-
 ; void forth_test()
 ; - testing forth stuff
 ; XXX delete
@@ -334,6 +315,15 @@ forth_test::
     add     hl, sp
     ld      (Forth_orig_sp), hl
 
+    ; Take over the Z80 stack for our parameter stack.
+    ld      hl, (Forth_psp)
+    ld      sp, hl
+    pop     bc
+
+    ; Reset input pointer to start of buffer.
+    ld      hl, Gets_buffer
+    ld      (Forth_input), hl
+
     ; Test program.
     ld      hl, Forth_code
     ld      (hl), 0xCD          ; Z80 opcode for CALL.
@@ -350,6 +340,9 @@ forth_test::
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
     M_forth_add_code forth_native_dot
+    ld      de, hl
+    M_forth_add_code forth_interpret
+    M_forth_add_code forth_interpret
     M_forth_add_code forth_terminate
 
     ; Set up HERE pointer.
@@ -361,10 +354,6 @@ forth_test::
     ; Set up IP.
     ; ld      de, Forth_code
 
-    ; Set up parameter stack. This is the top word. The rest
-    ; of the stack is just the Z80 stack.
-    ld      bc, 0xFFFF
-
     ; Start the program.
     jp      forth_next
 
@@ -375,121 +364,6 @@ forth_test_terminate::
     pop     de
     pop     bc
     pop     hl
-    ret
-#endlocal
-
-; void forth_strequ_test()
-; - tests the forth_strequ() function.
-; - XXX delete
-#local
-str1:
-    .text   "abc", NUL
-str2:
-    .text   "abd", NUL
-str3:
-    .text   "abcd", NUL
-str4:
-    .text   "abc", NUL
-and_str:
-    .text   " and ", NUL
-equal_str:
-    .text   " are equal.", NUL
-not_equal_str:
-    .text   " are not equal.", NUL
-forth_strequ_test::
-    push    hl
-    push    bc
-
-    ld      hl, str1
-    ld      bc, str1
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str2
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str3
-    call    do_compare
-
-    ld      hl, str3
-    ld      bc, str1
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str4
-    call    do_compare
-
-    pop     bc
-    pop     hl
-    ret
-
-do_compare:
-    push    hl
-    call    lcd_puts
-    push    hl
-    ld      hl, and_str
-    call    lcd_puts
-    ld      hl, bc
-    call    lcd_puts
-    pop     hl
-
-    call    forth_strequ
-    jr      z, equal
-    ld      hl, not_equal_str
-    jr      done_compare
-
-equal:
-    ld      hl, equal_str
-
-done_compare:
-    call    lcd_puts
-    call    lcd_crlf
-    pop     hl
-    ret
-#endlocal
-
-; void forth_find_test()
-; - tests the forth_native_find() function.
-; - XXX delete
-#local
-str1:
-    .text   "dup", NUL
-str2:
-    .text   "+", NUL
-str3:
-    .text   "foo", NUL
-separator_str:
-    .text   ": ", NUL
-forth_find_test::
-    push    hl
-    push    bc
-
-    ld      hl, str1
-    call    do_check
-
-    ld      hl, str2
-    call    do_check
-
-    ld      hl, str3
-    call    do_check
-
-    ld      hl, Gets_buffer
-    call    do_check
-
-    pop     bc
-    pop     hl
-    ret
-
-do_check:
-    call    lcd_puts
-    ld      bc, hl
-    call    forth_native_find
-    ld      hl, separator_str
-    call    lcd_puts
-    ld      hl, bc
-    call    lcd_puthex16
-    call    lcd_crlf
     ret
 #endlocal
 
@@ -544,6 +418,12 @@ forth_exit::
 ; - terminates the interpreter
 #local
 forth_terminate::
+    ; Save our own stack pointer.
+    push    bc
+    ld      hl, 0
+    add     hl, sp
+    ld      (Forth_psp), hl
+
     ; Restore the original stack pointer.
     ld      hl, (Forth_orig_sp)
     ld      sp, hl
@@ -639,28 +519,81 @@ loop:
 
 ; - skips the header of a dictionary entry.
     M_forth_native ">cfa", cfa
+    ld      hl, bc
+    call    forth_cfa
+    ld      bc, hl
+    jp      forth_next
+
+; - skips the header of a dictionary entry.
 #local
-    ; BC is pointing to the start of the dictionary entry.
+forth_cfa::
+    ; HL is pointing to the start of the dictionary entry.
     ; Skip the link pointer.
-    inc     bc
-    inc     bc
+    inc     hl
+    inc     hl
 
     ; Skip the nul-terminated string.
 loop:
-    ld      a, (bc)
-    inc     bc
+    ld      a, (hl)
+    inc     hl
     or      a
     jr      nz, loop
 
-    jp      forth_next
+    ret
 #endlocal
+
 
 ; - gets the next word from the input stream and puts its address
 ; - on the parameter stack.
     M_forth_native "word", word
     push    bc
-    ld      bc, Gets_buffer
+    call    forth_word
+    ld      bc, hl
     jp      forth_next
+
+; - gets the next word from the input stream and returns its address in HL.
+; - The pointer will point to a NUL byte if we're at the end of the buffer.
+#local
+forth_word::
+    ld      hl, (Forth_input)
+
+    ; Skip whitespace.
+whitespace_loop:
+    ld      a, (hl)
+    cp      ' '
+    jr      nz, end_of_whitespace
+    inc     hl
+    jr      whitespace_loop
+
+end_of_whitespace:
+    ; We're at the start of the word, record that.
+    push    hl
+
+    ; Skip word.
+word_loop:
+    ld      a, (hl)
+    cp      ' '
+    jr      z, end_of_word
+    cp      NUL
+    jr      z, end_of_string
+    inc     hl
+    jr      word_loop
+
+end_of_word:
+    ; NUL-terminate word.
+    ld      (hl), NUL
+
+    ; Skip new NUL.
+    inc     hl
+
+end_of_string:
+    ; Record new position.
+    ld      (Forth_input), hl
+
+    ; Skip back to start of word.
+    pop     hl
+    ret
+#endlocal
 
 ; - skips over the number of bytes specified at the IP.
     M_forth_native "branch", branch
@@ -695,7 +628,18 @@ no_skip:
 ; - finds the string at the top of the stack in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
     M_forth_native "find", find
+    ld      hl, bc
+    call    forth_find
+    ld      bc, hl
+    jp      forth_next
+
+; - finds the string pointed to by HL in the dictionary.
+; - returns a pointer to the dictionary entry or NULL if not found.
 #local
+forth_find::
+    push    bc
+    ld      bc, hl
+
     ; Start at head of linked list.
     ld      hl, (Forth_dict)
 
@@ -733,10 +677,52 @@ not_null:
     jp      loop
 
 done:
-    ; Result is in HL.
-    ld      bc, hl
+    pop     bc
+    ret
+#endlocal
 
+; - grabs the next word and processes it (runs it or compiles it).
+#local
+forth_interpret::
+    ; Parse and find the word.
+    call    forth_word
+    push    hl
+    call    forth_find
+
+    ; See if it was found.
+    ld      a, l
+    or      a
+    jr      nz, found
+    ld      a, h
+    or      a
+    jr      nz, found
+
+    ; Not found, parse as number and push it.
+    pop     hl
+    call    parse_hex16
+    ; XXX detect that parsing failed, and print error message below.
+
+    ; Push parsed value.
+    push    bc
+    ld      bc, hl
     jp      forth_next
+
+    ; Not found, display error message.
+    ld      hl, word_not_found_error_message
+    call    lcd_puts
+    pop     hl
+    call    lcd_puts
+    call    lcd_crlf
+    jp      forth_terminate
+
+found:
+    ; Throw away saves name.
+    inc     sp
+    inc     sp
+    call    forth_cfa
+    jp      (hl)
+word_not_found_error_message:
+    .text   "Word not found: ", NUL
 #endlocal
 
 ; void forth_strequ()
@@ -2052,6 +2038,7 @@ Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_dict:: defs 2     ; Pointer to dictionary linked list.
 Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_psp:: defs 2      ; Pointer into Forth_pstack.
+Forth_input:: defs 2    ; Pointer to input buffer.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
