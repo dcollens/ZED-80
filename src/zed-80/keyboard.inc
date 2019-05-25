@@ -80,13 +80,15 @@ KBD_SCNST_RLSBIT equ 7		    ; parsed a $F0 code, indicating a key-up event
 ; NOTE: These are all the same values as the corresponding KEY_xxx keycodes. The idea is that we
 ; can update Kbd_modifiers as follows, to set (or clear) a key:
 ;    Kbd_modifiers |= 1 << keycode
-; We can fold the left and right modifier keys onto the left one by:
-;    folded = Kbd_modifiers | (Kbd_modifiers >> 1)
-; Then test the any Lxxx bit in "folded" to see whether either side's modifier is active.
 KMOD_LSHFT_BIT	equ 1	    ; Left shift
 KMOD_RSHFT_BIT	equ 2	    ; Right shift
 KMOD_LCTRL_BIT	equ 3	    ; Left control
 KMOD_RCTRL_BIT	equ 4	    ; Right control
 KMOD_LALT_BIT	equ 5	    ; Left alt
 KMOD_RALT_BIT	equ 6	    ; Right alt
+
 KMOD_MAX	equ 6	    ; 6 is the last modifier key
+
+KMOD_SHIFT_MSK	equ (1 << KMOD_LSHFT_BIT) | (1 << KMOD_RSHFT_BIT)
+KMOD_CTRL_MSK	equ (1 << KMOD_LCTRL_BIT) | (1 << KMOD_RCTRL_BIT)
+KMOD_ALT_MSK	equ (1 << KMOD_LALT_BIT) | (1 << KMOD_RALT_BIT)

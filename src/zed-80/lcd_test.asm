@@ -391,32 +391,6 @@ increment_digit:
     ret
 #endlocal
 
-; void lcd_puthex8(uint8_t value)
-; - write an 8-bit hex value to the LCD
-lcd_puthex8::
-    push    hl
-    ld	    h, l
-    srl	    l
-    srl	    l
-    srl	    l
-    srl	    l
-    call    bin2hex
-    call    lcd_putc
-    ld	    l, h
-    call    bin2hex
-    call    lcd_putc
-    pop	    hl
-    ret
-
-; void lcd_puthex16(uint16_t value)
-; - write a 16-bit hex value to the LCD
-lcd_puthex16::
-    push    hl
-    ld      l, h
-    call    lcd_puthex8
-    pop     hl
-    jr	    lcd_puthex8
-
 ; void lcd_gets()
 ; - reads a line of text from keyboard, not including newline, into Gets_buffer.
 ; - leaves the buffer nul-terminated.
@@ -427,25 +401,20 @@ lcd_gets::
     ld      de, Gets_buffer
 
 loop:
-    call    kbd_get_keycode	    ; get next key
-    ld	    a, (Kbd_modifiers)
-    call    seg0_write		    ; show Kbd_modifiers on SEG0
-    bit	    KEY_RELEASED_BIT, l	    ; test (keycode & KEY_RELEASED) == 0?
-    jr      nz, loop                ; skip key release
-    ld      a, l
-    cp      KEY_ENTER
-    jr      z, done
-    call    lcd_putc
-    ld      a, l
-    ld      (de), a
-    inc     de
+    call    kbd_getc		    ; get next cooked character
+    ld      a, l		    ; A = input_char
+    cp      KEY_ENTER		    ; test input_char == KEY_ENTER?
+    jr      z, done		    ; if equal, return
+    ld      (de), a		    ; store input_char in buffer
+    call    lcd_putc		    ; display input_char
+    inc     de			    ; advance buffer pointer
     ; XXX must check for buffer overflow.
     jr	    loop
 
 done:
     xor	    a
-    ld      (de), a
-    call    lcd_crlf
+    ld      (de), a		    ; store terminating NUL
+    call    lcd_crlf		    ; advance display pointer to next line
     pop     hl
     pop     de
     ret
@@ -813,6 +782,32 @@ lcd_wait_idle::
     ret
 #endlocal
 
+; void lcd_puthex8(uint8_t value)
+; - write an 8-bit hex value to the LCD
+lcd_puthex8::
+    push    hl
+    ld	    h, l
+    srl	    l
+    srl	    l
+    srl	    l
+    srl	    l
+    call    bin2hex
+    call    lcd_putc
+    ld	    l, h
+    call    bin2hex
+    call    lcd_putc
+    pop	    hl
+    ret
+
+; void lcd_puthex16(uint16_t value)
+; - write a 16-bit hex value to the LCD
+lcd_puthex16::
+    push    hl
+    ld      l, h
+    call    lcd_puthex8
+    pop     hl
+    jr	    lcd_puthex8
+
 ; void lcd_rand_line_coords()
 ; - set up random coordinates for line start & line end
 #local
@@ -1104,10 +1099,10 @@ found:
     jr	    nc, notModifier	; keycode > KMOD_MAX, so it's not a modifier key
     ld	    d, a		; D = keycode
     ld	    b, a		; B = keycode
-    ld	    a, 1		; A = 1 << keycode
-shift:				; ...
-    sla	    a			; ...
-    djnz    shift		; ...
+    ld	    a, 1		; set up for: A = 1 << keycode
+shift:
+    sla	    a			; A <<= 1
+    djnz    shift		; repeat B times
     ld	    hl, Kbd_modifiers	; HL = &Kbd_modifiers
     bit	    KBD_SCNST_RLSBIT, c	; test (scan_state & KBD_SCANST_RLS) == 0?
     jr	    nz, clearModifier	; release bit is set, so clear modifier bit
@@ -1210,6 +1205,54 @@ Kbd_ext_tbl_sz	    equ ($-Kbd_ext_tbl) / 2
 ; Left Control down ($14), NumberLock down ($77), KEY_NONE ($E1), Left Control up ($F0,$14),
 ; and NumberLock up ($F0, $77). These will all be ignored.
 
+#endlocal
+
+; uint8_t kbd_getc()
+; - reads the next ISO8859-1 input character from the keyboard (i.e. "cooked" mode)
+; - filters out all key-release and modifier keycodes
+; - applies SHIFT modifier to input key
+; - ignores CTRL/ALT modifiers (for now)
+#local
+kbd_getc::
+loop:
+    call    kbd_get_keycode	; read the next keycode into L
+    bit	    KEY_RELEASED_BIT, l	; test (keycode & KEY_RELEASED_BIT) == 0?
+    jr	    nz, loop		; if bit is set, ignore the release keycode
+    ld	    a, l		; A = keycode
+    cp	    KMOD_MAX+1		; test keycode <= KMOD_MAX?
+    jr	    c, loop		; ignore modifier keys
+    ld	    a, (Kbd_modifiers)	; A = modifiers
+    and	    KMOD_SHIFT_MSK	; test (A & KMOD_SHIFT_MSK) != 0
+    ret     z
+
+    ; Handle SHIFT modifier.
+    ld	    a, l		; A = keycode
+    sub	    KEY_SHIFT_MIN	; A = keycode - KEY_SHIFT_MIN
+    ret	    c			; return key unmodified if keycode < KEY_SHIFT_MIN
+
+    ; Map key through table
+    push    hl
+    push    bc
+    ld	    c, a
+    ld	    b, 0
+    ld	    hl, Key_shift_tbl	; HL = &Key_shift_tbl
+    add	    hl, bc		; HL = &Key_shift_tbl[keycode - KEY_SHIFT_MIN]
+    ld	    a, (hl)
+    pop	    bc
+    pop	    hl
+    ld	    l, a
+    ret
+
+; Entries in this table map a keycode to the ISO8859-1 character that should be generated when
+; the shift key is held down. The table has 89 entries, for keycodes $27-$7F inclusive
+KEY_SHIFT_MIN	    equ 0x27
+Key_shift_tbl:
+    .byte '"()*+<_>?' ; $27-2F
+    .byte ")!@#$%^&*(::<+>?" ; $30-3F
+    .byte "@ABCDEFGHIJKLMNO" ; $40-4F
+    .byte "PQRSTUVWXYZ{|}^_" ; $50-5F
+    .byte "~ABCDEFGHIJKLMNO" ; $60-6F
+    .byte "PQRSTUVWXYZ{|}~", $7F ; $70-7F
 #endlocal
 
 ; uint8_t bin2hex(uint8_t val)
