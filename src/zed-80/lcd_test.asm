@@ -216,21 +216,21 @@ forth_test::
     push    ix
     push    iy
 
-    ; Set up return stack.
-    ld      ix, Forth_pstack+FORTH_PSTACK_SIZE
-
-    ; Set up IP.
-    ld      de, Forth_code
-
     ; Test program.
     ld      hl, Forth_code
-    M_forth_add_code forth_imm
-    M_forth_add_code 0x3357
-    M_forth_add_code forth_imm
-    M_forth_add_code 0x1234
+    ld      (hl), 0xCD          ; Z80 opcode for CALL.
+    inc     hl
+    ld      (hl), lo(forth_enter)
+    inc     hl
+    ld      (hl), hi(forth_enter)
+    inc     hl
     M_forth_add_code forth_dup
     M_forth_add_code forth_add
-    M_forth_add_code forth_dot
+    M_forth_add_code forth_exit
+    ld      de, hl
+    M_forth_add_code forth_imm
+    M_forth_add_code 0x1234
+    M_forth_add_code Forth_code
     M_forth_add_code forth_dot
     M_forth_add_code forth_finish
 
@@ -240,6 +240,12 @@ forth_test::
     ld      hl, 0
     add     hl, sp
     ld      (Forth_orig_sp), hl
+
+    ; Set up return stack.
+    ld      ix, Forth_pstack+FORTH_PSTACK_SIZE
+
+    ; Set up IP.
+    ; ld      de, Forth_code
 
     ; Set up stack.
     ld      bc, 0xFFFF
