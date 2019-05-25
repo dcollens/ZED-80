@@ -167,7 +167,7 @@ lcd_test_text::
     push    de
     push    hl
     M_lcdwrite0 LCDREG_CCR0
-    M_lcdwrite LCDREG_CCR1, 0x40
+    M_lcdwrite0 LCDREG_CCR1
     M_lcdwrite0 LCDREG_FLDR	    ; vertical gap between lines, in pixels
     M_lcdwrite0 LCDREG_F2FSSR	    ; horizontal gap between characters, in pixels
     ld	    de, 0xFFFF
@@ -840,18 +840,34 @@ increment_digit:
 ; - leaves the buffer nul-terminated.
 #local
 lcd_gets::
+    push    bc
     push    de
     push    hl
-    ld      de, Gets_buffer
+    ld      de, Gets_buffer	    ; DE = input_buffer
+    ld	    b, 0		    ; B = byte_count
 
 loop:
     call    kbd_getc		    ; get next cooked character
     ld      a, l		    ; A = input_char
     cp      KEY_ENTER		    ; test input_char == KEY_ENTER?
     jr      z, done		    ; if equal, return
+    cp	    KEY_BS		    ; test input_char == KEY_BS?
+    jr	    nz, store		    ; if not BS, store it
+
+    ; Backspace processing
+    ld	    a, b
+    and	    a			    ; test byte_count == 0?
+    jr	    z, loop		    ; if byte_count == 0, ignore BS, and get next char
+    call    lcd_bs		    ; move text position back and erase character
+    dec	    de			    ; rewind input_buffer
+    dec	    b			    ; decrement byte_count
+    jr	    loop		    ; get next character
+    
+store:
     ld      (de), a		    ; store input_char in buffer
     call    lcd_putc		    ; display input_char
-    inc     de			    ; advance buffer pointer
+    inc     de			    ; advance input_buffer
+    inc	    b			    ; increment byte_count
     ; XXX must check for buffer overflow.
     jr	    loop
 
@@ -861,6 +877,7 @@ done:
     call    lcd_crlf		    ; advance display pointer to next line
     pop     hl
     pop     de
+    pop	    bc
     ret
 #endlocal
 
@@ -1107,10 +1124,10 @@ lcd_set_text_xy::
     ret
 
 ; void lcd_set_text_x(uint16_t x)
-;lcd_set_text_x::
-;    M_lcdwrite LCDREG_F_CURX0, l
-;    M_lcdwrite LCDREG_F_CURX1, h
-;    ret
+lcd_set_text_x::
+    M_lcdwrite LCDREG_F_CURX0, l
+    M_lcdwrite LCDREG_F_CURX1, h
+    ret
 
 ; void lcd_set_text_y(uint16_t y)
 ;lcd_set_text_y::
@@ -1120,14 +1137,14 @@ lcd_set_text_xy::
 
 ; uint16_t lcd_get_text_x()
 ; - returns current text X position, in pixels
-;lcd_get_text_x::
-;    M_out   (PORT_LCDCMD), LCDREG_F_CURX0
-;    in	    a, (PORT_LCDDAT)
-;    ld	    l, a
-;    M_out   (PORT_LCDCMD), LCDREG_F_CURX1
-;    in	    a, (PORT_LCDDAT)
-;    ld	    h, a
-;    ret
+lcd_get_text_x::
+    M_out   (PORT_LCDCMD), LCDREG_F_CURX0
+    in	    a, (PORT_LCDDAT)
+    ld	    l, a
+    M_out   (PORT_LCDCMD), LCDREG_F_CURX1
+    in	    a, (PORT_LCDDAT)
+    ld	    h, a
+    ret
 
 ; uint16_t lcd_get_text_y()
 ; - returns current text Y position, in pixels
@@ -1153,6 +1170,30 @@ lcd_crlf::
     pop	    hl
     pop	    de
     ret
+
+; void lcd_bs()
+; - move text position back one column
+; - erase character under new position
+#local
+lcd_bs::
+    push    de
+    push    hl
+    call    lcd_get_text_x	; HL = text_x
+    ld	    de, LCD_TXT_WIDTH	; DE = LCD_TXT_WIDTH
+    or	    a			; clear carry flag
+    sbc	    hl, de		; HL = text_x - LCD_TXT_WIDTH
+    jr	    c, done		; if text_x < LCD_TXT_WIDTH, give up (TODO: should wrap up 1 row)
+    call    lcd_set_text_x	; move cursor back one column
+    ex	    de, hl		; DE = saved text position
+    ld	    l, ' '
+    call    lcd_putc		; overwrite erased character position with a blank space
+    ex	    de, hl		; HL = saved text position
+    call    lcd_set_text_x	; move cursor back one column (after erasing old character)
+done:
+    pop	    hl
+    pop	    de
+    ret
+#endlocal
 
 ; void lcd_ellipse_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
