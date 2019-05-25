@@ -113,7 +113,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
         treeDir = "/Users/dcollens/Documents";
     }
 
-    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_monitor.rom";
+    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_for_emulator.rom";
 //    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_ram_test.rom";
     auto romData = loadFile(romPathname);
     if (romData == nullptr) {
