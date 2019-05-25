@@ -227,10 +227,9 @@ forth_test::
     M_forth_add_code forth_imm
     M_forth_add_code 0x3357
     M_forth_add_code forth_imm
-    M_forth_add_code 0x2357
-    M_forth_add_code forth_imm
-    M_forth_add_code 0x1357
-    M_forth_add_code forth_dot
+    M_forth_add_code 0x1234
+    M_forth_add_code forth_dup
+    M_forth_add_code forth_add
     M_forth_add_code forth_dot
     M_forth_add_code forth_dot
     M_forth_add_code forth_finish
@@ -328,7 +327,6 @@ forth_imm::
 
 ; void forth_dot()
 ; - word for popping and print the number on the top of the stack.
-#local
 forth_dot::
     ld      hl, bc
     pop     bc
@@ -336,7 +334,22 @@ forth_dot::
     call    cr
 
     jp      forth_next
-#endlocal
+
+; void forth_dup()
+; - duplicate the word at the top of the parameter stack.
+forth_dup::
+    push    bc
+
+    jp      forth_next
+
+; void forth_add()
+; - add the top two entries in the parameter stack.
+forth_add::
+    pop     hl
+    add     hl, bc
+    ld      bc, hl
+
+    jp      forth_next
 
 ; void put_dec_int(uint16_t value)
 ; - writes a decimal value to the LCD
