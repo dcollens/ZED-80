@@ -122,6 +122,8 @@ hello_message::
     .text   "ZED-80 Personal Computer", NUL
 copyright_message::
     .text   0xA9, "1976 HeadCode", NUL
+prompt::
+    .text   ">", NUL
 
 ; void lcd_test_drawing()
 ; - exercise the LCD panel drawing primitives
@@ -161,34 +163,56 @@ lcd_test_text::
     call    lcd_set_fgcolor	    ; set FG color to white
     call    lcd_wait_idle	    ; must be idle before switching to text mode
     M_lcdwrite LCDREG_ICR, 0x04	    ; set text mode
+    ld      hl, 0                   ; move text cursor to line 0
+    ld      (Cursor_y), hl
+    call    reset_cursor
     ld	    hl, hello_message
     call    lcd_puts
-    ld	    de, 0
-    ld	    hl, LCD_TXT_HEIGHT
-    call    lcd_text_xy
+    call    cr
     ld	    hl, copyright_message
     call    lcd_puts
-    ld	    de, 0
-    ld	    hl, 2 * LCD_TXT_HEIGHT
-    call    lcd_text_xy
+    call    cr
 loop:
-    ; HL is cursor Y location here.
+    ld	    hl, prompt
+    call    lcd_puts
     call    gets                    ; get a line of code
-    ld      de, LCD_TXT_HEIGHT
-    add     hl, de
-    ld      de, 0
-    call    lcd_text_xy
-    push    hl                      ; save Y location of cursor
     ld      hl, Gets_buffer
     call    lcd_puts
-    pop     hl                      ; get Y location of cursor, move to next line
-    ld      de, LCD_TXT_HEIGHT
-    add     hl, de
-    ld      de, 0
-    call    lcd_text_xy
+    call    cr
     jr      loop
     pop	    hl
     pop	    de
+    ret
+#endlocal
+
+; void reset_cursor()
+; - move the text cursor to the first column and the row indicated (in pixels) by Cursor_y.
+#local
+reset_cursor::
+    push    de
+    push    hl
+    ld	    de, 0
+    ld	    hl, (Cursor_y)
+    call    lcd_text_xy
+    pop     hl
+    pop     de
+    ret
+#endlocal
+
+; void cr()
+; - move the text cursor to the beginning of the next line.
+#local
+cr::
+    push    de
+    push    hl
+    ld	    hl, (Cursor_y)
+    ld      de, LCD_TXT_HEIGHT
+    add     hl, de
+    ; XXX check if off the bottom of the display, scroll it up.
+    ld      (Cursor_y), hl
+    call    reset_cursor
+    pop     hl
+    pop     de
     ret
 #endlocal
 
@@ -218,6 +242,7 @@ loop:
 done:
     ld      a, NUL
     ld      (de), a
+    call    cr
     pop     hl
     pop     de
     ret
@@ -1158,3 +1183,4 @@ Seg1_data:: defs 1	; current value of second 7-segment display byte
 Rand16_seed1:: defs 2	; seed value for rand16() routine
 Rand16_seed2:: defs 2	; seed value for rand16() routine
 Gets_buffer:: defs 80   ; input buffer for gets() routine
+Cursor_y:: defs 2       ; Y (pixel) location of text cursor

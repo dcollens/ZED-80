@@ -23,7 +23,7 @@ using std::make_shared;
 std::string pins_to_str(uint64_t pins) {
     return std::string()
         + ((pins & Z80_RETI) != 0 ? "RETI " : "---- ")
-        + ((pins & Z80_IEIO) != 0 ? "IEIO " : "     ")
+        + ((pins & Z80_IEIO) != 0 ? "IEIO " : "---- ")
         + ((pins & Z80_WAIT2) != 0 ? "2" : "-")
         + ((pins & Z80_WAIT1) != 0 ? "1" : "-")
         + ((pins & Z80_WAIT0) != 0 ? "0 " : "- ")
