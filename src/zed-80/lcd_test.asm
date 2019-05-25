@@ -197,7 +197,6 @@ loop:
     call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
     ; call    forth_test
-    ; call    forth_test2
     jr      loop
     call    forth_shutdown
     pop	    hl
@@ -294,29 +293,6 @@ done:
     ret
 #endlocal
 
-; void forth_test2()
-; XXX delete
-#local
-forth_test2::
-    push    hl
-    push    ix
-
-    ld      hl, Gets_buffer
-    call    parse_hex16
-
-    ; Push parsed value.
-    ld      ix, (Forth_psp)
-    dec     ix
-    dec     ix
-    ld      (ix+0), l
-    ld      (ix+1), h
-    ld      (Forth_psp), ix
-
-    pop     ix
-    pop     hl
-    ret
-#endlocal
-
 ; void forth_test()
 ; - testing forth stuff
 ; XXX delete
@@ -340,6 +316,10 @@ forth_test::
     ld      sp, hl
     pop     bc
 
+    ; Reset input pointer to start of buffer.
+    ld      hl, Gets_buffer
+    ld      (Forth_input), hl
+
     ; Test program.
     ld      hl, Forth_code
     ld      (hl), 0xCD          ; Z80 opcode for CALL.
@@ -357,6 +337,8 @@ forth_test::
     M_forth_add_code Forth_code
     M_forth_add_code forth_native_dot
     ld      de, hl
+    M_forth_add_code forth_interpret
+    M_forth_add_code forth_interpret
     M_forth_add_code forth_terminate
 
     ; Set up HERE pointer.
@@ -368,8 +350,6 @@ forth_test::
     ; Set up IP.
     ; ld      de, Forth_code
 
-    jp      forth_interpret
-
     ; Start the program.
     jp      forth_next
 
@@ -380,121 +360,6 @@ forth_test_terminate::
     pop     de
     pop     bc
     pop     hl
-    ret
-#endlocal
-
-; void forth_strequ_test()
-; - tests the forth_strequ() function.
-; - XXX delete
-#local
-str1:
-    .text   "abc", NUL
-str2:
-    .text   "abd", NUL
-str3:
-    .text   "abcd", NUL
-str4:
-    .text   "abc", NUL
-and_str:
-    .text   " and ", NUL
-equal_str:
-    .text   " are equal.", NUL
-not_equal_str:
-    .text   " are not equal.", NUL
-forth_strequ_test::
-    push    hl
-    push    bc
-
-    ld      hl, str1
-    ld      bc, str1
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str2
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str3
-    call    do_compare
-
-    ld      hl, str3
-    ld      bc, str1
-    call    do_compare
-
-    ld      hl, str1
-    ld      bc, str4
-    call    do_compare
-
-    pop     bc
-    pop     hl
-    ret
-
-do_compare:
-    push    hl
-    call    lcd_puts
-    push    hl
-    ld      hl, and_str
-    call    lcd_puts
-    ld      hl, bc
-    call    lcd_puts
-    pop     hl
-
-    call    forth_strequ
-    jr      z, equal
-    ld      hl, not_equal_str
-    jr      done_compare
-
-equal:
-    ld      hl, equal_str
-
-done_compare:
-    call    lcd_puts
-    call    lcd_crlf
-    pop     hl
-    ret
-#endlocal
-
-; void forth_find_test()
-; - tests the forth_native_find() function.
-; - XXX delete
-#local
-str1:
-    .text   "dup", NUL
-str2:
-    .text   "+", NUL
-str3:
-    .text   "foo", NUL
-separator_str:
-    .text   ": ", NUL
-forth_find_test::
-    push    hl
-    push    bc
-
-    ld      hl, str1
-    call    do_check
-
-    ld      hl, str2
-    call    do_check
-
-    ld      hl, str3
-    call    do_check
-
-    ld      hl, Gets_buffer
-    call    do_check
-
-    pop     bc
-    pop     hl
-    ret
-
-do_check:
-    call    lcd_puts
-    ld      bc, hl
-    call    forth_find
-    ld      hl, separator_str
-    call    lcd_puts
-    ld      hl, bc
-    call    lcd_puthex16
-    call    lcd_crlf
     ret
 #endlocal
 
@@ -683,9 +548,48 @@ loop:
     jp      forth_next
 
 ; - gets the next word from the input stream and returns its address in HL.
-forth_word:
-    ld      hl, Gets_buffer
+; - The pointer will point to a NUL byte if we're at the end of the buffer.
+#local
+forth_word::
+    ld      hl, (Forth_input)
+
+    ; Skip whitespace.
+whitespace_loop:
+    ld      a, (hl)
+    cp      ' '
+    jr      nz, end_of_whitespace
+    inc     hl
+    jr      whitespace_loop
+
+end_of_whitespace:
+    ; We're at the start of the word, record that.
+    push    hl
+
+    ; Skip word.
+word_loop:
+    ld      a, (hl)
+    cp      ' '
+    jr      z, end_of_word
+    cp      NUL
+    jr      z, end_of_string
+    inc     hl
+    jr      word_loop
+
+end_of_word:
+    ; NUL-terminate word.
+    ld      (hl), NUL
+
+    ; Skip new NUL.
+    inc     hl
+
+end_of_string:
+    ; Record new position.
+    ld      (Forth_input), hl
+
+    ; Skip back to start of word.
+    pop     hl
     ret
+#endlocal
 
 ; - skips over the number of bytes specified at the IP.
     M_forth_native "branch", branch
@@ -2130,6 +2034,7 @@ Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_dict:: defs 2     ; Pointer to dictionary linked list.
 Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_psp:: defs 2      ; Pointer into Forth_pstack.
+Forth_input:: defs 2    ; Pointer to input buffer.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
