@@ -217,7 +217,7 @@ loop:
 
 done:
     ld      a, NUL
-    ld      (hl), a
+    ld      (de), a
     pop     hl
     pop     de
     ret
