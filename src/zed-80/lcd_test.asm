@@ -26,6 +26,7 @@
 #include "keyboard.inc"
 #include "ascii.inc"
 
+FORTH_RSTACK_SIZE   equ   256
 FORTH_PSTACK_SIZE   equ   256
 FORTH_CODE_SIZE     equ   2048
 
@@ -183,22 +184,26 @@ lcd_test_text::
     ld	    hl, copyright_message
     call    lcd_puts
     call    lcd_crlf
+    call    forth_init
 loop:
+    call    forth_dump_pstack
     ld	    hl, prompt
     call    lcd_puts
     call    lcd_gets                ; get a line of code
     ld      hl, Gets_buffer
     call    lcd_puts
     call    lcd_crlf
-    call    forth_test
+    ; call    forth_test
+    call    forth_test2
     jr      loop
+    call    forth_shutdown
     pop	    hl
     pop	    de
     ret
 #endlocal
 
-; void forth_test()
-; - testing forth stuff
+; void forth_init()
+; - initializes the Forth interpreter/compiler.
 ; - Notes:
 ;   - We're using Direct Threaded Code (DTC).
 ;   - Machine register allocation:
@@ -206,8 +211,114 @@ loop:
 ;       - DE: IP (instruction to decode next)
 ;       - HL: W (working register)
 ;       - IX: RSP (return stack pointer)
-;       - IY: UP (?)
 ;       - SP: PSP (parameter stack pointer)
+forth_init::
+    push    hl
+
+    ; Set up parameter stack.
+    ld      hl, Forth_pstack+FORTH_PSTACK_SIZE
+    dec     hl
+    ld      (hl), 0x12
+    dec     hl
+    ld      (hl), 0x34
+    dec     hl
+    ld      (hl), 0x67
+    dec     hl
+    ld      (hl), 0x89
+    ld      (Forth_psp), hl
+
+    ; Set the head of the dictionary linked list.
+    call    forth_init_dict
+
+    ; Set up HERE pointer.
+    ld      hl, Forth_code
+    ld      (Forth_here), hl
+
+    pop     hl
+    ret
+
+; void forth_shutdown()
+; - shut down the Forth interpreter/compiler.
+; XXX delete
+forth_shutdown::
+    ret
+
+; void forth_dump_pstack()
+; - dump the parameter stack contents to the console.
+#local
+forth_dump_pstack::
+    push    hl
+    push    bc
+    push    de
+
+    ; Start at the bottom of the stack.
+    ld      hl, Forth_pstack+FORTH_PSTACK_SIZE
+    ld      bc, (Forth_psp)
+
+loop:
+    ; See if we're done.
+    or      a           ; Clear carry.
+    sbc     hl, bc
+    add     hl, bc
+    jr      z, done
+
+    dec     hl
+    dec     hl
+
+    ; Print (HL).
+    ld      de, hl      ; Save/restore HL.
+    ld      a, (hl)     ; Dereference HL.
+    inc     hl
+    ld      h, (hl)
+    ld      l, a
+    call    lcd_puthex16
+    ld      hl, de
+
+    ; Write space.
+    ld      de, hl      ; Save/restore L.
+    ld      l, ' '
+    call    lcd_putc
+    ld      hl, de
+
+    jr      loop
+
+done:
+    pop     de
+    pop     bc
+    pop     hl
+    ret
+#endlocal
+
+; void forth_test2()
+; XXX delete
+#local
+forth_test2::
+    push    hl
+
+    ld      hl, Gets_buffer
+    call    parse_hex16
+    call    lcd_puthex16
+    call    lcd_crlf
+
+    ; Push parsed value.
+    ;; ld      hl, (Forth_psp)
+    ;; dec     hl
+    ;; ld      (hl), 0x12
+    ;; dec     hl
+    ;; ld      (hl), 0x34
+    ;; dec     hl
+    ;; ld      (hl), 0x67
+    ;; dec     hl
+    ;; ld      (hl), 0x89
+    ;; ld      (Forth_psp), hl
+
+    pop     hl
+    ret
+#endlocal
+
+; void forth_test()
+; - testing forth stuff
+; XXX delete
 #local
 forth_test::
     push    hl
@@ -222,8 +333,6 @@ forth_test::
     ld      hl, 0
     add     hl, sp
     ld      (Forth_orig_sp), hl
-
-    call    forth_init_dict
 
     ; Test program.
     ld      hl, Forth_code
@@ -247,7 +356,7 @@ forth_test::
     ld      (Forth_here), hl
 
     ; Set up return stack.
-    ld      ix, Forth_pstack+FORTH_PSTACK_SIZE
+    ld      ix, Forth_rstack+FORTH_RSTACK_SIZE
 
     ; Set up IP.
     ; ld      de, Forth_code
@@ -633,6 +742,64 @@ forth_init_dict::
     ld      (hl), hi(FORTH_LINK)
     pop     hl
     ret
+
+; uint16_t parse_hex16(char *s)
+; - parses a 16-bit hex value from "s".
+#local
+parse_hex16::
+    push    de
+
+    ; Parse high byte.
+    ld      de, hl
+    call    parse_hex8
+
+    ; Parse low byte.
+    ex      de, hl
+    inc     hl
+    inc     hl
+    call    parse_hex8
+
+    ; Combine bytes.
+    ld      h, e
+
+    pop     de
+    ret
+#endlocal
+
+; uint8_t parse_hex8(char *s)
+; - parses an 8-bit hex value from "s".
+#local
+parse_hex8::
+    push    de
+    push    bc
+
+    ; Parse first nybble.
+    ld      bc, hl
+    ld      l, (hl)
+    call    hex2bin
+
+    ; Shift left into high nybble.
+    ld      e, l
+    sla     e
+    sla     e
+    sla     e
+    sla     e
+
+    ; Parse second nybble.
+    ld      hl, bc
+    inc     hl
+    ld      l, (hl)
+    call    hex2bin
+
+    ; Combine nybbles.
+    ld      a, e
+    or      l
+    ld      l, a
+
+    pop     bc
+    pop     de
+    ret
+#endlocal
 
 ; void lcd_putdec16(uint16_t value)
 ; - writes a 16-bit decimal value to the LCD
@@ -1549,6 +1716,27 @@ decimal:
     ret
 #endlocal
 
+; uint8_t hex2bin(uint8_t val)
+; - converts the hexadecimal character (0-9,A-F,a-f) to a 4-bit value.
+; - assumes that the character is a valid hex digit, upper or lower case.
+#local
+hex2bin::
+    ld	    a, l
+    sub     a, '0'
+    cp      10
+    jr      c, done         ; If we borrowed, then it's less than 10 and we're done.
+
+    ; Adjust for A-F.
+    sub     a, 'A'-'0'-10
+
+    ; Handle lower case (has 0x20 OR'ed in).
+    and     0x0F
+
+done:
+    ld	    l, a
+    ret
+#endlocal
+
 ; void sio_putc(uint8_t ch)
 ; - write the specified character "ch" to port A
 #local
@@ -1785,5 +1973,7 @@ Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_dict:: defs 2     ; Pointer to dictionary linked list.
 Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
+Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_code:: defs FORTH_CODE_SIZE
+Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
