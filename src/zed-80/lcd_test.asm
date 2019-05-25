@@ -174,23 +174,23 @@ lcd_test_text::
     call    lcd_set_fgcolor	    ; set FG color to white
     call    lcd_wait_idle	    ; must be idle before switching to text mode
     M_lcdwrite LCDREG_ICR, 0x04	    ; set text mode
-    ld      hl, 0                   ; move text cursor to line 0
-    ld      (Cursor_y), hl
-    call    reset_cursor
+    ld	    de, 0                   ; move text cursor to (0,0)
+    ld      hl, 0		    ; ...
+    call    lcd_set_text_xy	    ; ...
     ld	    hl, hello_message
     call    lcd_puts
-    call    cr
+    call    lcd_crlf
     ld	    hl, copyright_message
     call    lcd_puts
-    call    cr
+    call    lcd_crlf
 loop:
     ld	    hl, prompt
     call    lcd_puts
-    call    gets                    ; get a line of code
+    call    lcd_gets                ; get a line of code
     ld      hl, Gets_buffer
     call    lcd_puts
-    call    cr
-    call    forth_test
+    call    lcd_crlf
+    ;call    forth_test
     jr      loop
     pop	    hl
     pop	    de
@@ -337,7 +337,7 @@ forth_dot::
     ld      hl, bc
     pop     bc
     call    put_hex_int16
-    call    cr
+    call    lcd_crlf
 
     jp      forth_next
 
@@ -422,42 +422,11 @@ put_hex_int16::
     ret
 #endlocal
 
-; void reset_cursor()
-; - move the text cursor to the first column and the row indicated (in pixels) by Cursor_y.
-#local
-reset_cursor::
-    push    de
-    push    hl
-    ld	    de, 0
-    ld	    hl, (Cursor_y)
-    call    lcd_text_xy
-    pop     hl
-    pop     de
-    ret
-#endlocal
-
-; void cr()
-; - move the text cursor to the beginning of the next line.
-#local
-cr::
-    push    de
-    push    hl
-    ld	    hl, (Cursor_y)
-    ld      de, LCD_TXT_HEIGHT
-    add     hl, de
-    ; XXX check if off the bottom of the display, scroll it up.
-    ld      (Cursor_y), hl
-    call    reset_cursor
-    pop     hl
-    pop     de
-    ret
-#endlocal
-
-; void gets()
+; void lcd_gets()
 ; - reads a line of text from keyboard, not including newline, into Gets_buffer.
 ; - leaves the buffer nul-terminated.
 #local
-gets::
+lcd_gets::
     push    de
     push    hl
     ld      de, Gets_buffer
@@ -477,9 +446,9 @@ loop:
     jr	    loop
 
 done:
-    ld      a, NUL
+    xor	    a
     ld      (de), a
-    call    cr
+    call    lcd_crlf
     pop     hl
     pop     de
     ret
@@ -718,13 +687,61 @@ lcd_triangle_xy::
     M_lcdwrite LCDREG_DTPV1, h
     ret
 
-; void lcd_text_xy(uint16_t x, uint16_t y)
+; void lcd_set_text_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
-lcd_text_xy::
+lcd_set_text_xy::
     M_lcdwrite LCDREG_F_CURX0, e
     M_lcdwrite LCDREG_F_CURX1, d
     M_lcdwrite LCDREG_F_CURY0, l
     M_lcdwrite LCDREG_F_CURY1, h
+    ret
+
+; void lcd_set_text_x(uint16_t x)
+;lcd_set_text_x::
+;    M_lcdwrite LCDREG_F_CURX0, l
+;    M_lcdwrite LCDREG_F_CURX1, h
+;    ret
+
+; void lcd_set_text_y(uint16_t y)
+;lcd_set_text_y::
+;    M_lcdwrite LCDREG_F_CURY0, l
+;    M_lcdwrite LCDREG_F_CURY1, h
+;    ret
+
+; uint16_t lcd_get_text_x()
+; - returns current text X position, in pixels
+;lcd_get_text_x::
+;    M_out   (PORT_LCDCMD), LCDREG_F_CURX0
+;    in	    a, (PORT_LCDDAT)
+;    ld	    l, a
+;    M_out   (PORT_LCDCMD), LCDREG_F_CURX1
+;    in	    a, (PORT_LCDDAT)
+;    ld	    h, a
+;    ret
+
+; uint16_t lcd_get_text_y()
+; - returns current text Y position, in pixels
+lcd_get_text_y::
+    M_out   (PORT_LCDCMD), LCDREG_F_CURY0
+    in	    a, (PORT_LCDDAT)
+    ld	    l, a
+    M_out   (PORT_LCDCMD), LCDREG_F_CURY1
+    in	    a, (PORT_LCDDAT)
+    ld	    h, a
+    ret
+
+; void lcd_crlf()
+; - advance to first column of next line
+lcd_crlf::
+    push    de
+    push    hl
+    call    lcd_get_text_y
+    ld	    de, LCD_TXT_HEIGHT
+    add	    hl, de
+    ld	    de, 0
+    call    lcd_set_text_xy
+    pop	    de
+    pop	    hl
     ret
 
 ; void lcd_ellipse_xy(uint16_t x, uint16_t y)
@@ -1419,8 +1436,7 @@ Seg0_data:: defs 1	; current value of first 7-segment display byte
 Seg1_data:: defs 1	; current value of second 7-segment display byte
 Rand16_seed1:: defs 2	; seed value for rand16() routine
 Rand16_seed2:: defs 2	; seed value for rand16() routine
-Gets_buffer:: defs 80   ; input buffer for gets() routine
-Cursor_y:: defs 2       ; Y (pixel) location of text cursor
+Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
 
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_code:: defs FORTH_CODE_SIZE
