@@ -365,6 +365,9 @@ forth_find_test::
     ld      hl, str3
     call    do_check
 
+    ld      hl, Gets_buffer
+    call    do_check
+
     pop     bc
     pop     hl
     ret
@@ -504,6 +507,9 @@ forth_native_&label::
     ld      de, (Forth_dict)
     ld      (hl), de
     pop     de
+    ; Write our new linked list head.
+    ld      (Forth_dict), hl
+    ; Skip link pointer.
     inc     hl
     inc     hl
 
@@ -519,6 +525,24 @@ loop:
     ; Write back our new "here".
     ld      (Forth_here), hl
     pop     bc
+    jp      forth_next
+#endlocal
+
+; - skips the header of a dictionary entry.
+    M_forth_native ">cfa", cfa
+#local
+    ; BC is pointing to the start of the dictionary entry.
+    ; Skip the link pointer.
+    inc     bc
+    inc     bc
+
+    ; Skip the nul-terminated string.
+loop:
+    ld      a, (bc)
+    inc     bc
+    or      a
+    jr      nz, loop
+
     jp      forth_next
 #endlocal
 
