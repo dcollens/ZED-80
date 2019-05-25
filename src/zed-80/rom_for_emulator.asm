@@ -133,7 +133,7 @@ init::
     ld	    sp, RAM_end-1
     ; reset peripherals
     M_pio_reset
-    M_sio_reset
+    ; M_sio_reset
     M_ctc_reset
     ; set up interrupts
     ld	    a, hi(IVT)
@@ -144,7 +144,7 @@ init::
     call    seg_init
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
-    call    sio_init
+    ; call    sio_init
     ; print startup banner
     ; M_sio_puts startup_msg
     ; call    cmd_loop
