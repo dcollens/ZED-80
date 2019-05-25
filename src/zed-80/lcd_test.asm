@@ -294,24 +294,20 @@ done:
 #local
 forth_test2::
     push    hl
+    push    ix
 
     ld      hl, Gets_buffer
     call    parse_hex16
-    call    lcd_puthex16
-    call    lcd_crlf
 
     ; Push parsed value.
-    ;; ld      hl, (Forth_psp)
-    ;; dec     hl
-    ;; ld      (hl), 0x12
-    ;; dec     hl
-    ;; ld      (hl), 0x34
-    ;; dec     hl
-    ;; ld      (hl), 0x67
-    ;; dec     hl
-    ;; ld      (hl), 0x89
-    ;; ld      (Forth_psp), hl
+    ld      ix, (Forth_psp)
+    dec     ix
+    dec     ix
+    ld      (ix+0), l
+    ld      (ix+1), h
+    ld      (Forth_psp), ix
 
+    pop     ix
     pop     hl
     ret
 #endlocal
