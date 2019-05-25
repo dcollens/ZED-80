@@ -224,20 +224,31 @@ forth_test::
 
     ; Test program.
     ld      hl, Forth_code
+    M_forth_add_code forth_imm
+    M_forth_add_code 0x3357
+    M_forth_add_code forth_imm
+    M_forth_add_code 0x2357
+    M_forth_add_code forth_imm
+    M_forth_add_code 0x1357
+    M_forth_add_code forth_dot
     M_forth_add_code forth_dot
     M_forth_add_code forth_dot
     M_forth_add_code forth_finish
 
-    ; Push test data on parameter stack.
-    ld      bc, 0x1234
-    push    bc
-    ld      bc, 0x5678
-    push    bc
-    ld      bc, 0x6543
+    ; We use the Z80 stack for parameters, so save our SP so we can restore it
+    ; and return to our caller even if the Forth program left junk on the
+    ; parameter stack.
+    ld      hl, 0
+    add     hl, sp
+    ld      (Forth_orig_sp), hl
+
+    ; Set up stack.
+    ld      bc, 0xFFFF
 
     jp      forth_next
 
-forth_test_finish::
+    ; Restore the SP from Forth_orig_sp before jumping here:
+forth_test_terminate::
     pop     iy
     pop     ix
     pop     de
@@ -297,8 +308,23 @@ forth_exit::
 ; - terminates the interpreter
 #local
 forth_finish::
-    jp      forth_test_finish
+    ; Restore the original stack pointer.
+    ld      hl, (Forth_orig_sp)
+    ld      sp, hl
+
+    jp      forth_test_terminate
 #endlocal
+
+; void forth_imm()
+; - pushes the next word onto the parameter stack.
+forth_imm::
+    push    bc
+    ld      hl, de
+    ld      bc, (hl)
+    inc     de
+    inc     de
+
+    jp      forth_next
 
 ; void forth_dot()
 ; - word for popping and print the number on the top of the stack.
@@ -1377,5 +1403,6 @@ Rand16_seed2:: defs 2	; seed value for rand16() routine
 Gets_buffer:: defs 80   ; input buffer for gets() routine
 Cursor_y:: defs 2       ; Y (pixel) location of text cursor
 
+Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
