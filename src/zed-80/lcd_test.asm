@@ -218,7 +218,9 @@ loop:
 forth_init::
     push    hl
 
-    ; Set up parameter stack.
+    ; Set up parameter stack. Note that it must always have at least
+    ; one item because the first thing we do is pop it off and stick
+    ; it into BC.
     ld      hl, Forth_pstack+FORTH_PSTACK_SIZE
     dec     hl
     ld      (hl), 0x12
@@ -774,13 +776,45 @@ done:
 ; - grabs the next word and processes it (runs it or compiles it).
 #local
 forth_interpret::
+    ; Parse and find the word.
     call    forth_word
+    push    hl
     call    forth_find
-    ;; call    lcd_puthex16
-    ;; call    lcd_crlf
-    call    forth_cfa
 
+    ; See if it was found.
+    ld      a, l
+    or      a
+    jr      nz, found
+    ld      a, h
+    or      a
+    jr      nz, found
+
+    ; Not found, parse as number and push it.
+    pop     hl
+    call    parse_hex16
+    ; XXX detect that parsing failed, and print error message below.
+
+    ; Push parsed value.
+    push    bc
+    ld      bc, hl
+    jp      forth_next
+
+    ; Not found, display error message.
+    ld      hl, word_not_found_error_message
+    call    lcd_puts
+    pop     hl
+    call    lcd_puts
+    call    lcd_crlf
+    jp      forth_terminate
+
+found:
+    ; Throw away saves name.
+    inc     sp
+    inc     sp
+    call    forth_cfa
     jp      (hl)
+word_not_found_error_message:
+    .text   "Word not found: ", NUL
 #endlocal
 
 ; void forth_strequ()
