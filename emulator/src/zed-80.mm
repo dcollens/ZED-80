@@ -19,6 +19,29 @@ using std::unique_ptr;
 using std::make_unique;
 using std::make_shared;
 
+// Converts a 64-bit pin word to a string. Move this somewhere.
+std::string pins_to_str(uint64_t pins) {
+    return std::string()
+        + ((pins & Z80_RETI) != 0 ? "RETI " : "---- ")
+        + ((pins & Z80_IEIO) != 0 ? "IEIO " : "     ")
+        + ((pins & Z80_WAIT2) != 0 ? "2" : "-")
+        + ((pins & Z80_WAIT1) != 0 ? "1" : "-")
+        + ((pins & Z80_WAIT0) != 0 ? "0 " : "- ")
+        + ((pins & Z80_BUSACK) != 0 ? "BA " : "-- ")
+        + ((pins & Z80_BUSREQ) != 0 ? "BQ " : "-- ")
+        + ((pins & Z80_NMI) != 0 ? "NMI " : "--- ")
+        + ((pins & Z80_INT) != 0 ? "INT " : "--- ")
+        // Skip HALT.
+        + ((pins & Z80_WR) != 0 ? "WR " : "-- ")
+        + ((pins & Z80_RD) != 0 ? "RD " : "-- ")
+        + ((pins & Z80_IORQ) != 0 ? "IORQ " : "---- ")
+        + ((pins & Z80_MREQ) != 0 ? "MREQ " : "---- ")
+        + ((pins & Z80_M1) != 0 ? "M1 " : "-- ")
+        + to_hex(uint8_t(Z80_GET_DATA(pins)))
+        + " "
+        + to_hex(uint16_t(Z80_GET_ADDR(pins)));
+}
+
 //static
 uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
@@ -44,6 +67,8 @@ ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(ni
     // TODO: iommu->setDevice(8, sdcardDevice);
     _iommu->setDevice(9, _keyboardDevice);
 
+    _recordPinHistory = false;
+
     cout << "Z80: " << (CPU_CLOCK_HZ / 1000000) << "MHz clock" << endl;
     _iommu->describe(cout);
     _audioDevice.describe(cout);
@@ -65,7 +90,21 @@ void ZED80::receivedKeyboardScanCode(uint8_t scanCode) {
     _keyboardDevice->receivedScanCode(scanCode);
 }
 
+void ZED80::dumpPinHistory() {
+    cout << "Pin history:" << endl;
+    for (int i = 0; i < _pinHistory.size(); i++) {
+        cout << "    " << pins_to_str(_pinHistory[i]) << endl;
+    }
+}
+
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
+    if (_recordPinHistory) {
+        _pinHistory.push_back(pins);
+        while (_pinHistory.size() > 16) {
+            _pinHistory.erase(_pinHistory.begin());
+        }
+    }
+
     CtcDevice &ctcDevice = *_ctcDevice;
     PioDevice &pioDevice = *_pioDevice;
     
@@ -82,8 +121,8 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
             Z80_SET_DATA(pins, _mmu->read(addr));
         } else if ((pins & Z80_WR) != 0) {
             if (addr < 0x4000) {
-                // XXX temporary for debugging, remove.
-                cout << "PC: " << to_hex(z80_pc(&_cpu)) << " " << to_hex(pins) << endl;
+                // Catch ROM writes. XXX temporary for debugging, remove.
+                dumpPinHistory();
             }
             _mmu->write(addr, Z80_GET_DATA(pins));
         }

@@ -41,10 +41,15 @@ class ZED80 {
 
     ViewController *            _uiDelegate;
 
+    bool                        _recordPinHistory;
+    std::vector<uint64_t>       _pinHistory;
+
     static uint64_t z80TickCallback(int numTicks, uint64_t pins, void *userData);
 
     uint64_t tickCallback(int numTicks, uint64_t pins);
-    
+
+    void dumpPinHistory();
+
 public:
     ZED80();
     
