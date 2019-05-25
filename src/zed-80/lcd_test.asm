@@ -190,7 +190,7 @@ loop:
     ld      hl, Gets_buffer
     call    lcd_puts
     call    lcd_crlf
-    ;call    forth_test
+    call    forth_test
     jr      loop
     pop	    hl
     pop	    de
@@ -216,6 +216,8 @@ forth_test::
     push    ix
     push    iy
 
+    call    forth_init_dict
+
     ; Test program.
     ld      hl, Forth_code
     ld      (hl), 0xCD          ; Z80 opcode for CALL.
@@ -224,15 +226,15 @@ forth_test::
     inc     hl
     ld      (hl), hi(forth_enter)
     inc     hl
-    M_forth_add_code forth_dup
-    M_forth_add_code forth_add
+    M_forth_add_code forth_native_dup
+    M_forth_add_code forth_native_add
     M_forth_add_code forth_exit
     ld      de, hl
-    M_forth_add_code forth_imm
+    M_forth_add_code forth_native_imm
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
-    M_forth_add_code forth_dot
-    M_forth_add_code forth_finish
+    M_forth_add_code forth_native_dot
+    M_forth_add_code forth_terminate
 
     ; We use the Z80 stack for parameters, so save our SP so we can restore it
     ; and return to our caller even if the Forth program left junk on the
@@ -247,7 +249,7 @@ forth_test::
     ; Set up IP.
     ; ld      de, Forth_code
 
-    ; Set up stack.
+    ; Set up parameter stack. This is the top word.
     ld      bc, 0xFFFF
 
     jp      forth_next
@@ -259,6 +261,118 @@ forth_test_terminate::
     pop     de
     pop     bc
     pop     hl
+    ret
+#endlocal
+
+; void forth_strequ_test()
+; - tests the forth_strequ() function.
+; - XXX delete
+#local
+str1:
+    .text   "abc", NUL
+str2:
+    .text   "abd", NUL
+str3:
+    .text   "abcd", NUL
+str4:
+    .text   "abc", NUL
+and_str:
+    .text   " and ", NUL
+equal_str:
+    .text   " are equal.", NUL
+not_equal_str:
+    .text   " are not equal.", NUL
+forth_strequ_test::
+    push    hl
+    push    bc
+
+    ld      hl, str1
+    ld      bc, str1
+    call    do_compare
+
+    ld      hl, str1
+    ld      bc, str2
+    call    do_compare
+
+    ld      hl, str1
+    ld      bc, str3
+    call    do_compare
+
+    ld      hl, str3
+    ld      bc, str1
+    call    do_compare
+
+    ld      hl, str1
+    ld      bc, str4
+    call    do_compare
+
+    pop     bc
+    pop     hl
+    ret
+
+do_compare:
+    push    hl
+    call    lcd_puts
+    push    hl
+    ld      hl, and_str
+    call    lcd_puts
+    ld      hl, bc
+    call    lcd_puts
+    pop     hl
+
+    call    forth_strequ
+    jr      z, equal
+    ld      hl, not_equal_str
+    jr      done_compare
+
+equal:
+    ld      hl, equal_str
+
+done_compare:
+    call    lcd_puts
+    call    lcd_crlf
+    pop     hl
+    ret
+#endlocal
+
+; void forth_find_test()
+; - tests the forth_native_find() function.
+; - XXX delete
+#local
+str1:
+    .text   "dup", NUL
+str2:
+    .text   "+", NUL
+str3:
+    .text   "foo", NUL
+separator_str:
+    .text   ": ", NUL
+forth_find_test::
+    push    hl
+    push    bc
+
+    ld      hl, str1
+    call    do_check
+
+    ld      hl, str2
+    call    do_check
+
+    ld      hl, str3
+    call    do_check
+
+    pop     bc
+    pop     hl
+    ret
+
+do_check:
+    call    lcd_puts
+    ld      bc, hl
+    call    forth_native_find
+    ld      hl, separator_str
+    call    lcd_puts
+    ld      hl, bc
+    call    lcd_puthex16
+    call    lcd_crlf
     ret
 #endlocal
 
@@ -309,10 +423,10 @@ forth_exit::
     jp      forth_next
 #endlocal
 
-; void forth_finish()
+; void forth_terminate()
 ; - terminates the interpreter
 #local
-forth_finish::
+forth_terminate::
     ; Restore the original stack pointer.
     ld      hl, (Forth_orig_sp)
     ld      sp, hl
@@ -320,42 +434,137 @@ forth_finish::
     jp      forth_test_terminate
 #endlocal
 
-; void forth_imm()
+; Format of the Forth dictionary:
+;
+; Link (2): Pointer to previous entry in dictionary, or NULL.
+; Name (N+1): Nul-terminated name of entry.
+; Code (...): Code for the routine.
+
+FORTH_LINK = 0
+M_forth_native macro name, label
+FORTH_THIS_ADDR = $
+    .dw     FORTH_LINK
+FORTH_LINK = FORTH_THIS_ADDR
+    .asciz  &name
+forth_native_&label::
+    endm
+
+; - duplicates the word at the top of the parameter stack.
+    M_forth_native "dup", dup
+    push    bc
+    jp      forth_next
+
+; - adds the top two entries in the parameter stack.
+    M_forth_native "+", add
+    pop     hl
+    add     hl, bc
+    ld      bc, hl
+    jp      forth_next
+
+; - prints the number on the top of the stack.
+    M_forth_native ".", dot
+    ld      hl, bc
+    pop     bc
+    call    lcd_puthex16
+    call    lcd_crlf
+    jp      forth_next
+
 ; - pushes the next word onto the parameter stack.
-forth_imm::
+    M_forth_native "imm", imm
     push    bc
     ld      hl, de
     ld      bc, (hl)
     inc     de
     inc     de
-
     jp      forth_next
 
-; void forth_dot()
-; - word for popping and print the number on the top of the stack.
-forth_dot::
-    ld      hl, bc
-    pop     bc
-    call    lcd_puthex16
-    call    lcd_crlf
+; - finds the string at the top of the stack in the dictionary.
+; - returns a pointer to the dictionary entry or NULL if not found.
+    M_forth_native "find", find
+#local
+    ; Start at head of linked list.
+    ld      hl, (Forth_dict)
 
-    jp      forth_next
+loop:
+    ; See if HL is null. Is there a better way to do this?
+    ld      a, l
+    or      a
+    jp      nz, not_null
+    ld      a, h
+    or      a
+    jp      z, done
 
-; void forth_dup()
-; - duplicate the word at the top of the parameter stack.
-forth_dup::
-    push    bc
+not_null:
+    ; Point to name of routine.
+    inc     hl
+    inc     hl
 
-    jp      forth_next
+    ; BC and HL are both now pointing to strings. Compare them.
+    ; The result is in the zero flag.
+    call    forth_strequ
 
-; void forth_add()
-; - add the top two entries in the parameter stack.
-forth_add::
-    pop     hl
-    add     hl, bc
+    ; Point back to link pointer. These don't modify the zero flag.
+    dec     hl
+    dec     hl
+
+    ; forth_strequ puts the result in the zero flag, where set means equal.
+    jp      z, done
+
+    ; Jump to next entry in linked list.
+    ld      a, (hl)
+    inc     hl
+    ld      h, (hl)
+    ld      l, a
+
+    jp      loop
+
+done:
+    ; Result is in HL.
     ld      bc, hl
 
     jp      forth_next
+#endlocal
+
+; void forth_strequ()
+; - compares nul-terminated strings in HL and BC.
+; - puts the result in the zero flag (set = equal, cleared = not equal).
+#local
+forth_strequ::
+    push    hl
+    push    bc
+
+loop:
+    ; Compare the characters.
+    ld      a, (bc)
+    cp      (hl)
+    jr      nz, done
+
+    ; They're equal, see if we're done.
+    or      a
+    jr      z, done
+
+    inc     hl
+    inc     bc
+    jr      loop
+
+done:
+    pop     bc
+    pop     hl
+    ret
+#endlocal
+
+; void forth_init_dict()
+; - initialize the Forth dictionary, erasing all dynamically-created words.
+; - This routine needs to be placed after all uses of the macro M_forth_native.
+forth_init_dict::
+    push    hl
+    ; Initialize dictionary linked list pointer.
+    ld      hl, Forth_dict
+    ld      (hl), lo(FORTH_LINK)
+    inc     hl
+    ld      (hl), hi(FORTH_LINK)
+    pop     hl
+    ret
 
 ; void lcd_putdec16(uint16_t value)
 ; - writes a 16-bit decimal value to the LCD
@@ -706,8 +915,8 @@ lcd_crlf::
     add	    hl, de
     ld	    de, 0
     call    lcd_set_text_xy
-    pop	    de
     pop	    hl
+    pop	    de
     ret
 
 ; void lcd_ellipse_xy(uint16_t x, uint16_t y)
@@ -1508,3 +1717,4 @@ Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
+Forth_dict:: defs 2     ; Pointed to dictionary linked list.

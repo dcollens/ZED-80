@@ -106,6 +106,14 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 
     _zed80.setUiDelegate(self);
 
+    [self loadPrograms];
+}
+
+- (void)viewWillLayout {
+    [super viewWillLayout];
+}
+
+- (void)loadPrograms {
     std::string treeDir;
     if ([NSUserName() isEqualToString:@"lk"]) {
         treeDir = "/Users/lk/mine";
@@ -114,14 +122,14 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     }
 
     std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_for_emulator.rom";
-//    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_ram_test.rom";
+    //    std::string romPathname = treeDir + "/zed-80/src/zed-80/rom_ram_test.rom";
     auto romData = loadFile(romPathname);
     if (romData == nullptr) {
         NSLog(@"Can't load ROM file \"%s\"", romPathname.c_str());
     } else {
         _zed80.writeMemory(ROM_BASE, romData->size(), *romData);
     }
-    
+
     std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_test.bin";
     auto ramData = loadFile(ramPathname);
     if (ramData == nullptr) {
@@ -131,10 +139,6 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     }
 }
 
-- (void)viewWillLayout {
-    [super viewWillLayout];
-}
-
 - (void)cancelEmulatorTimer {
     if (_emulatorRunTimer != nil) {
         [_emulatorRunTimer invalidate];
@@ -142,10 +146,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     }
 }
 
-- (IBAction)emulatorRun:(id)sender {
-    [self cancelEmulatorTimer];
-
-    NSLog(@"Running emulator");
+- (void)startEmulator {
     int periodMs = 10;
 
     _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs / 1000.0
@@ -155,12 +156,28 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
                                                           }];
 }
 
-- (IBAction)emulatorStop:(id)sender {
+- (void)stopEmulator {
     [self cancelEmulatorTimer];
+}
+
+- (IBAction)emulatorGo:(id)sender {
+    [self stopEmulator];
+    [self startEmulator];
+}
+
+- (IBAction)emulatorStop:(id)sender {
+    [self stopEmulator];
 }
 
 - (IBAction)emulatorReset:(id)sender {
     _zed80.reset();
+}
+
+- (IBAction)emulatorReload:(id)sender {
+    [self stopEmulator];
+    [self loadPrograms];
+    _zed80.reset();
+    [self startEmulator];
 }
 
 // Magically called via first responder from menu item.
@@ -168,7 +185,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     BOOL enabled;
 
     SEL action = menuItem.action;
-    if (action == @selector(emulatorRun:)) {
+    if (action == @selector(emulatorGo:)) {
         enabled = _emulatorRunTimer == nil;
     } else if (action == @selector(emulatorStop:)) {
         enabled = _emulatorRunTimer != nil;
