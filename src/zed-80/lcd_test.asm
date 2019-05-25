@@ -216,6 +216,13 @@ forth_test::
     push    ix
     push    iy
 
+    ; We use the Z80 stack for parameters, so save our SP so we can restore it
+    ; and return to our caller even if the Forth program left junk on the
+    ; parameter stack.
+    ld      hl, 0
+    add     hl, sp
+    ld      (Forth_orig_sp), hl
+
     call    forth_init_dict
 
     ; Test program.
@@ -236,12 +243,8 @@ forth_test::
     M_forth_add_code forth_native_dot
     M_forth_add_code forth_terminate
 
-    ; We use the Z80 stack for parameters, so save our SP so we can restore it
-    ; and return to our caller even if the Forth program left junk on the
-    ; parameter stack.
-    ld      hl, 0
-    add     hl, sp
-    ld      (Forth_orig_sp), hl
+    ; Set up HERE pointer.
+    ld      (Forth_here), hl
 
     ; Set up return stack.
     ld      ix, Forth_pstack+FORTH_PSTACK_SIZE
@@ -249,9 +252,11 @@ forth_test::
     ; Set up IP.
     ; ld      de, Forth_code
 
-    ; Set up parameter stack. This is the top word.
+    ; Set up parameter stack. This is the top word. The rest
+    ; of the stack is just the Z80 stack.
     ld      bc, 0xFFFF
 
+    ; Start the program.
     jp      forth_next
 
     ; Restore the SP from Forth_orig_sp before jumping here:
@@ -477,6 +482,45 @@ forth_native_&label::
     inc     de
     inc     de
     jp      forth_next
+
+; - adds the word at the top of the stack to our code.
+    M_forth_native ",", comma
+    ld      hl, (Forth_here)
+    ld      (hl), bc
+    inc     hl
+    inc     hl
+    ld      (Forth_here), hl
+    pop     bc
+    jp      forth_next
+
+; - creates a new entry in the dictionary.
+; - the top of the stack has the name.
+    M_forth_native "create", create
+#local
+    ld      hl, (Forth_here)
+
+    ; Set up next-word pointer.
+    push    de
+    ld      de, (Forth_dict)
+    ld      (hl), de
+    pop     de
+    inc     hl
+    inc     hl
+
+    ; Copy name from BC (top of stack).
+loop:
+    ld      a, (bc)
+    ld      (hl), a
+    inc     hl
+    inc     bc
+    or      a
+    jr      nz, loop
+
+    ; Write back our new "here".
+    ld      (Forth_here), hl
+    pop     bc
+    jp      forth_next
+#endlocal
 
 ; - finds the string at the top of the stack in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
@@ -1715,6 +1759,7 @@ Kbd_modifiers:: defs 1	; active modifier keys (1=pressed, 0=released), see KMOD_
 Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
 
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
+Forth_dict:: defs 2     ; Pointer to dictionary linked list.
+Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
-Forth_dict:: defs 2     ; Pointed to dictionary linked list.
