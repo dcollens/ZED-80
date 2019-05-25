@@ -4,6 +4,12 @@ PORT_KBD	equ 0x90	    ; port address for keyboard byte input
 ; just use the key value directly as input (provided you don't care about modifier keys).
 ; High bit set means the corresponding key was released.
 KEY_NONE	equ 0x00	    ; no key
+KEY_LSHFT	equ 0x01	    ; Left shift, NOTE: same value as the KMOD_xxx_BIT below
+KEY_RSHFT	equ 0x02	    ; Right shift, NOTE: same value as the KMOD_xxx_BIT below
+KEY_LCTRL	equ 0x03	    ; Left control, NOTE: same value as the KMOD_xxx_BIT below
+KEY_RCTRL	equ 0x04	    ; Right control, NOTE: same value as the KMOD_xxx_BIT below
+KEY_LALT	equ 0x05	    ; Left alt, NOTE: same value as the KMOD_xxx_BIT below
+KEY_RALT	equ 0x06	    ; Right alt, NOTE: same value as the KMOD_xxx_BIT below
 KEY_BS		equ 0x08	    ; Backspace
 KEY_TAB		equ 0x09	    ; Tab
 KEY_ENTER	equ 0x0D	    ; Enter/Return
@@ -69,3 +75,18 @@ KEY_RELEASED_BIT equ 7
 KBD_SCNST_IDL	equ 0x00	    ; idle, awaiting a new scan code
 KBD_SCNST_EXTBIT equ 0		    ; next byte shall be looked up in extended scan code table
 KBD_SCNST_RLSBIT equ 7		    ; parsed a $F0 code, indicating a key-up event
+
+; Keyboard modifier key flags (see Kbd_modifiers variable).
+; NOTE: These are all the same values as the corresponding KEY_xxx keycodes. The idea is that we
+; can update Kbd_modifiers as follows, to set (or clear) a key:
+;    Kbd_modifiers |= 1 << keycode
+; We can fold the left and right modifier keys onto the left one by:
+;    folded = Kbd_modifiers | (Kbd_modifiers >> 1)
+; Then test the any Lxxx bit in "folded" to see whether either side's modifier is active.
+KMOD_LSHFT_BIT	equ 1	    ; Left shift
+KMOD_RSHFT_BIT	equ 2	    ; Right shift
+KMOD_LCTRL_BIT	equ 3	    ; Left control
+KMOD_RCTRL_BIT	equ 4	    ; Right control
+KMOD_LALT_BIT	equ 5	    ; Left alt
+KMOD_RALT_BIT	equ 6	    ; Right alt
+KMOD_MAX	equ 6	    ; 6 is the last modifier key
