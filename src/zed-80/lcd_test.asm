@@ -890,6 +890,7 @@ tryStore:
     ld	    a, b
     cp	    Gets_buffer_sz-1	    ; test byte_count < Gets_buffer_sz-1?
     jr	    nc, loop		    ; if byte_count >= Gets_buffer_sz-1, reject further input
+    ld      a, l
     ld      (de), a		    ; store input_char in buffer
     call    lcd_putc		    ; display input_char
     inc     de			    ; advance input_buffer
