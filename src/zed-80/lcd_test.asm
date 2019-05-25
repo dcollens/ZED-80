@@ -737,8 +737,8 @@ lcd_crlf::
     add	    hl, de
     ld	    de, 0
     call    lcd_set_text_xy
-    pop	    de
     pop	    hl
+    pop	    de
     ret
 
 ; void lcd_ellipse_xy(uint16_t x, uint16_t y)
