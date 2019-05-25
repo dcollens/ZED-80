@@ -179,9 +179,89 @@ loop:
     ld      hl, Gets_buffer
     call    lcd_puts
     call    cr
+    call    forth_test
     jr      loop
     pop	    hl
     pop	    de
+    ret
+#endlocal
+
+; void forth_test()
+; - testing forth stuff
+#local
+forth_test::
+    push    hl
+    ld      hl, 1234
+    call    put_dec_int
+    call    cr
+    call    put_hex_int16
+    call    cr
+    pop     hl
+    ret
+#endlocal
+
+; void put_dec_int(uint16_t value)
+; - writes a decimal value to the LCD
+#local
+put_dec_int::
+    push    bc
+    push    hl
+    ld      bc, -10000
+    call    handle_digit
+    ld      bc, -1000
+    call    handle_digit
+    ld      bc, -100
+    call    handle_digit
+    ld      c, -10
+    call    handle_digit
+    ld      c, -1
+    call    handle_digit
+    pop     hl
+    pop     bc
+    ret
+
+handle_digit:
+    ld      a, '0'-1
+increment_digit:
+    inc     a
+    add     hl, bc
+    jr      c, increment_digit
+    sbc     hl, bc
+    push    hl
+    ld      l, a
+    call    lcd_putc
+    pop     hl
+    ret
+#endlocal
+
+; void put_hex_int8(uint8_t value)
+; - write a hex value to the LCD
+#local
+put_hex_int8::
+    push    hl
+    ld	    h, l
+    srl	    l
+    srl	    l
+    srl	    l
+    srl	    l
+    call    bin2hex
+    call    lcd_putc
+    ld	    l, h
+    call    bin2hex
+    call    lcd_putc
+    pop	    hl
+    ret
+#endlocal
+
+; void put_hex_int16(uint16_t value)
+; - write a hex value to the LCD
+#local
+put_hex_int16::
+    push    hl
+    ld      l, h
+    call    put_hex_int8
+    pop     hl
+    call    put_hex_int8
     ret
 #endlocal
 
