@@ -230,10 +230,10 @@ forth_test::
     M_forth_add_code forth_native_add
     M_forth_add_code forth_exit
     ld      de, hl
-    M_forth_add_code forth_imm
+    M_forth_add_code forth_native_imm
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
-    M_forth_add_code forth_dot
+    M_forth_add_code forth_native_dot
     M_forth_add_code forth_terminate
 
     ; We use the Z80 stack for parameters, so save our SP so we can restore it
@@ -322,27 +322,6 @@ forth_terminate::
     jp      forth_test_terminate
 #endlocal
 
-; void forth_imm()
-; - pushes the next word onto the parameter stack.
-forth_imm::
-    push    bc
-    ld      hl, de
-    ld      bc, (hl)
-    inc     de
-    inc     de
-
-    jp      forth_next
-
-; void forth_dot()
-; - word for popping and print the number on the top of the stack.
-forth_dot::
-    ld      hl, bc
-    pop     bc
-    call    lcd_puthex16
-    call    lcd_crlf
-
-    jp      forth_next
-
 ; Format of the Forth dictionary:
 ;
 ; Link (2): Pointer to previous entry in dictionary, or NULL.
@@ -368,6 +347,23 @@ forth_native_&label::
     pop     hl
     add     hl, bc
     ld      bc, hl
+    jp      forth_next
+
+; - prints the number on the top of the stack.
+    M_forth_native ".", dot
+    ld      hl, bc
+    pop     bc
+    call    lcd_puthex16
+    call    lcd_crlf
+    jp      forth_next
+
+; - pushes the next word onto the parameter stack.
+    M_forth_native "imm", imm
+    push    bc
+    ld      hl, de
+    ld      bc, (hl)
+    inc     de
+    inc     de
     jp      forth_next
 
 ; void forth_init_dict()
