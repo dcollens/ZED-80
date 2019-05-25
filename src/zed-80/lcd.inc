@@ -80,6 +80,11 @@ LCDREG_MWULX1	equ 0x27		; Main Window Upper-Left corner X-coordinates 1
 LCDREG_MWULY0	equ 0x28		; Main Window Upper-Left corner Y-coordinates 0
 LCDREG_MWULY1	equ 0x29		; Main Window Upper-Left corner Y-coordinates 1
 
+LCDREG_GTCCR	equ 0x3C		; Graphic/Text Cursor Control Register
+LCDREG_BTCR	equ 0x3D		; Blink Time Control Register
+LCDREG_CURHS	equ 0x3E		; Text Cursor Horizontal Size Register
+LCDREG_CURVS	equ 0x3F		; Text Cursor Vertical Size Register
+
 LCDREG_CVSSA0	equ 0x50		; Canvas Start Address 0
 LCDREG_CVSSA1	equ 0x51		; Canvas Start Address 1
 LCDREG_CVSSA2	equ 0x52		; Canvas Start Address 2
