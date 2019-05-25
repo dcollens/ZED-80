@@ -135,7 +135,7 @@ hello_message::
 copyright_message::
     .text   0xA9, "1976 HeadCode", NUL
 prompt::
-    .text   ">", NUL
+    .text   "> ", NUL
 
 ; void lcd_test_drawing()
 ; - exercise the LCD panel drawing primitives
@@ -186,15 +186,18 @@ lcd_test_text::
     call    lcd_crlf
     call    forth_init
 loop:
+    ld      de, 0xFFFF
+    ld      h, 0x00
+    call    lcd_set_fgcolor
     call    forth_dump_pstack
     ld	    hl, prompt
     call    lcd_puts
+    ld      de, 0xFFFF
+    ld      h, 0xFF
+    call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
-    ld      hl, Gets_buffer
-    call    lcd_puts
-    call    lcd_crlf
     ; call    forth_test
-    call    forth_test2
+    ; call    forth_test2
     jr      loop
     call    forth_shutdown
     pop	    hl
@@ -330,6 +333,11 @@ forth_test::
     add     hl, sp
     ld      (Forth_orig_sp), hl
 
+    ; Take over the Z80 stack for our parameter stack.
+    ld      hl, (Forth_psp)
+    ld      sp, hl
+    pop     bc
+
     ; Test program.
     ld      hl, Forth_code
     ld      (hl), 0xCD          ; Z80 opcode for CALL.
@@ -346,6 +354,7 @@ forth_test::
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
     M_forth_add_code forth_native_dot
+    ld      de, hl
     M_forth_add_code forth_terminate
 
     ; Set up HERE pointer.
@@ -357,9 +366,7 @@ forth_test::
     ; Set up IP.
     ; ld      de, Forth_code
 
-    ; Set up parameter stack. This is the top word. The rest
-    ; of the stack is just the Z80 stack.
-    ld      bc, 0xFFFF
+    jp      forth_interpret
 
     ; Start the program.
     jp      forth_next
@@ -480,7 +487,7 @@ forth_find_test::
 do_check:
     call    lcd_puts
     ld      bc, hl
-    call    forth_native_find
+    call    forth_find
     ld      hl, separator_str
     call    lcd_puts
     ld      hl, bc
@@ -540,6 +547,12 @@ forth_exit::
 ; - terminates the interpreter
 #local
 forth_terminate::
+    ; Save our own stack pointer.
+    push    bc
+    ld      hl, 0
+    add     hl, sp
+    ld      (Forth_psp), hl
+
     ; Restore the original stack pointer.
     ld      hl, (Forth_orig_sp)
     ld      sp, hl
@@ -635,28 +648,42 @@ loop:
 
 ; - skips the header of a dictionary entry.
     M_forth_native ">cfa", cfa
+    ld      hl, bc
+    call    forth_cfa
+    ld      bc, hl
+    jp      forth_next
+
+; - skips the header of a dictionary entry.
 #local
-    ; BC is pointing to the start of the dictionary entry.
+forth_cfa::
+    ; HL is pointing to the start of the dictionary entry.
     ; Skip the link pointer.
-    inc     bc
-    inc     bc
+    inc     hl
+    inc     hl
 
     ; Skip the nul-terminated string.
 loop:
-    ld      a, (bc)
-    inc     bc
+    ld      a, (hl)
+    inc     hl
     or      a
     jr      nz, loop
 
-    jp      forth_next
+    ret
 #endlocal
+
 
 ; - gets the next word from the input stream and puts its address
 ; - on the parameter stack.
     M_forth_native "word", word
     push    bc
-    ld      bc, Gets_buffer
+    call    forth_word
+    ld      bc, hl
     jp      forth_next
+
+; - gets the next word from the input stream and returns its address in HL.
+forth_word:
+    ld      hl, Gets_buffer
+    ret
 
 ; - skips over the number of bytes specified at the IP.
     M_forth_native "branch", branch
@@ -691,7 +718,18 @@ no_skip:
 ; - finds the string at the top of the stack in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
     M_forth_native "find", find
+    ld      hl, bc
+    call    forth_find
+    ld      bc, hl
+    jp      forth_next
+
+; - finds the string pointed to by HL in the dictionary.
+; - returns a pointer to the dictionary entry or NULL if not found.
 #local
+forth_find::
+    push    bc
+    ld      bc, hl
+
     ; Start at head of linked list.
     ld      hl, (Forth_dict)
 
@@ -729,10 +767,20 @@ not_null:
     jp      loop
 
 done:
-    ; Result is in HL.
-    ld      bc, hl
+    pop     bc
+    ret
+#endlocal
 
-    jp      forth_next
+; - grabs the next word and processes it (runs it or compiles it).
+#local
+forth_interpret::
+    call    forth_word
+    call    forth_find
+    ;; call    lcd_puthex16
+    ;; call    lcd_crlf
+    call    forth_cfa
+
+    jp      (hl)
 #endlocal
 
 ; void forth_strequ()
