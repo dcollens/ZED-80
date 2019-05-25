@@ -190,7 +190,7 @@ loop:
     ld      hl, Gets_buffer
     call    lcd_puts
     call    lcd_crlf
-    ;call    forth_test
+    call    forth_test
     jr      loop
     pop	    hl
     pop	    de
@@ -216,6 +216,8 @@ forth_test::
     push    ix
     push    iy
 
+    call    forth_init_dict
+
     ; Test program.
     ld      hl, Forth_code
     ld      (hl), 0xCD          ; Z80 opcode for CALL.
@@ -224,15 +226,15 @@ forth_test::
     inc     hl
     ld      (hl), hi(forth_enter)
     inc     hl
-    M_forth_add_code forth_dup
-    M_forth_add_code forth_add
+    M_forth_add_code forth_native_dup
+    M_forth_add_code forth_native_add
     M_forth_add_code forth_exit
     ld      de, hl
     M_forth_add_code forth_imm
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
     M_forth_add_code forth_dot
-    M_forth_add_code forth_finish
+    M_forth_add_code forth_terminate
 
     ; We use the Z80 stack for parameters, so save our SP so we can restore it
     ; and return to our caller even if the Forth program left junk on the
@@ -309,10 +311,10 @@ forth_exit::
     jp      forth_next
 #endlocal
 
-; void forth_finish()
+; void forth_terminate()
 ; - terminates the interpreter
 #local
-forth_finish::
+forth_terminate::
     ; Restore the original stack pointer.
     ld      hl, (Forth_orig_sp)
     ld      sp, hl
@@ -341,21 +343,45 @@ forth_dot::
 
     jp      forth_next
 
-; void forth_dup()
-; - duplicate the word at the top of the parameter stack.
-forth_dup::
-    push    bc
+; Format of the Forth dictionary:
+;
+; Link (2): Pointer to previous entry in dictionary, or NULL.
+; Name (N+1): Nul-terminated name of entry.
+; Code (...): Code for the routine.
 
+FORTH_LINK = 0
+M_forth_native macro name, label
+FORTH_THIS_ADDR = $
+    .dw     FORTH_LINK
+FORTH_LINK = FORTH_THIS_ADDR
+    .asciz  &name
+forth_native_&label::
+    endm
+
+; - duplicates the word at the top of the parameter stack.
+    M_forth_native "dup", dup
+    push    bc
     jp      forth_next
 
-; void forth_add()
-; - add the top two entries in the parameter stack.
-forth_add::
+; - adds the top two entries in the parameter stack.
+    M_forth_native "+", add
     pop     hl
     add     hl, bc
     ld      bc, hl
-
     jp      forth_next
+
+; void forth_init_dict()
+; - initialize the Forth dictionary, erasing all dynamically-created words.
+; - This routine needs to be placed after all uses of the macro M_forth_native.
+forth_init_dict::
+    push    hl
+    ; Initialize dictionary linked list pointer.
+    ld      hl, Forth_dict
+    ld      (hl), lo(FORTH_LINK)
+    inc     hl
+    ld      (hl), hi(FORTH_LINK)
+    pop     hl
+    ret
 
 ; void lcd_putdec16(uint16_t value)
 ; - writes a 16-bit decimal value to the LCD
@@ -1465,3 +1491,4 @@ Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
+Forth_dict:: defs 2     ; Pointed to dictionary linked list.
