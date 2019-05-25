@@ -172,12 +172,54 @@ lcd_test_text::
     ld	    hl, 2 * LCD_TXT_HEIGHT
     call    lcd_text_xy
 loop:
-    call    kbd_get_keycode	    ; get next key
-    bit	    KEY_RELEASED_BIT, l	    ; test (keycode & KEY_RELEASED) == 0?
-    call    z, lcd_putc		    ; print the key to the screen if it's a key-down code
-    jr	    loop
+    ; HL is cursor Y location here.
+    call    gets                    ; get a line of code
+    ld      de, LCD_TXT_HEIGHT
+    add     hl, de
+    ld      de, 0
+    call    lcd_text_xy
+    push    hl                      ; save Y location of cursor
+    ld      hl, Gets_buffer
+    call    lcd_puts
+    pop     hl                      ; get Y location of cursor, move to next line
+    ld      de, LCD_TXT_HEIGHT
+    add     hl, de
+    ld      de, 0
+    call    lcd_text_xy
+    jr      loop
     pop	    hl
     pop	    de
+    ret
+#endlocal
+
+; void gets()
+; - reads a line of text from keyboard, not including newline, into Gets_buffer.
+; - leaves the buffer nul-terminated.
+#local
+gets::
+    push    de
+    push    hl
+    ld      de, Gets_buffer
+
+loop:
+    call    kbd_get_keycode	    ; get next key
+    bit	    KEY_RELEASED_BIT, l	    ; test (keycode & KEY_RELEASED) == 0?
+    jr      nz, loop                ; skip key release
+    ld      a, l
+    cp      KEY_ENTER
+    jr      z, done
+    call    lcd_putc
+    ld      a, l
+    ld      (de), a
+    inc     de
+    ; XXX must check for buffer overflow.
+    jr	    loop
+
+done:
+    ld      a, NUL
+    ld      (hl), a
+    pop     hl
+    pop     de
     ret
 #endlocal
 
@@ -1115,3 +1157,4 @@ Seg0_data:: defs 1	; current value of first 7-segment display byte
 Seg1_data:: defs 1	; current value of second 7-segment display byte
 Rand16_seed1:: defs 2	; seed value for rand16() routine
 Rand16_seed2:: defs 2	; seed value for rand16() routine
+Gets_buffer:: defs 80   ; input buffer for gets() routine
