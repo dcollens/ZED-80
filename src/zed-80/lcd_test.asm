@@ -26,6 +26,9 @@
 #include "keyboard.inc"
 #include "ascii.inc"
 
+FORTH_PSTACK_SIZE   equ   256
+FORTH_CODE_SIZE     equ   2048
+
 DCR0_DRAWLINE	equ LCDDCR0_DRWLIN | LCDDCR0_RUN
 DCR0_DRAWTRI	equ LCDDCR0_DRWTRI | LCDDCR0_RUN
 DCR0_FILLTRI	equ LCDDCR0_DRWTRI | LCDDCR0_FILL | LCDDCR0_RUN
@@ -36,6 +39,14 @@ DCR1_DRAWELL	equ LCDDCR1_DRWELL | LCDDCR1_RUN
 DCR1_FILLELL	equ LCDDCR1_DRWELL | LCDDCR1_FILL | LCDDCR1_RUN
 DCR1_DRAWRR	equ LCDDCR1_DRWRR | LCDDCR1_RUN
 DCR1_FILLRR	equ LCDDCR1_DRWRR | LCDDCR1_FILL | LCDDCR1_RUN
+
+; Add a call to the function to the code pointed to by HL.
+M_forth_add_code macro func
+    ld      (hl), lo(&func)
+    inc     hl
+    ld      (hl), hi(&func)
+    inc     hl
+    endm
 
 M_lcd_rand_line	macro
     call    lcd_rand_line_coords
@@ -188,16 +199,117 @@ loop:
 
 ; void forth_test()
 ; - testing forth stuff
+; - Notes:
+;   - We're using Direct Threaded Code (DTC).
+;   - Machine register allocation:
+;       - BC: TOS (top of stack)
+;       - DE: IP (instruction to decode next)
+;       - HL: W (working register)
+;       - IX: RSP (return stack pointer)
+;       - IY: UP (?)
+;       - SP: PSP (parameter stack pointer)
 #local
 forth_test::
     push    hl
-    ld      hl, 1234
-    call    put_dec_int
-    call    cr
-    call    put_hex_int16
-    call    cr
+    push    bc
+    push    de
+    push    ix
+    push    iy
+
+    ; Set up return stack.
+    ld      ix, Forth_pstack+FORTH_PSTACK_SIZE
+
+    ; Set up IP.
+    ld      de, Forth_code
+
+    ; Test program.
+    ld      hl, Forth_code
+    M_forth_add_code forth_dot
+    M_forth_add_code forth_dot
+    M_forth_add_code forth_finish
+
+    ; Push test data on parameter stack.
+    ld      bc, 0x1234
+    push    bc
+    ld      bc, 0x5678
+    push    bc
+    ld      bc, 0x6543
+
+    jp      forth_next
+
+forth_test_finish::
+    pop     iy
+    pop     ix
+    pop     de
+    pop     bc
     pop     hl
     ret
+#endlocal
+
+; void forth_enter()
+; - code for entering a Forth word.
+#local
+forth_enter::
+    ; Push IP onto return address stack.
+    dec     ix
+    ld      (ix+0), d
+    dec     ix
+    ld      (ix+0), e
+
+    ; IP = W+2. We were called here from the code field, so the stack
+    ; contains the address of the next IP.
+    pop     de
+
+    ; Jump to NEXT.
+    jp      forth_next
+#endlocal
+
+; void forth_next()
+; - code for the Forth "next" routine, which executes the instruction at IP.
+#local
+forth_next::
+    ; W = (IP++)
+    ld      a, (de)             ; Low byte of (IP)
+    ld      l, a
+    inc     de
+    ld      a, (de)             ; High byte of (IP)
+    ld      h, a
+    inc     de
+    ; JP (IP)
+    jp      (hl)
+#endlocal
+
+; void forth_exit()
+; - code for existing a Forth word.
+#local
+forth_exit::
+    ; Pop IP from return address stack.
+    ld      e, (ix+0)
+    inc     ix
+    ld      d, (ix+0)
+    inc     ix
+
+    ; Jump to NEXT.
+    jp      forth_next
+#endlocal
+
+; void forth_finish()
+; - terminates the interpreter
+#local
+forth_finish::
+    jp      forth_test_finish
+#endlocal
+
+; void forth_dot()
+; - word for popping and print the number on the top of the stack.
+#local
+forth_dot::
+    ld      hl, bc
+    pop     bc
+    call    put_hex_int16
+    call    cr
+
+    jp      forth_next
 #endlocal
 
 ; void put_dec_int(uint16_t value)
@@ -1264,3 +1376,6 @@ Rand16_seed1:: defs 2	; seed value for rand16() routine
 Rand16_seed2:: defs 2	; seed value for rand16() routine
 Gets_buffer:: defs 80   ; input buffer for gets() routine
 Cursor_y:: defs 2       ; Y (pixel) location of text cursor
+
+Forth_code:: defs FORTH_CODE_SIZE
+Forth_pstack:: defs FORTH_PSTACK_SIZE
