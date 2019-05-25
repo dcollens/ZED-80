@@ -342,7 +342,7 @@ forth_test::
     M_forth_add_code forth_native_add
     M_forth_add_code forth_exit
     ld      de, hl
-    M_forth_add_code forth_native_imm
+    M_forth_add_code forth_native_lit
     M_forth_add_code 0x1234
     M_forth_add_code Forth_code
     M_forth_add_code forth_native_dot
@@ -583,7 +583,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - pushes the next word onto the parameter stack.
-    M_forth_native "imm", imm
+    M_forth_native "lit", lit
     push    bc
     ld      hl, de
     ld      bc, (hl)
@@ -648,6 +648,43 @@ loop:
     or      a
     jr      nz, loop
 
+    jp      forth_next
+#endlocal
+
+; - gets the next word from the input stream and puts its address
+; - on the parameter stack.
+    M_forth_native "word", word
+    push    bc
+    ld      bc, Gets_buffer
+    jp      forth_next
+
+; - skips over the number of bytes specified at the IP.
+    M_forth_native "branch", branch
+    push    bc
+forth_native_branch_tail::
+    ld      hl, de
+    ld      bc, (hl)
+    add     hl, bc
+    ld      de, hl
+    pop     bc
+    jp      forth_next
+
+; - skips over the number of bytes specified at the IP if TOS is zero.
+    M_forth_native "0branch", 0branch
+#local
+    ; Check top of stack (BC).
+    ld      a, b
+    or      a
+    jr      nz, no_skip
+    ld      a, c
+    or      a
+    jp      z, forth_native_branch_tail
+
+no_skip:
+    ; Still need to skip the count itself.
+    inc     de
+    inc     de
+    pop     bc
     jp      forth_next
 #endlocal
 
