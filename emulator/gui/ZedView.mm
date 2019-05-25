@@ -12,18 +12,50 @@
 #import "SevenSegmentView.h"
 #import "KeycodeMap.h"
 
+// The "device dependent" modifier flags don't seem to be defined anywhere that I can see, so
+// we define them here from experimentation.
+static constexpr uint32_t MODFLAG_LSHIFT = 0x0002;
+static constexpr uint32_t MODFLAG_RSHIFT = 0x0004;
+static constexpr uint32_t MODFLAG_LCTRL = 0x0001;
+static constexpr uint32_t MODFLAG_RCTRL = 0x2000;
+static constexpr uint32_t MODFLAG_LALT = 0x0020;
+static constexpr uint32_t MODFLAG_RALT = 0x0040;
+
 static constexpr size_t SEVEN_SEGMENT_COUNT = 2;
 static constexpr CGFloat V_PADDING = 8;
 
+class Modifier {
+    uint32_t        _flag;
+    NSNumber *      _pseudoKey;
+    
+public:
+    Modifier(uint32_t flag, NSNumber *pseudoKey) : _flag(flag), _pseudoKey(pseudoKey) {}
+    
+    uint32_t flag() const { return _flag; }
+    NSNumber *pseudoKey() const { return _pseudoKey; }
+};
+
+static std::array<Modifier,6> const g_Modifiers = {
+    Modifier(MODFLAG_LSHIFT, @1000),
+    Modifier(MODFLAG_RSHIFT, @1001),
+    Modifier(MODFLAG_LCTRL, @1002),
+    Modifier(MODFLAG_RCTRL, @1003),
+    Modifier(MODFLAG_LALT, @1004),
+    Modifier(MODFLAG_RALT, @1005)
+};
+
 @implementation ZedView {
     id<ZedViewDelegate> __weak _delegate;
+    
     std::array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
+    uint32_t _lastModifierFlags;
 }
 
 - (instancetype)initWithDelegate:(id<ZedViewDelegate>)delegate {
     self = [super init];
 
     _delegate = delegate;
+    _lastModifierFlags = 0;
 
     for (int i = 0; i < SEVEN_SEGMENT_COUNT; i++) {
         _sevenSegment[i] = [SevenSegmentView new];
@@ -78,7 +110,22 @@ static constexpr CGFloat V_PADDING = 8;
 }
 
 - (void)flagsChanged:(NSEvent *)event {
-    NSLog(@"Keyboard modifier flags changed: 0x%08lX", (unsigned long)event.modifierFlags);
+    auto modifierFlags = event.modifierFlags;
+    auto modifierChanges = modifierFlags ^ _lastModifierFlags;
+    
+    for (auto const &mod : g_Modifiers) {
+        auto const flag = mod.flag();
+        if ((modifierChanges & flag) == 0) continue;
+        
+        NSDictionary<NSNumber *,NSArray<NSNumber *> *> *scanCodeMap;
+        if ((modifierFlags & flag) == 0) {
+            scanCodeMap = g_KeyReleaseScanCodes;
+        } else {
+            scanCodeMap = g_KeyPressScanCodes;
+        }
+        [self submitScanCodes:scanCodeMap[mod.pseudoKey()]];
+    }
+    _lastModifierFlags = uint32_t(modifierFlags);
 }
 
 - (NSSize)intrinsicContentSize {

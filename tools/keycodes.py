@@ -44,7 +44,7 @@ SCAN_CODES = """
 4C	F0 4C	;
 52	F0 52	'
 5A	F0 5A	enter
-12	F0 12	left shift
+12	F0 12	left_shift
 1A	F0 1A	z
 22	F0 22	x
 21	F0 21	c
@@ -55,12 +55,12 @@ SCAN_CODES = """
 41	F0 41	,
 49	F0 49	.
 4A	F0 4A	/
-59	F0 59	right shift
-14	F0 14	left ctrl
-11	F0 11	left alt
+59	F0 59	right_shift
+14	F0 14	left_ctrl
+11	F0 11	left_alt
 29	F0 29	spacebar
-E0 11	E0 F0 11	right alt
-E0 14	E0 F0 14	right ctrl
+E0 11	E0 F0 11	right_alt
+E0 14	E0 F0 14	right_ctrl
 E0 70	E0 F0 70	insert
 E0 71	E0 F0 71	delete
 E0 6B	E0 F0 6B	left
@@ -108,6 +108,8 @@ E1 14 77 E1	F0 14 F0 77	pause break
 """
 
 # Mac key codes.
+# Modifier keys (shift, ctrl, alt) are delivered as modifier flags changes rather than key events,
+# so we make pseudo-key-codes (1000-1005) to look them up in the table from the MacOS side.
 KEY_CODES = """
 a 0
 s 1
@@ -176,6 +178,13 @@ up 126
 down 125
 left 123
 right 124
+
+left_shift 1000
+right_shift 1001
+left_ctrl 1002
+right_ctrl 1003
+left_alt 1004
+right_alt 1005
 """
 
 # Converts a string like "F0 7E" to a list of integers.

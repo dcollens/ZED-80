@@ -60,6 +60,12 @@ NSDictionary<NSNumber *,NSArray *> * const g_KeyPressScanCodes = @{
     @124: @[@0xe0, @0x74], // right
     @125: @[@0xe0, @0x72], // down
     @126: @[@0xe0, @0x75], // up
+    @1000: @[@0x12], // left_shift
+    @1001: @[@0x59], // right_shift
+    @1002: @[@0x14], // left_ctrl
+    @1003: @[@0xe0, @0x14], // right_ctrl
+    @1004: @[@0x11], // left_alt
+    @1005: @[@0xe0, @0x11], // right_alt
 };
 
 // Map from MacOS key code to PS/2 release scan code sequence.
@@ -122,4 +128,10 @@ NSDictionary<NSNumber *, NSArray *> * const g_KeyReleaseScanCodes = @{
     @124: @[@0xe0, @0xf0, @0x74], // right
     @125: @[@0xe0, @0xf0, @0x72], // down
     @126: @[@0xe0, @0xf0, @0x75], // up
+    @1000: @[@0xf0, @0x12], // left_shift
+    @1001: @[@0xf0, @0x59], // right_shift
+    @1002: @[@0xf0, @0x14], // left_ctrl
+    @1003: @[@0xe0, @0xf0, @0x14], // right_ctrl
+    @1004: @[@0xf0, @0x11], // left_alt
+    @1005: @[@0xe0, @0xf0, @0x11], // right_alt
 };
