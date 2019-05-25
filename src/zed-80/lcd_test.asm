@@ -200,9 +200,8 @@ loop:
     ld      h, 0xFF
     call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
-    ; call    forth_test
+    call    forth_parse_line
     jr      loop
-    call    forth_shutdown
     pop	    hl
     pop	    de
     ret
@@ -243,12 +242,6 @@ forth_init::
     ld      (Forth_here), hl
 
     pop     hl
-    ret
-
-; void forth_shutdown()
-; - shut down the Forth interpreter/compiler.
-; XXX delete
-forth_shutdown::
     ret
 
 ; void forth_dump_pstack()
@@ -297,11 +290,10 @@ done:
     ret
 #endlocal
 
-; void forth_test()
-; - testing forth stuff
-; XXX delete
+; void forth_parse_line()
+; - parse the gets input buffer line.
 #local
-forth_test::
+forth_parse_line::
     push    hl
     push    bc
     push    de
@@ -326,24 +318,10 @@ forth_test::
 
     ; Test program.
     ld      hl, Forth_code
-    ld      (hl), 0xCD          ; Z80 opcode for CALL.
-    inc     hl
-    ld      (hl), lo(forth_enter)
-    inc     hl
-    ld      (hl), hi(forth_enter)
-    inc     hl
-    M_forth_add_code forth_native_dup
-    M_forth_add_code forth_native_add
-    M_forth_add_code forth_exit
-    ld      de, hl
-    M_forth_add_code forth_native_lit
-    M_forth_add_code 0x1234
-    M_forth_add_code Forth_code
-    M_forth_add_code forth_native_dot
     ld      de, hl
     M_forth_add_code forth_interpret
-    M_forth_add_code forth_interpret
-    M_forth_add_code forth_terminate
+    M_forth_add_code forth_native_branch
+    M_forth_add_code -4
 
     ; Set up HERE pointer.
     ld      (Forth_here), hl
@@ -358,7 +336,7 @@ forth_test::
     jp      forth_next
 
     ; Restore the SP from Forth_orig_sp before jumping here:
-forth_test_terminate::
+forth_parse_line_terminate::
     pop     iy
     pop     ix
     pop     de
@@ -428,7 +406,7 @@ forth_terminate::
     ld      hl, (Forth_orig_sp)
     ld      sp, hl
 
-    jp      forth_test_terminate
+    jp      forth_parse_line_terminate
 #endlocal
 
 ; Format of the Forth dictionary:
@@ -686,7 +664,16 @@ done:
 forth_interpret::
     ; Parse and find the word.
     call    forth_word
+
+    ; See if we're at the end of the input buffer.
+    ld      a, (hl)
+    or      a
+    jp      z, forth_terminate
+
+    ; Save it for later (number parsing and error display).
     push    hl
+
+    ; Find it in the dictionary.
     call    forth_find
 
     ; See if it was found.
@@ -721,6 +708,7 @@ found:
     inc     sp
     call    forth_cfa
     jp      (hl)
+
 word_not_found_error_message:
     .text   "Word not found: ", NUL
 #endlocal
