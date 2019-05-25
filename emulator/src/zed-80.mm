@@ -81,9 +81,13 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
         if ((pins & Z80_RD) != 0) {
             Z80_SET_DATA(pins, _mmu->read(addr));
         } else if ((pins & Z80_WR) != 0) {
+            if (addr < 0x4000) {
+                // XXX temporary for debugging, remove.
+                cout << "PC: " << to_hex(z80_pc(&_cpu)) << " " << to_hex(pins) << endl;
+            }
             _mmu->write(addr, Z80_GET_DATA(pins));
         }
-    } else if ((pins & Z80_IORQ) != 0) {
+    } else if ((pins & Z80_IORQ) != 0 && (pins & (Z80_RD|Z80_WR)) != 0) {
         pins = _iommu->tickCallback(numTicks, pins);
         // If the BC1/BDIR pins have changed since the last simulator step, run an IO cycle
         // on the audio chip.
