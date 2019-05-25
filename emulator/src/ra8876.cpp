@@ -87,6 +87,11 @@ static constexpr uint8_t REG_MWULX1 = 0x27;     // Main Window Upper-Left corner
 static constexpr uint8_t REG_MWULY0 = 0x28;     // Main Window Upper-Left corner Y-coordinates 0
 static constexpr uint8_t REG_MWULY1 = 0x29;     // Main Window Upper-Left corner Y-coordinates 1
 
+static constexpr uint8_t REG_GTCCR = 0x3C;      // Graphic/Text Cursor Control Register
+static constexpr uint8_t REG_BTCR = 0x3D;       // Blink Time Control Register
+static constexpr uint8_t REG_CURHS = 0x3E;      // Text Cursor Horizontal Size Register
+static constexpr uint8_t REG_CURVS = 0x3F;      // Text Cursor Vertical Size Register
+
 static constexpr uint8_t REG_CVSSA0 = 0x50;     // Canvas Start Address 0
 static constexpr uint8_t REG_CVSSA1 = 0x51;     // Canvas Start Address 1
 static constexpr uint8_t REG_CVSSA2 = 0x52;     // Canvas Start Address 2

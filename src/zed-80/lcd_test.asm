@@ -875,7 +875,7 @@ loop:
     cp      KEY_ENTER		    ; test input_char == KEY_ENTER?
     jr      z, done		    ; if equal, return
     cp	    KEY_BS		    ; test input_char == KEY_BS?
-    jr	    nz, store		    ; if not BS, store it
+    jr	    nz, tryStore	    ; if not BS, try to store it
 
     ; Backspace processing
     ld	    a, b
@@ -886,12 +886,14 @@ loop:
     dec	    b			    ; decrement byte_count
     jr	    loop		    ; get next character
     
-store:
+tryStore:
+    ld	    a, b
+    cp	    Gets_buffer_sz-1	    ; test byte_count < Gets_buffer_sz-1?
+    jr	    nc, loop		    ; if byte_count >= Gets_buffer_sz-1, reject further input
     ld      (de), a		    ; store input_char in buffer
     call    lcd_putc		    ; display input_char
     inc     de			    ; advance input_buffer
     inc	    b			    ; increment byte_count
-    ; XXX must check for buffer overflow.
     jr	    loop
 
 done:
@@ -2033,6 +2035,7 @@ Rand16_seed2:: defs 2	; seed value for rand16() routine
 Kbd_modifiers:: defs 1	; active modifier keys (1=pressed, 0=released), see KMOD_xxx_BIT
 
 Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
+Gets_buffer_sz	equ $-Gets_buffer
 
 Forth_orig_sp:: defs 2  ; Save the calling program's SP.
 Forth_dict:: defs 2     ; Pointer to dictionary linked list.
