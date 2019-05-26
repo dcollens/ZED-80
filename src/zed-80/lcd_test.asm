@@ -434,6 +434,32 @@ M_forth_const macro name, value
     push    bc
     jp      forth_next
 
+; - drops the top word of the stack.
+    M_forth_native "drop", 0, drop
+    pop     bc
+    jp      forth_next
+
+; - swaps the top two words on the stack.
+    M_forth_native "swap", 0, swap
+    pop     hl
+    push    bc
+    ld      bc, hl
+    jp      forth_next
+
+; - reads the pointer at the top of the stack.
+    M_forth_native "@", 0, at
+    ld      hl, bc
+    ld      bc, (hl)
+    jp      forth_next
+
+; - writes the pointer at the top of the stack (push value, address).
+    M_forth_native "!", 0, bang
+    ld      hl, bc
+    pop     bc
+    ld      (hl), bc
+    pop     bc
+    jp      forth_next
+
 ; - adds the top two entries in the parameter stack.
     M_forth_native "+", 0, add
     pop     hl
