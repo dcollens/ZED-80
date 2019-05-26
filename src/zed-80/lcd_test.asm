@@ -375,20 +375,24 @@ forth_terminate::
 ; Format of the Forth dictionary:
 ;
 ; Link (2): Pointer to previous entry in dictionary, or NULL.
-; Name (N+1): Nul-terminated name of entry.
+; Flags (1): Set of flags about the entry. See F_IMMED.
+; Name (len(name)+1): Nul-terminated name of entry.
 ; Code (...): Code for the routine.
 
+F_IMMED equ 0x01
+
 FORTH_LINK = 0
-M_forth_native macro name, label
+M_forth_native macro name, flags, label
 FORTH_THIS_ADDR = $
     .dw     FORTH_LINK
+    .db     &flags
 FORTH_LINK = FORTH_THIS_ADDR
     .asciz  &name
 forth_native_&label::
     endm
 
 ; - code for entering a Forth word.
-    M_forth_native "enter", enter
+    M_forth_native "enter", 0, enter
     ; Push IP onto return address stack.
     dec     ix
     ld      (ix+0), d
@@ -401,7 +405,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - code for exiting a Forth word.
-    M_forth_native "exit", exit
+    M_forth_native "exit", 0, exit
     ; Pop IP from return address stack.
     ld      e, (ix+0)
     inc     ix
@@ -410,19 +414,19 @@ forth_native_&label::
     jp      forth_next
 
 ; - duplicates the word at the top of the parameter stack.
-    M_forth_native "dup", dup
+    M_forth_native "dup", 0, dup
     push    bc
     jp      forth_next
 
 ; - adds the top two entries in the parameter stack.
-    M_forth_native "+", add
+    M_forth_native "+", 0, add
     pop     hl
     add     hl, bc
     ld      bc, hl
     jp      forth_next
 
 ; - prints the number on the top of the stack.
-    M_forth_native ".", dot
+    M_forth_native ".", 0, dot
     ld      hl, bc
     pop     bc
     call    lcd_puthex16
@@ -430,7 +434,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - pushes the next word onto the parameter stack.
-    M_forth_native "lit", lit
+    M_forth_native "lit", 0, lit
     push    bc
     ld      hl, de
     ld      bc, (hl)
@@ -439,7 +443,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - adds the word at the top of the stack to our code.
-    M_forth_native ",", comma
+    M_forth_native ",", 0, comma
     ld      hl, (Forth_here)
     ld      (hl), bc
     inc     hl
@@ -451,7 +455,7 @@ forth_native_&label::
 ; - put the address of the code of the word that's next in
 ; - the input buffer on the stack. Does not handle the word
 ; - not existing, so it better be there!
-    M_forth_native "'", tick
+    M_forth_native "'", 0, tick
     call    forth_word
     call    forth_find
     call    forth_cfa
@@ -460,7 +464,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - lists all words in the dictionary.
-    M_forth_native "words", words
+    M_forth_native "words", 0, words
 #local
     ; Start at head of linked list.
     ld      hl, (Forth_dict)
@@ -478,7 +482,8 @@ not_null:
     ; Save node pointer for later.
     push    hl
 
-    ; Skip link.
+    ; Skip link and flags.
+    inc     hl
     inc     hl
     inc     hl
 
@@ -507,7 +512,7 @@ is_null:
 
 ; - creates a new entry in the dictionary.
 ; - the top of the stack has the name.
-    M_forth_native "create", create
+    M_forth_native "create", 0, create
 #local
     ld      hl, (Forth_here)
 
@@ -520,6 +525,10 @@ is_null:
     ld      (Forth_dict), hl
     ; Skip link pointer.
     inc     hl
+    inc     hl
+
+    ; Write flags. Default to zero.
+    ld      (hl), 0
     inc     hl
 
     ; Copy name from BC (top of stack).
@@ -542,7 +551,7 @@ loop:
 #endlocal
 
 ; - skips the header of a dictionary entry.
-    M_forth_native ">cfa", cfa
+    M_forth_native ">cfa", 0, cfa
     ld      hl, bc
     call    forth_cfa
     ld      bc, hl
@@ -552,7 +561,8 @@ loop:
 #local
 forth_cfa::
     ; HL is pointing to the start of the dictionary entry.
-    ; Skip the link pointer.
+    ; Skip the link pointer and flags.
+    inc     hl
     inc     hl
     inc     hl
 
@@ -569,7 +579,7 @@ loop:
 
 ; - gets the next word from the input stream and puts its address
 ; - on the parameter stack.
-    M_forth_native "word", word
+    M_forth_native "word", 0, word
     push    bc
     call    forth_word
     ld      bc, hl
@@ -620,7 +630,7 @@ end_of_string:
 #endlocal
 
 ; - skips over the number of bytes specified at the IP.
-    M_forth_native "branch", branch
+    M_forth_native "branch", 0, branch
     push    bc
 forth_native_branch_tail::
     ld      hl, de
@@ -631,7 +641,7 @@ forth_native_branch_tail::
     jp      forth_next
 
 ; - skips over the number of bytes specified at the IP if TOS is zero.
-    M_forth_native "0branch", 0branch
+    M_forth_native "0branch", 0, 0branch
 #local
     ; Check top of stack (BC).
     ld      a, b
@@ -651,7 +661,7 @@ no_skip:
 
 ; - finds the string at the top of the stack in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
-    M_forth_native "find", find
+    M_forth_native "find", 0, find
     ld      hl, bc
     call    forth_find
     ld      bc, hl
@@ -668,7 +678,7 @@ forth_find::
     ld      hl, (Forth_dict)
 
 loop:
-    ; See if HL is null. Is there a better way to do this?
+    ; See if HL is null.
     ld      a, l
     or      a
     jp      nz, not_null
@@ -680,12 +690,14 @@ not_null:
     ; Point to name of routine.
     inc     hl
     inc     hl
+    inc     hl
 
     ; BC and HL are both now pointing to strings. Compare them.
     ; The result is in the zero flag.
     call    forth_strequ
 
     ; Point back to link pointer. These don't modify the zero flag.
+    dec     hl
     dec     hl
     dec     hl
 
