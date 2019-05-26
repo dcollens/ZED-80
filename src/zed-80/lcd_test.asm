@@ -778,6 +778,21 @@ no_skip:
     .dw     forth_native_lbrac
     .dw     forth_native_exit
 
+; - draws a line. args are x1, y1, x2, y2, pushed in that order.
+    M_forth_native "line", 0, line
+    ld      hl, bc                  ; y2
+    ld      bc, de                  ; save DE
+    pop     de                      ; x2
+    call    lcd_line_end_xy
+    pop     hl                      ; y1
+    pop     de                      ; x1
+    call    lcd_line_start_xy
+    M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
+    call    lcd_wait_idle           ; wait for graphics operation to complete
+    ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
 #local
