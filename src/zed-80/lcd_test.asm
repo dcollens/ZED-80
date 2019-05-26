@@ -225,13 +225,9 @@ forth_init::
     ; it into BC.
     ld      hl, Forth_pstack+FORTH_PSTACK_SIZE
     dec     hl
-    ld      (hl), 0x12
+    ld      (hl), 0x00
     dec     hl
-    ld      (hl), 0x34
-    dec     hl
-    ld      (hl), 0x67
-    dec     hl
-    ld      (hl), 0x89
+    ld      (hl), 0x00
     ld      (Forth_psp), hl
 
     ; Set the head of the dictionary linked list.
@@ -403,6 +399,14 @@ M_forth_word macro name, flags, label
     call    forth_native_enter
     endm
 
+; Macro for defining a constant. Don't put quotes around the name.
+M_forth_const macro name, value
+    M_forth_word "&name", 0, &name
+    .dw     forth_native_lit
+    .dw     &value
+    .dw     forth_native_exit
+    endm
+
 ; - code for entering a Forth word.
     M_forth_native "enter", 0, enter
     ; Push IP onto return address stack.
@@ -442,6 +446,12 @@ M_forth_word macro name, flags, label
     ld      hl, bc
     pop     bc
     call    lcd_puthex16
+    ld      l, ' '
+    call    lcd_putc
+    jp      forth_next
+
+; - prints a cr/nl combo.
+    M_forth_native "cr", 0, cr
     call    lcd_crlf
     jp      forth_next
 
@@ -792,6 +802,23 @@ no_skip:
     ld      de, bc                  ; restore DE
     pop     bc
     jp      forth_next
+
+; - pushes a random 16-bit number onto the stack.
+    M_forth_native "rnd", 0, rnd
+    push    bc
+    call    rand16
+    ld      bc, hl
+    jp      forth_next
+
+; - pushes a random number mod N onto the stack.
+    M_forth_native "rndn", 0, rndn
+    call    rand16_modn
+    ld      bc, hl
+    jp      forth_next
+
+; - various constants.
+    M_forth_const lcd_width, LCD_WIDTH
+    M_forth_const lcd_height, LCD_HEIGHT
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
