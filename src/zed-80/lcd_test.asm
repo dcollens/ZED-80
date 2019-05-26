@@ -190,16 +190,17 @@ lcd_test_text::
     call    lcd_crlf
     call    forth_init
 loop:
-    ld      de, 0xFFFF
+    ld      de, 0xFFFF              ; yellow foreground
     ld      h, 0x00
     call    lcd_set_fgcolor
-    call    forth_dump_pstack
+    call    forth_dump_pstack       ; stack and prompt
     ld	    hl, prompt
     call    lcd_puts
-    ld      de, 0xFFFF
+    ld      de, 0xFFFF              ; white foreground
     ld      h, 0xFF
     call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
+    ld      hl, Gets_buffer
     call    forth_parse_line
     jr      loop
     pop	    hl
@@ -248,8 +249,26 @@ forth_init::
     ; Set up HERE pointer.
     ld      (Forth_here), hl
 
+    ; Define some built-ins.
+    ld      hl, Forth_init_cmd
+    call    forth_parse_line
+
     pop     hl
     ret
+
+Forth_init_cmd:
+    .text   ": if immediate ' 0branch , here @ 0000 , ; "
+    .text   ": then immediate dup here @ swap - swap ! ; "
+    .text   ": begin immediate here @ ; "
+    .text   ": until immediate ' 0branch , here @ - , ; "
+    .text   ": again immediate ' branch , here @ - , ; "
+    ; The rest are for testing. XXX delete.
+    .text   ": rx lcd_width rndn ; "
+    .text   ": ry lcd_height rndn ; "
+    .text   ": rl rx ry rx ry line ; "
+    .text   ": rc rnd rnd rnd color ; "
+    .text   ": demo begin rc rl again ; "
+    .text   NUL
 
 ; void forth_dump_pstack()
 ; - dump the parameter stack contents to the console.
@@ -297,7 +316,7 @@ done:
     ret
 #endlocal
 
-; void forth_parse_line()
+; void forth_parse_line(uint8_t *buffer (HL))
 ; - parse the gets input buffer line.
 #local
 forth_parse_line::
@@ -306,6 +325,9 @@ forth_parse_line::
     push    de
     push    ix
     push    iy
+
+    ; Reset input pointer to start of buffer.
+    ld      (Forth_input), hl
 
     ; We use the Z80 stack for parameters, so save our SP so we can restore it
     ; and return to our caller even if the Forth program left junk on the
@@ -318,10 +340,6 @@ forth_parse_line::
     ld      hl, (Forth_psp)
     ld      sp, hl
     pop     bc
-
-    ; Reset input pointer to start of buffer.
-    ld      hl, Gets_buffer
-    ld      (Forth_input), hl
 
     ; Set up return stack.
     ld      ix, Forth_rstack+FORTH_RSTACK_SIZE
@@ -869,6 +887,18 @@ no_skip:
     M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
     call    lcd_wait_idle           ; wait for graphics operation to complete
     ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
+; - sets the foreground drawing color. args are r, g, b, pushed in that order, [0-255].
+    M_forth_native "color", 0, color
+    ; Hit the ports directly. We could use the lcd_set_fgcolor routine but
+    ; it requires DE, which we don't want to damage and can't save easily.
+    M_lcdwrite LCDREG_FGCB, c       ; blue
+    pop     bc
+    M_lcdwrite LCDREG_FGCG, c       ; green
+    pop     bc
+    M_lcdwrite LCDREG_FGCR, c       ; red
     pop     bc
     jp      forth_next
 
@@ -1711,6 +1741,28 @@ bzero::
     ldir			; zero last len-1 bytes
 done:
     pop	    de
+    ret
+#endlocal
+
+; void strcpy(uint8_t *dst (HL), uint8_t *src (BC))
+; strings are NUL-terminated.
+; XXX this routine hasn't been tested.
+#local
+strcpy::
+    push    hl
+    push    bc
+
+loop:
+    ld      a, (bc)
+    ld      (hl), a
+    inc     hl
+    inc     bc
+    or      a
+    jr      nz, loop
+
+    pop     bc
+    pop     hl
+
     ret
 #endlocal
 
