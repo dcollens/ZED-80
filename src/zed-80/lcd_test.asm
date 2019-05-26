@@ -735,6 +735,19 @@ no_skip:
     ld      bc, hl
     jp      forth_next
 
+; - toggles the immediate flag of the most recently defined word.
+    M_forth_native "immediate", F_IMMED, immediate
+    ; Get most recent word.
+    ld      hl, (Forth_dict)
+    ; Skip link.
+    inc     hl
+    inc     hl
+    ; Toggle immediate flag.
+    ld      a, (hl)
+    xor     F_IMMED
+    ld      (hl), a
+    jp      forth_next
+
 ; - starts a definition of a new word.
     M_forth_word ":", 0, colon
     .dw     forth_native_word
