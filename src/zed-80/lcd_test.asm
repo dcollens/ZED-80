@@ -240,6 +240,10 @@ forth_init::
     ld      hl, 0
     ld      (Forth_compiling), hl
 
+    ; Default to hex for printing.
+    ld      hl, 16
+    ld      (Forth_base), hl
+
     ; Program is infinite loop to interpret words.
     ld      hl, Forth_code
     M_forth_add_code forth_interpret
@@ -261,6 +265,7 @@ Forth_init_cmd:
     .text   ": mod /mod drop ; "
     .text   ": if immediate ' 0branch , here @ 0000 , ; "
     .text   ": then immediate dup here @ swap - swap ! ; "
+    .text   ": else immediate ' branch , here @ 0000 , swap dup here @ swap - swap ! ; "
     .text   ": begin immediate here @ ; "
     .text   ": until immediate ' 0branch , here @ - , ; "
     .text   ": again immediate ' branch , here @ - , ; "
@@ -269,6 +274,9 @@ Forth_init_cmd:
     .text   ": space 0020 emit ; "
     .text   ": words latest @ begin ?dup while dup 0003 + tell space @ repeat cr ; "
     .text   ": recurse immediate latest @ >cfa , ; "
+    .text   ": decimal 000a base ! ; "
+    .text   ": hex 0010 base ! ; "
+    .text   ": u. base @ /mod ?dup if recurse then dup 000a < if 0030 else 000a - 0041 then + emit ; "
     ; The rest are for testing. XXX delete.
     .text   ": rx lcd_width rndn ; "
     .text   ": ry lcd_height rndn ; "
@@ -566,6 +574,19 @@ zero:
     jr      nz, not_equal
     inc     bc
 not_equal:
+    jp      forth_next
+#endlocal
+
+; - computes < for the top two stack entries.
+    M_forth_native "<", 0, lt
+#local
+    pop     hl
+    or      a           ; Clear carry.
+    sbc     hl, bc
+    ld      bc, 0
+    jr      nc, not_less_than
+    inc     bc
+not_less_than:
     jp      forth_next
 #endlocal
 
@@ -929,6 +950,7 @@ no_skip:
     M_forth_const latest, Forth_dict
     M_forth_const state, Forth_compiling
     M_forth_const here, Forth_here
+    M_forth_const base, Forth_base
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
@@ -2435,6 +2457,7 @@ Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_input:: defs 2    ; Pointer to input buffer.
 Forth_compiling:: defs 2 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
 Forth_orig_de:: defs 2  ; Temporary for saving DE.
+Forth_base:: defs 2     ; Current base for printing numbers.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
