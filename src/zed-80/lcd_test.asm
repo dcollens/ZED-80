@@ -462,6 +462,19 @@ M_forth_const macro name, value
     pop     bc
     jp      forth_next
 
+; - reads the port at the top of the stack.
+    M_forth_native "io@", 0, ioat
+    in      c, (c)
+    ld      b, 0
+    jp      forth_next
+
+; - writes the port at the top of the stack (push value, address).
+    M_forth_native "io!", 0, iobang
+    pop     hl
+    out     (c), l
+    pop     bc
+    jp      forth_next
+
 ; - adds the top two entries in the parameter stack.
     M_forth_native "+", 0, add
     pop     hl
