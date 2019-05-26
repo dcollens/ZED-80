@@ -233,9 +233,11 @@ forth_init::
     ; Set the head of the dictionary linked list.
     call    forth_init_dict
 
-    ; Start in immediate mode.
-    xor     a
-    ld      (Forth_compiling), a
+    ; Start in immediate mode. This is a two-byte variable so that it
+    ; can be accessed from Forth, but throughout this code we only
+    ; access its first (lower) byte.
+    ld      hl, 0
+    ld      (Forth_compiling), hl
 
     ; Program is infinite loop to interpret words.
     ld      hl, Forth_code
@@ -467,6 +469,27 @@ M_forth_const macro name, value
     ld      bc, hl
     jp      forth_next
 
+; - subtracts the top two entries in the parameter stack (a b -- a-b)
+    M_forth_native "-", 0, sub
+    pop     hl
+    or      a           ; Clear carry.
+    sbc     hl, bc
+    ld      bc, hl
+    jp      forth_next
+
+; - determines if the top two stack entries are the same, leaving 0 or 1.
+    M_forth_native "=", 0, equ
+#local
+    pop     hl
+    or      a           ; Clear carry.
+    sbc     hl, bc
+    ld      bc, 0
+    jr      nz, not_equal
+    inc     bc
+not_equal:
+    jp      forth_next
+#endlocal
+
 ; - prints the number on the top of the stack.
     M_forth_native ".", 0, dot
     ld      hl, bc
@@ -474,6 +497,13 @@ M_forth_const macro name, value
     call    lcd_puthex16
     ld      l, ' '
     call    lcd_putc
+    jp      forth_next
+
+; - prints the string whose address is on the top of the stack.
+    M_forth_native "tell", 0, tell
+    ld      hl, bc
+    call    lcd_puts
+    pop     bc
     jp      forth_next
 
 ; - prints a cr/nl combo.
@@ -845,6 +875,9 @@ no_skip:
 ; - various constants.
     M_forth_const lcd_width, LCD_WIDTH
     M_forth_const lcd_height, LCD_HEIGHT
+    M_forth_const latest, Forth_dict
+    M_forth_const state, Forth_compiling
+    M_forth_const here, Forth_here
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
@@ -2306,7 +2339,7 @@ Forth_dict:: defs 2     ; Pointer to dictionary linked list.
 Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_input:: defs 2    ; Pointer to input buffer.
-Forth_compiling:: defs 1 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
+Forth_compiling:: defs 2 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
