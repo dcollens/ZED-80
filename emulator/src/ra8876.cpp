@@ -334,6 +334,8 @@ void RA8876::write_data(uint8_t value) {
         case REG_DTPV1:
         case REG_F_CURX1:
         case REG_F_CURY1:
+        case REG_CURHS:
+        case REG_CURVS:
         case REG_DEHR1:
         case REG_DEVR1:
         case REG_ELL_A1:
@@ -383,6 +385,8 @@ void RA8876::write_data(uint8_t value) {
         case REG_DTPV0:
         case REG_F_CURX0:
         case REG_F_CURY0:
+        case REG_GTCCR:
+        case REG_BTCR:
         case REG_DEHR0:
         case REG_DEVR0:
         case REG_ELL_A0:
