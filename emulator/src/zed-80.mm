@@ -47,7 +47,9 @@ uint64_t ZED80::z80TickCallback(int numTicks, uint64_t pins, void *userData) {
     return static_cast<ZED80 *>(userData)->tickCallback(numTicks, pins);
 }
 
-ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(nil) {
+ZED80::ZED80()
+: _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(nil), _recordPinHistory(false)
+{
     _sysRegDevice = make_shared<SysRegDevice>();
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
@@ -66,8 +68,6 @@ ZED80::ZED80() : _audioDevice(CPU_CLOCK_HZ, AUDIO_CLOCK_DIVISOR), _uiDelegate(ni
     _iommu->setDevice(7, _sysRegDevice);
     // TODO: iommu->setDevice(8, sdcardDevice);
     _iommu->setDevice(9, _keyboardDevice);
-
-    _recordPinHistory = false;
 
     cout << "Z80: " << (CPU_CLOCK_HZ / 1000000) << "MHz clock" << endl;
     _iommu->describe(cout);
@@ -92,16 +92,16 @@ void ZED80::receivedKeyboardScanCode(uint8_t scanCode) {
 
 void ZED80::dumpPinHistory() {
     cout << "Pin history:" << endl;
-    for (int i = 0; i < _pinHistory.size(); i++) {
-        cout << "    " << pins_to_str(_pinHistory[i]) << endl;
+    for (auto pins : _pinHistory) {
+        cout << "    " << pins_to_str(pins) << endl;
     }
 }
 
 uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
     if (_recordPinHistory) {
-        _pinHistory.push_back(pins);
+        _pinHistory.emplace_back(pins);
         while (_pinHistory.size() > 16) {
-            _pinHistory.erase(_pinHistory.begin());
+            _pinHistory.pop_front();
         }
     }
 
