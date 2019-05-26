@@ -385,6 +385,7 @@ forth_terminate::
 
 F_IMMED equ 0x01
 
+; Macro for defining words in assembly language.
 FORTH_LINK = 0
 M_forth_native macro name, flags, label
 FORTH_THIS_ADDR = $
@@ -393,6 +394,13 @@ FORTH_THIS_ADDR = $
 FORTH_LINK = FORTH_THIS_ADDR
     .asciz  &name
 forth_native_&label::
+    endm
+
+; Macro for defining words as a sequence of Forth native calls.
+; Be sure to finish with forth_native_exit.
+M_forth_word macro name, flags, label
+    M_forth_native &name, &flags, &label
+    call    forth_native_enter
     endm
 
 ; - code for entering a Forth word.
@@ -726,6 +734,24 @@ no_skip:
     call    forth_find
     ld      bc, hl
     jp      forth_next
+
+; - starts a definition of a new word.
+    M_forth_word ":", 0, colon
+    .dw     forth_native_word
+    .dw     forth_native_create
+    .dw     forth_native_lit
+    .dw     forth_native_enter
+    .dw     forth_native_comma
+    .dw     forth_native_rbrac
+    .dw     forth_native_exit
+
+; - end a definition of a new word.
+    M_forth_word ";", F_IMMED, semicolon
+    .dw     forth_native_lit
+    .dw     forth_native_exit
+    .dw     forth_native_comma
+    .dw     forth_native_lbrac
+    .dw     forth_native_exit
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
