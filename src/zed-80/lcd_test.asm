@@ -486,15 +486,27 @@ forth_comma:
     jp      forth_next
 
 ; - put the address of the code of the word that's next in
-; - the input buffer on the stack. Does not handle the word
-; - not existing, so it better be there!
+; - the stream onto the stack. This version only works
+; - in compiled mode. There's another version that uses
+; - word, find, and cfa, but I think it only works in
+; - immediate mode, and I don't need it then. See below.
+; - Note that this version has identical code to the "lit"
+; - word, so we could just use that instead?
     M_forth_native "'", 0, tick
-    call    forth_word
-    call    forth_find
-    call    forth_cfa
     push    bc
-    ld      bc, hl
+    ld      hl, de
+    ld      bc, (hl)
+    inc     de
+    inc     de
     jp      forth_next
+
+; Immediate mode version:
+;;    call    forth_word
+;;    call    forth_find
+;;    call    forth_cfa
+;;    push    bc
+;;    ld      bc, hl
+;;    jp      forth_next
 
 ; - lists code memory.
     M_forth_native "code", 0, code
