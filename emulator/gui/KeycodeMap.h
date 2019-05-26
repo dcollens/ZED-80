@@ -43,9 +43,9 @@ NSDictionary<NSNumber *,NSArray *> * const g_KeyPressScanCodes = @{
     @39: @[@0x52], // '
     @40: @[@0x42], // k
     @41: @[@0x4c], // ;
-    @42: @[@0x4a], // /
+    @42: @[@0x5d], // backslash
     @43: @[@0x41], // ,
-    @44: @[@0x5d], // backslash
+    @44: @[@0x4a], // /
     @45: @[@0x31], // n
     @46: @[@0x3a], // m
     @47: @[@0x49], // .
@@ -111,9 +111,9 @@ NSDictionary<NSNumber *, NSArray *> * const g_KeyReleaseScanCodes = @{
     @39: @[@0xf0, @0x52], // '
     @40: @[@0xf0, @0x42], // k
     @41: @[@0xf0, @0x4c], // ;
-    @42: @[@0xf0, @0x4a], // /
+    @42: @[@0xf0, @0x5d], // backslash
     @43: @[@0xf0, @0x41], // ,
-    @44: @[@0xf0, @0x5d], // backslash
+    @44: @[@0xf0, @0x4a], // /
     @45: @[@0xf0, @0x31], // n
     @46: @[@0xf0, @0x3a], // m
     @47: @[@0xf0, @0x49], // .

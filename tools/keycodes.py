@@ -153,9 +153,9 @@ j 38
 ' 39
 k 40
 ; 41
-/ 42
+/ 44
 , 43
-backslash 44
+backslash 42
 n 45
 m 46
 . 47
