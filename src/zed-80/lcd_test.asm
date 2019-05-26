@@ -200,9 +200,8 @@ loop:
     ld      h, 0xFF
     call    lcd_set_fgcolor
     call    lcd_gets                ; get a line of code
-    ; call    forth_test
+    call    forth_parse_line
     jr      loop
-    call    forth_shutdown
     pop	    hl
     pop	    de
     ret
@@ -238,17 +237,16 @@ forth_init::
     ; Set the head of the dictionary linked list.
     call    forth_init_dict
 
-    ; Set up HERE pointer.
+    ; Program is infinite loop to interpret words.
     ld      hl, Forth_code
+    M_forth_add_code forth_interpret
+    M_forth_add_code forth_native_branch
+    M_forth_add_code -4
+
+    ; Set up HERE pointer.
     ld      (Forth_here), hl
 
     pop     hl
-    ret
-
-; void forth_shutdown()
-; - shut down the Forth interpreter/compiler.
-; XXX delete
-forth_shutdown::
     ret
 
 ; void forth_dump_pstack()
@@ -297,11 +295,10 @@ done:
     ret
 #endlocal
 
-; void forth_test()
-; - testing forth stuff
-; XXX delete
+; void forth_parse_line()
+; - parse the gets input buffer line.
 #local
-forth_test::
+forth_parse_line::
     push    hl
     push    bc
     push    de
@@ -324,65 +321,33 @@ forth_test::
     ld      hl, Gets_buffer
     ld      (Forth_input), hl
 
-    ; Test program.
-    ld      hl, Forth_code
-    ld      (hl), 0xCD          ; Z80 opcode for CALL.
-    inc     hl
-    ld      (hl), lo(forth_enter)
-    inc     hl
-    ld      (hl), hi(forth_enter)
-    inc     hl
-    M_forth_add_code forth_native_dup
-    M_forth_add_code forth_native_add
-    M_forth_add_code forth_exit
-    ld      de, hl
-    M_forth_add_code forth_native_lit
-    M_forth_add_code 0x1234
-    M_forth_add_code Forth_code
-    M_forth_add_code forth_native_dot
-    ld      de, hl
-    M_forth_add_code forth_interpret
-    M_forth_add_code forth_interpret
-    M_forth_add_code forth_terminate
-
-    ; Set up HERE pointer.
-    ld      (Forth_here), hl
-
     ; Set up return stack.
     ld      ix, Forth_rstack+FORTH_RSTACK_SIZE
 
     ; Set up IP.
-    ; ld      de, Forth_code
+    ld      de, Forth_code
 
     ; Start the program.
     jp      forth_next
 
     ; Restore the SP from Forth_orig_sp before jumping here:
-forth_test_terminate::
+forth_parse_line_terminate::
+    ; Save our own stack pointer.
+    push    bc
+    ld      hl, 0
+    add     hl, sp
+    ld      (Forth_psp), hl
+
+    ; Restore the original stack pointer.
+    ld      hl, (Forth_orig_sp)
+    ld      sp, hl
+
     pop     iy
     pop     ix
     pop     de
     pop     bc
     pop     hl
     ret
-#endlocal
-
-; void forth_enter()
-; - code for entering a Forth word.
-#local
-forth_enter::
-    ; Push IP onto return address stack.
-    dec     ix
-    ld      (ix+0), d
-    dec     ix
-    ld      (ix+0), e
-
-    ; IP = W+2. We were called here from the code field, so the stack
-    ; contains the address of the next IP.
-    pop     de
-
-    ; Jump to NEXT.
-    jp      forth_next
 #endlocal
 
 ; void forth_next()
@@ -400,66 +365,68 @@ forth_next::
     jp      (hl)
 #endlocal
 
-; void forth_exit()
-; - code for existing a Forth word.
-#local
-forth_exit::
-    ; Pop IP from return address stack.
-    ld      e, (ix+0)
-    inc     ix
-    ld      d, (ix+0)
-    inc     ix
-
-    ; Jump to NEXT.
-    jp      forth_next
-#endlocal
-
 ; void forth_terminate()
 ; - terminates the interpreter
 #local
 forth_terminate::
-    ; Save our own stack pointer.
-    push    bc
-    ld      hl, 0
-    add     hl, sp
-    ld      (Forth_psp), hl
-
-    ; Restore the original stack pointer.
-    ld      hl, (Forth_orig_sp)
-    ld      sp, hl
-
-    jp      forth_test_terminate
+    jp      forth_parse_line_terminate
 #endlocal
 
 ; Format of the Forth dictionary:
 ;
 ; Link (2): Pointer to previous entry in dictionary, or NULL.
-; Name (N+1): Nul-terminated name of entry.
+; Flags (1): Set of flags about the entry. See F_IMMED.
+; Name (len(name)+1): Nul-terminated name of entry.
 ; Code (...): Code for the routine.
 
+F_IMMED equ 0x01
+
 FORTH_LINK = 0
-M_forth_native macro name, label
+M_forth_native macro name, flags, label
 FORTH_THIS_ADDR = $
     .dw     FORTH_LINK
+    .db     &flags
 FORTH_LINK = FORTH_THIS_ADDR
     .asciz  &name
 forth_native_&label::
     endm
 
+; - code for entering a Forth word.
+    M_forth_native "enter", 0, enter
+    ; Push IP onto return address stack.
+    dec     ix
+    ld      (ix+0), d
+    dec     ix
+    ld      (ix+0), e
+
+    ; IP = W+2. We were called here from the code field, so the stack
+    ; contains the address of the next IP.
+    pop     de
+    jp      forth_next
+
+; - code for exiting a Forth word.
+    M_forth_native "exit", 0, exit
+    ; Pop IP from return address stack.
+    ld      e, (ix+0)
+    inc     ix
+    ld      d, (ix+0)
+    inc     ix
+    jp      forth_next
+
 ; - duplicates the word at the top of the parameter stack.
-    M_forth_native "dup", dup
+    M_forth_native "dup", 0, dup
     push    bc
     jp      forth_next
 
 ; - adds the top two entries in the parameter stack.
-    M_forth_native "+", add
+    M_forth_native "+", 0, add
     pop     hl
     add     hl, bc
     ld      bc, hl
     jp      forth_next
 
 ; - prints the number on the top of the stack.
-    M_forth_native ".", dot
+    M_forth_native ".", 0, dot
     ld      hl, bc
     pop     bc
     call    lcd_puthex16
@@ -467,7 +434,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - pushes the next word onto the parameter stack.
-    M_forth_native "lit", lit
+    M_forth_native "lit", 0, lit
     push    bc
     ld      hl, de
     ld      bc, (hl)
@@ -476,7 +443,7 @@ forth_native_&label::
     jp      forth_next
 
 ; - adds the word at the top of the stack to our code.
-    M_forth_native ",", comma
+    M_forth_native ",", 0, comma
     ld      hl, (Forth_here)
     ld      (hl), bc
     inc     hl
@@ -485,9 +452,67 @@ forth_native_&label::
     pop     bc
     jp      forth_next
 
+; - put the address of the code of the word that's next in
+; - the input buffer on the stack. Does not handle the word
+; - not existing, so it better be there!
+    M_forth_native "'", 0, tick
+    call    forth_word
+    call    forth_find
+    call    forth_cfa
+    push    bc
+    ld      bc, hl
+    jp      forth_next
+
+; - lists all words in the dictionary.
+    M_forth_native "words", 0, words
+#local
+    ; Start at head of linked list.
+    ld      hl, (Forth_dict)
+
+loop:
+    ; See if HL is null.
+    ld      a, l
+    or      a
+    jr      nz, not_null
+    ld      a, h
+    or      a
+    jr      z, is_null
+
+not_null:
+    ; Save node pointer for later.
+    push    hl
+
+    ; Skip link and flags.
+    inc     hl
+    inc     hl
+    inc     hl
+
+    ; Print name.
+    call    lcd_puts
+
+    ; Print space.
+    ld      l, ' '
+    call    lcd_putc
+
+    ; Restore node pointer.
+    pop     hl
+
+    ; Dereference to get next node.
+    ld      a, (hl)
+    inc     hl
+    ld      h, (hl)
+    ld      l, a
+
+    jr      loop
+
+is_null:
+    call    lcd_crlf
+    jp      forth_next
+#endlocal
+
 ; - creates a new entry in the dictionary.
 ; - the top of the stack has the name.
-    M_forth_native "create", create
+    M_forth_native "create", 0, create
 #local
     ld      hl, (Forth_here)
 
@@ -502,6 +527,10 @@ forth_native_&label::
     inc     hl
     inc     hl
 
+    ; Write flags. Default to zero.
+    ld      (hl), 0
+    inc     hl
+
     ; Copy name from BC (top of stack).
 loop:
     ld      a, (bc)
@@ -511,6 +540,10 @@ loop:
     or      a
     jr      nz, loop
 
+    ; Add a "call" instruction. We'll fill in the address later from Forth itself.
+    ld      (hl), opcode(call NN)
+    inc     hl
+
     ; Write back our new "here".
     ld      (Forth_here), hl
     pop     bc
@@ -518,7 +551,7 @@ loop:
 #endlocal
 
 ; - skips the header of a dictionary entry.
-    M_forth_native ">cfa", cfa
+    M_forth_native ">cfa", 0, cfa
     ld      hl, bc
     call    forth_cfa
     ld      bc, hl
@@ -528,7 +561,8 @@ loop:
 #local
 forth_cfa::
     ; HL is pointing to the start of the dictionary entry.
-    ; Skip the link pointer.
+    ; Skip the link pointer and flags.
+    inc     hl
     inc     hl
     inc     hl
 
@@ -545,7 +579,7 @@ loop:
 
 ; - gets the next word from the input stream and puts its address
 ; - on the parameter stack.
-    M_forth_native "word", word
+    M_forth_native "word", 0, word
     push    bc
     call    forth_word
     ld      bc, hl
@@ -596,7 +630,7 @@ end_of_string:
 #endlocal
 
 ; - skips over the number of bytes specified at the IP.
-    M_forth_native "branch", branch
+    M_forth_native "branch", 0, branch
     push    bc
 forth_native_branch_tail::
     ld      hl, de
@@ -607,7 +641,7 @@ forth_native_branch_tail::
     jp      forth_next
 
 ; - skips over the number of bytes specified at the IP if TOS is zero.
-    M_forth_native "0branch", 0branch
+    M_forth_native "0branch", 0, 0branch
 #local
     ; Check top of stack (BC).
     ld      a, b
@@ -627,7 +661,7 @@ no_skip:
 
 ; - finds the string at the top of the stack in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
-    M_forth_native "find", find
+    M_forth_native "find", 0, find
     ld      hl, bc
     call    forth_find
     ld      bc, hl
@@ -644,7 +678,7 @@ forth_find::
     ld      hl, (Forth_dict)
 
 loop:
-    ; See if HL is null. Is there a better way to do this?
+    ; See if HL is null.
     ld      a, l
     or      a
     jp      nz, not_null
@@ -656,12 +690,14 @@ not_null:
     ; Point to name of routine.
     inc     hl
     inc     hl
+    inc     hl
 
     ; BC and HL are both now pointing to strings. Compare them.
     ; The result is in the zero flag.
     call    forth_strequ
 
     ; Point back to link pointer. These don't modify the zero flag.
+    dec     hl
     dec     hl
     dec     hl
 
@@ -686,7 +722,16 @@ done:
 forth_interpret::
     ; Parse and find the word.
     call    forth_word
+
+    ; See if we're at the end of the input buffer.
+    ld      a, (hl)
+    or      a
+    jp      z, forth_terminate
+
+    ; Save it for later (number parsing and error display).
     push    hl
+
+    ; Find it in the dictionary.
     call    forth_find
 
     ; See if it was found.
@@ -721,6 +766,7 @@ found:
     inc     sp
     call    forth_cfa
     jp      (hl)
+
 word_not_found_error_message:
     .text   "Word not found: ", NUL
 #endlocal
