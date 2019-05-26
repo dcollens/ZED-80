@@ -262,6 +262,10 @@ Forth_init_cmd:
     .text   ": begin immediate here @ ; "
     .text   ": until immediate ' 0branch , here @ - , ; "
     .text   ": again immediate ' branch , here @ - , ; "
+    .text   ": while immediate ' 0branch , here @ 0000 , ; "
+    .text   ": repeat immediate ' branch , swap here @ - , dup here @ swap - swap ! ; "
+    .text   ": space 0020 emit ; "
+    .text   ": words latest @ begin ?dup while dup 0003 + tell space @ repeat cr ; "
     ; The rest are for testing. XXX delete.
     .text   ": rx lcd_width rndn ; "
     .text   ": ry lcd_height rndn ; "
@@ -454,6 +458,23 @@ M_forth_const macro name, value
     push    bc
     jp      forth_next
 
+; - duplicates the word at the top of the parameter stack if non-zero.
+; - this seems weird but it's useful for while loops where you want to
+; - use this as a condition. It saves you from having to drop it later.
+    M_forth_native "?dup", 0, qdup
+#local
+    ld      a, c
+    or      a
+    jr      nz, not_zero
+    ld      a, b
+    or      a
+    jr      z, zero
+not_zero:
+    push    bc
+zero:
+    jp      forth_next
+#endlocal
+
 ; - drops the top word of the stack.
     M_forth_native "drop", 0, drop
     pop     bc
@@ -528,6 +549,13 @@ not_equal:
     call    lcd_puthex16
     ld      l, ' '
     call    lcd_putc
+    jp      forth_next
+
+; - prints the character at the top of the stack.
+    M_forth_native "emit", 0, emit
+    ld      l, c
+    call    lcd_putc
+    pop     bc
     jp      forth_next
 
 ; - prints the string whose address is on the top of the stack.
@@ -637,53 +665,6 @@ loop:
 done:
     call    lcd_crlf
     pop     bc
-    jp      forth_next
-#endlocal
-
-; - lists all words in the dictionary.
-    M_forth_native "words", 0, words
-#local
-    ; Start at head of linked list.
-    ld      hl, (Forth_dict)
-
-loop:
-    ; See if HL is null.
-    ld      a, l
-    or      a
-    jr      nz, not_null
-    ld      a, h
-    or      a
-    jr      z, is_null
-
-not_null:
-    ; Save node pointer for later.
-    push    hl
-
-    ; Skip link and flags.
-    inc     hl
-    inc     hl
-    inc     hl
-
-    ; Print name.
-    call    lcd_puts
-
-    ; Print space.
-    ld      l, ' '
-    call    lcd_putc
-
-    ; Restore node pointer.
-    pop     hl
-
-    ; Dereference to get next node.
-    ld      a, (hl)
-    inc     hl
-    ld      h, (hl)
-    ld      l, a
-
-    jr      loop
-
-is_null:
-    call    lcd_crlf
     jp      forth_next
 #endlocal
 
