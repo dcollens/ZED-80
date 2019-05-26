@@ -257,6 +257,8 @@ forth_init::
     ret
 
 Forth_init_cmd:
+    .text   ": / /mod swap drop ; "
+    .text   ": mod /mod drop ; "
     .text   ": if immediate ' 0branch , here @ 0000 , ; "
     .text   ": then immediate dup here @ swap - swap ! ; "
     .text   ": begin immediate here @ ; "
@@ -266,6 +268,7 @@ Forth_init_cmd:
     .text   ": repeat immediate ' branch , swap here @ - , dup here @ swap - swap ! ; "
     .text   ": space 0020 emit ; "
     .text   ": words latest @ begin ?dup while dup 0003 + tell space @ repeat cr ; "
+    .text   ": recurse immediate latest @ >cfa , ; "
     ; The rest are for testing. XXX delete.
     .text   ": rx lcd_width rndn ; "
     .text   ": ry lcd_height rndn ; "
@@ -527,6 +530,30 @@ zero:
     or      a           ; Clear carry.
     sbc     hl, bc
     ld      bc, hl
+    jp      forth_next
+
+; - multiplies the top two entries on the parameter stack.
+    M_forth_native "*", 0, mul
+    ld      (Forth_orig_de), de
+    pop     de
+    call    mul16
+    ld      bc, hl      ; Drop higher 16 bits.
+    ld      de, (Forth_orig_de)
+    jp      forth_next
+
+; - computes the remainder and quotient of the top two stack entries (n, d).
+; - (n d -- q r)
+    M_forth_native "/mod", 0, divmod
+    ld      (Forth_orig_de), de
+    ld      de, bc
+    pop     bc
+    ld      a, b
+    ; The following routine divides AC by DE and places the quotient in AC and
+    ; the remainder in HL.
+    call    div_ac_de
+    push    hl
+    ld      b, a
+    ld      de, (Forth_orig_de)
     jp      forth_next
 
 ; - determines if the top two stack entries are the same, leaving 0 or 1.
@@ -1803,6 +1830,27 @@ rand16_modn::
     pop	    de		; we don't want the quotient, only the remainder in HL
     ret
 
+; (uint32_t (DEHL)) mul16(uint16_t a (DE), uint16_t, b (BC))
+; http://z80-heaven.wikidot.com/math#toc4
+#local
+mul16::
+    ld      hl, 0
+    ld      a, 16
+
+loop:
+    add     hl, hl
+    rl      e
+    rl      d
+    jr      nc, skip
+    add     hl, bc
+    jr      nc, skip
+    inc     de
+skip:
+    dec     a
+    jr      nz, loop
+    ret
+#endlocal
+
 ; (uint16_t, uint16_t) divmod16(uint16_t n, uint16_t d)
 ; - divides "n" by "d", returning n / d and n % d
 ; - pass "n" in DE, "d" in BC
@@ -2386,6 +2434,7 @@ Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_input:: defs 2    ; Pointer to input buffer.
 Forth_compiling:: defs 2 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
+Forth_orig_de:: defs 2  ; Temporary for saving DE.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
