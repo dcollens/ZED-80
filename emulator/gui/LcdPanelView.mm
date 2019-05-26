@@ -12,6 +12,10 @@ static constexpr size_t PANEL_WIDTH = 1024;
 static constexpr size_t PANEL_HEIGHT = 600;
 
 @implementation LcdPanelView {
+    NSView *                _cursorView;
+    NSTimeInterval          _cursorBlinkPeriod;
+    NSTimer *               _cursorBlinkTimer;
+
     NSBitmapImageRep *      _imageRep;
     NSImage *               _panelImage;
     NSFont *                _font;
@@ -19,6 +23,11 @@ static constexpr size_t PANEL_HEIGHT = 600;
 
 - (instancetype)init {
     self = [super init];
+    
+    _cursorBlinkPeriod = 1.0 / 50;
+    _cursorView = [[NSView alloc] initWithFrame:NSZeroRect];
+    _cursorView.wantsLayer = YES;
+    [self addSubview:_cursorView];
     
     _imageRep =
     [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
@@ -46,6 +55,26 @@ static constexpr size_t PANEL_HEIGHT = 600;
     CGContextFillRect(gfx, self.bounds);
 
     return self;
+}
+
+- (void)dealloc {
+    [self stopCursorBlinkTimer];
+}
+
+- (void)stopCursorBlinkTimer {
+    [_cursorBlinkTimer invalidate];
+    _cursorBlinkTimer = nil;
+}
+
+- (void)startCursorBlinkTimer {
+    [self stopCursorBlinkTimer];
+    
+    NSView *cursorView = _cursorView;
+    _cursorBlinkTimer = [NSTimer scheduledTimerWithTimeInterval:_cursorBlinkPeriod
+                                                        repeats:YES
+                                                          block:^(NSTimer * _Nonnull timer) {
+        cursorView.hidden = !cursorView.hidden;
+    }];
 }
 
 - (NSGraphicsContext *)gfxContext {
@@ -190,6 +219,44 @@ withForegroundColor:(NSColor *)fg
     [text drawAtPoint:p withAttributes:attr];
     [NSGraphicsContext restoreGraphicsState];
     [self setNeedsDisplay:YES];
+}
+
+- (void)setCursorMode:(LcdCursorMode)cursorMode {
+    switch (cursorMode) {
+        case LcdCursorMode::OFF:
+            [self stopCursorBlinkTimer];
+            _cursorView.hidden = YES;
+            break;
+        case LcdCursorMode::BLINKING:
+            [self startCursorBlinkTimer];
+            _cursorView.hidden = NO;
+            break;
+        case LcdCursorMode::SOLID:
+            [self stopCursorBlinkTimer];
+            _cursorView.hidden = NO;
+            break;
+    }
+}
+
+- (void)setCursorPosition:(NSPoint)origin {
+    NSRect frame = _cursorView.frame;
+    frame.origin = origin;
+    _cursorView.frame = frame;
+}
+
+- (void)setCursorSize:(NSSize)size {
+    NSRect frame = _cursorView.frame;
+    frame.size = size;
+    _cursorView.frame = frame;
+}
+
+- (void)setCursorColor:(NSColor *)c {
+    _cursorView.layer.backgroundColor = c.CGColor;
+}
+
+- (void)setCursorBlinkPeriod:(NSTimeInterval)blinkPeriod {
+    _cursorBlinkPeriod = blinkPeriod;
+    [self startCursorBlinkTimer];
 }
 
 @end

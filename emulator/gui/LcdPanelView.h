@@ -8,6 +8,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+enum class LcdCursorMode {
+    OFF,
+    BLINKING,
+    SOLID
+};
+
 @interface LcdPanelView : NSView
 
 - (void)drawLineFrom:(NSPoint)p1 to:(NSPoint)p2 withColor:(NSColor *)c;
@@ -35,6 +41,12 @@ NS_ASSUME_NONNULL_BEGIN
           atPoint:(NSPoint)p
 withForegroundColor:(NSColor *)fg
   backgroundColor:(NSColor *)bg;
+
+- (void)setCursorMode:(LcdCursorMode)cursorMode;
+- (void)setCursorPosition:(NSPoint)origin;
+- (void)setCursorSize:(NSSize)size;
+- (void)setCursorColor:(NSColor *)c;
+- (void)setCursorBlinkPeriod:(NSTimeInterval)blinkPeriod;
 
 @end
 

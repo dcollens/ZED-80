@@ -221,6 +221,7 @@ RA8876::Point RA8876::get_text_pt() const {
 
 void RA8876::set_text_pt(Point p) {
     set_pt(p, REG_F_CURX0);
+    _gfx_ops.set_cursor_position(p);
 }
 
 RA8876::Point RA8876::get_ellipse_pt() const {
@@ -332,10 +333,6 @@ void RA8876::write_data(uint8_t value) {
         case REG_DLVER1:
         case REG_DTPH1:
         case REG_DTPV1:
-        case REG_F_CURX1:
-        case REG_F_CURY1:
-        case REG_CURHS:
-        case REG_CURVS:
         case REG_DEHR1:
         case REG_DEVR1:
         case REG_ELL_A1:
@@ -371,9 +368,6 @@ void RA8876::write_data(uint8_t value) {
         case REG_AWUL_Y0:
         case REG_AW_WTH0:
         case REG_AW_HT0:
-        case REG_FGCR:
-        case REG_FGCG:
-        case REG_FGCB:
         case REG_BGCR:
         case REG_BGCG:
         case REG_BGCB:
@@ -383,10 +377,6 @@ void RA8876::write_data(uint8_t value) {
         case REG_DLVER0:
         case REG_DTPH0:
         case REG_DTPV0:
-        case REG_F_CURX0:
-        case REG_F_CURY0:
-        case REG_GTCCR:
-        case REG_BTCR:
         case REG_DEHR0:
         case REG_DEVR0:
         case REG_ELL_A0:
@@ -461,6 +451,43 @@ void RA8876::write_data(uint8_t value) {
                 advance_text_position();
             }
             break;
+        case REG_FGCR:
+        case REG_FGCG:
+        case REG_FGCB:
+            wr(value);
+            _gfx_ops.set_cursor_color(get_fg_color());
+            break;
+        case REG_F_CURX0:
+        case REG_F_CURY0:
+            wr(value);
+            _gfx_ops.set_cursor_position(get_text_pt());
+            break;
+        case REG_F_CURX1:
+        case REG_F_CURY1:
+            wr(value & 0x1F);
+            _gfx_ops.set_cursor_position(get_text_pt());
+            break;
+        case REG_GTCCR: {
+            wr(value);
+            bool enabled = (value & 0x02) != 0;
+            bool blinking = (value & 0x01) != 0;
+            _gfx_ops.set_cursor_mode(enabled, blinking);
+            break;
+        }
+        case REG_BTCR: {
+            wr(value);
+            float period = (float(value) + 1) / 50;
+            _gfx_ops.set_cursor_blink_period(period);
+            break;
+        }
+        case REG_CURHS:
+        case REG_CURVS: {
+            wr(value & 0x1F);
+            uint8_t width = (_regs[REG_CURHS] & 0x1F) + 1;
+            uint8_t height = (_regs[REG_CURVS] & 0x1F) + 1;
+            _gfx_ops.set_cursor_size(Point(width, height));
+            break;
+        }
         default:
             cout << "RA8876: ignoring write of $" << to_hex(value)
                  << " to register $" << to_hex(_address) << endl;

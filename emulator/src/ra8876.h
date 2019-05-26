@@ -37,6 +37,12 @@ public:
         virtual void fill_ellipse(Color c, Point center, Point radii) = 0;
 
         virtual void draw_text(uint8_t ch, Point p, Color fg, Color bg, bool transparent_bg) = 0;
+        
+        virtual void set_cursor_mode(bool enabled, bool blinking) = 0;
+        virtual void set_cursor_position(Point p) = 0;
+        virtual void set_cursor_size(Point size) = 0;
+        virtual void set_cursor_color(Color c) = 0;
+        virtual void set_cursor_blink_period(float seconds) = 0;
     };
 
 private:

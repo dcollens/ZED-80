@@ -39,6 +39,12 @@ class LcdPanelDevice : public IoDevice {
         void fill_ellipse(Color c, Point center, Point radii) override;
         
         void draw_text(uint8_t ch, Point p, Color fg, Color bg, bool transparent_bg) override;
+
+        void set_cursor_mode(bool enabled, bool blinking) override;
+        void set_cursor_position(Point p) override;
+        void set_cursor_size(Point size) override;
+        void set_cursor_color(Color c) override;
+        void set_cursor_blink_period(float seconds) override;
     };
     
     Gfx_ops _gfx_ops;

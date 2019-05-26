@@ -117,3 +117,27 @@ void LcdPanelDevice::Gfx_ops::draw_text(uint8_t ch, Point p, Color fg, Color bg,
       withForegroundColor:nscolor(fg)
           backgroundColor:bgColor];
 }
+
+void LcdPanelDevice::Gfx_ops::set_cursor_mode(bool enabled, bool blinking) {
+    LcdCursorMode mode = LcdCursorMode::OFF;
+    if (enabled) {
+        mode = blinking ? LcdCursorMode::BLINKING : LcdCursorMode::SOLID;
+    }
+    [_panelView setCursorMode:mode];
+}
+
+void LcdPanelDevice::Gfx_ops::set_cursor_position(Point p) {
+    [_panelView setCursorPosition:NSMakePoint(p.x, p.y)];
+}
+
+void LcdPanelDevice::Gfx_ops::set_cursor_size(Point size) {
+    [_panelView setCursorSize:NSMakeSize(size.x, size.y)];
+}
+
+void LcdPanelDevice::Gfx_ops::set_cursor_color(Color c) {
+    [_panelView setCursorColor:nscolor(c)];
+}
+
+void LcdPanelDevice::Gfx_ops::set_cursor_blink_period(float seconds) {
+    [_panelView setCursorBlinkPeriod:seconds];
+}

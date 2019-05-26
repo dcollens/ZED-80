@@ -48,6 +48,7 @@ static std::array<Modifier,6> const g_Modifiers = {
     id<ZedViewDelegate> __weak _delegate;
     
     std::array<SevenSegmentView *,SEVEN_SEGMENT_COUNT> _sevenSegment;
+    
     uint32_t _lastModifierFlags;
 }
 
@@ -61,7 +62,7 @@ static std::array<Modifier,6> const g_Modifiers = {
         _sevenSegment[i] = [SevenSegmentView new];
         [self addSubview:_sevenSegment[i]];
     }
-
+    
     _lcdPanelView = [LcdPanelView new];
     [self addSubview:_lcdPanelView];
 
