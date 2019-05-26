@@ -237,6 +237,10 @@ forth_init::
     ; Set the head of the dictionary linked list.
     call    forth_init_dict
 
+    ; Start in immediate mode.
+    xor     a
+    ld      (Forth_compiling), a
+
     ; Program is infinite loop to interpret words.
     ld      hl, Forth_code
     M_forth_add_code forth_interpret
@@ -444,12 +448,33 @@ forth_native_&label::
 
 ; - adds the word at the top of the stack to our code.
     M_forth_native ",", 0, comma
+    ld      hl, bc
+    call    forth_comma
+    pop     bc
+    jp      forth_next
+
+; - adds the word in HL to our code.
+forth_comma:
+    push    bc
+    ld      bc, hl
     ld      hl, (Forth_here)
     ld      (hl), bc
     inc     hl
     inc     hl
     ld      (Forth_here), hl
     pop     bc
+    ret
+
+; Go into immediate (non-compiling) mode.
+    M_forth_native "[", F_IMMED, lbrac
+    xor     a
+    ld      (Forth_compiling), a
+    jp      forth_next
+
+; Go into compiling mode.
+    M_forth_native "]", 0, rbrac
+    ld      a, 1
+    ld      (Forth_compiling), a
     jp      forth_next
 
 ; - put the address of the code of the word that's next in
@@ -462,6 +487,41 @@ forth_native_&label::
     push    bc
     ld      bc, hl
     jp      forth_next
+
+; - lists code memory.
+    M_forth_native "code", 0, code
+#local
+    push    bc
+    ld      hl, Forth_code      ; Start.
+    ld      bc, (Forth_here)    ; End.
+
+loop:
+    ; See if we're done.
+    or      a           ; Clear carry.
+    sbc     hl, bc
+    add     hl, bc
+    jr      z, done
+
+    ; Dereference HL.
+    ld      a, (hl)
+    push    hl
+    ld      l, a
+
+    ; Print.
+    call    lcd_puthex8
+    ld      l, ' '
+    call    lcd_putc
+
+    ; Next word.
+    pop     hl
+    inc     hl
+    jr      loop
+
+done:
+    call    lcd_crlf
+    pop     bc
+    jp      forth_next
+#endlocal
 
 ; - lists all words in the dictionary.
     M_forth_native "words", 0, words
@@ -720,7 +780,7 @@ done:
 ; - grabs the next word and processes it (runs it or compiles it).
 #local
 forth_interpret::
-    ; Parse and find the word.
+    ; Parse the next space-delimited word.
     call    forth_word
 
     ; See if we're at the end of the input buffer.
@@ -728,7 +788,7 @@ forth_interpret::
     or      a
     jp      z, forth_terminate
 
-    ; Save it for later (number parsing and error display).
+    ; Save name for later (number parsing and error display).
     push    hl
 
     ; Find it in the dictionary.
@@ -747,6 +807,22 @@ forth_interpret::
     call    parse_hex16
     ; XXX detect that parsing failed, and print error message below.
 
+    ; It's a number. Check if we're in immediate mode.
+    ld      a, (Forth_compiling)
+    or      a
+    jr      z, not_found_immediate
+
+    ; Compile IMM.
+    push    hl
+    ld      hl, forth_native_lit
+    call    forth_comma
+
+    ; Compile number.
+    pop     hl
+    call    forth_comma
+    jp      forth_next
+
+not_found_immediate:
     ; Push parsed value.
     push    bc
     ld      bc, hl
@@ -761,9 +837,31 @@ forth_interpret::
     jp      forth_terminate
 
 found:
-    ; Throw away saves name.
+    ; Throw away saved name, we don't need it if it was found.
     inc     sp
     inc     sp
+
+    ; Check if we're in immediate mode.
+    ld      a, (Forth_compiling)
+    or      a
+    jr      z, found_immediate
+
+    ; Check immediate flag of word.
+    push    hl
+    inc     hl
+    inc     hl
+    ld      a, (hl)
+    pop     hl
+    and     F_IMMED
+    jr      nz, found_immediate
+
+    ; We're compiling it.
+    call    forth_cfa
+    call    forth_comma
+    jp      forth_next
+
+found_immediate:
+    ; Move to code for word and execute it.
     call    forth_cfa
     jp      (hl)
 
@@ -2089,6 +2187,7 @@ Forth_dict:: defs 2     ; Pointer to dictionary linked list.
 Forth_here:: defs 2     ; Pointer to next available space in Forth_code.
 Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_input:: defs 2    ; Pointer to input buffer.
+Forth_compiling:: defs 1 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
