@@ -1377,29 +1377,29 @@ wait_sdram:
     or	    0x04
     out	    (PORT_LCDDAT), a
     ;	Main_Image_Start_Address(0);				
-    ; The default is start address 0, so we don't really need to do this.
-    M_lcdwrite0 LCDREG_MISA0
-    M_lcdwrite0 LCDREG_MISA1
-    M_lcdwrite0 LCDREG_MISA2
-    M_lcdwrite0 LCDREG_MISA3
+    ; The default is start address 0, so we don't need to do this.
+    ;M_lcdwrite0 LCDREG_MISA0
+    ;M_lcdwrite0 LCDREG_MISA1
+    ;M_lcdwrite0 LCDREG_MISA2
+    ;M_lcdwrite0 LCDREG_MISA3
     ;	Main_Image_Width(1024);							
-    M_lcdwrite0 LCDREG_MIW0
-    M_lcdwrite LCDREG_MIW1, 4
+    M_lcdwrite LCDREG_MIW0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_MIW1, hi(LCD_WIDTH)
     ;	Main_Window_Start_XY(0,0);	
-    ; The default is (0,0), so we don't really need to do this.
+    ; The default is (0,0).
     M_lcdwrite0 LCDREG_MWULX0
     M_lcdwrite0 LCDREG_MWULX1
     M_lcdwrite0 LCDREG_MWULY0
     M_lcdwrite0 LCDREG_MWULY1
     ;	Canvas_Image_Start_address(0);
-    ; The default is start address 0, so we don't really need to do this.
-    M_lcdwrite0 LCDREG_CVSSA0
-    M_lcdwrite0 LCDREG_CVSSA1
-    M_lcdwrite0 LCDREG_CVSSA2
-    M_lcdwrite0 LCDREG_CVSSA3
+    ; The default is start address 0, so we don't need to do this.
+    ;M_lcdwrite0 LCDREG_CVSSA0
+    ;M_lcdwrite0 LCDREG_CVSSA1
+    ;M_lcdwrite0 LCDREG_CVSSA2
+    ;M_lcdwrite0 LCDREG_CVSSA3
     ;	Canvas_image_width(1024);
-    M_lcdwrite0 LCDREG_CVS_IMWTH0
-    M_lcdwrite LCDREG_CVS_IMWTH1, 4
+    M_lcdwrite LCDREG_CVS_IMWTH0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_CVS_IMWTH1, hi(LCD_WIDTH)
     ;	Active_Window_XY(0,0);
     ; The default is (0,0), so we don't really need to do this.
     M_lcdwrite0 LCDREG_AWUL_X0
@@ -1407,10 +1407,36 @@ wait_sdram:
     M_lcdwrite0 LCDREG_AWUL_Y0
     M_lcdwrite0 LCDREG_AWUL_Y1
     ;	Active_Window_WH(1024,600);
-    M_lcdwrite0 LCDREG_AW_WTH0
-    M_lcdwrite LCDREG_AW_WTH1, 4
-    M_lcdwrite LCDREG_AW_HT0, 88
-    M_lcdwrite LCDREG_AW_HT1, 2
+    M_lcdwrite LCDREG_AW_WTH0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_AW_WTH1, hi(LCD_WIDTH)
+    M_lcdwrite LCDREG_AW_HT0, lo(LCD_HEIGHT)
+    M_lcdwrite LCDREG_AW_HT1, hi(LCD_HEIGHT)
+    ; Set BTE Source 0 memory start address (default is 0)
+    ;M_lcdwrite0 LCDREG_S0_STR0
+    ;M_lcdwrite0 LCDREG_S0_STR1
+    ;M_lcdwrite0 LCDREG_S0_STR2
+    ;M_lcdwrite0 LCDREG_S0_STR3
+    ; Set BTE Source 0 image width
+    M_lcdwrite LCDREG_S0_WTH0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_S0_WTH1, hi(LCD_WIDTH)
+    ; Set BTE Source 1 memory start address (default is 0)
+    ;M_lcdwrite0 LCDREG_S1_STR0
+    ;M_lcdwrite0 LCDREG_S1_STR1
+    ;M_lcdwrite0 LCDREG_S1_STR2
+    ;M_lcdwrite0 LCDREG_S1_STR3
+    ; Set BTE Source 1 image width
+    M_lcdwrite LCDREG_S1_WTH0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_S1_WTH1, hi(LCD_WIDTH)
+    ; Set BTE Destination memory start address (default is 0)
+    ;M_lcdwrite0 LCDREG_DT_STR0
+    ;M_lcdwrite0 LCDREG_DT_STR1
+    ;M_lcdwrite0 LCDREG_DT_STR2
+    ;M_lcdwrite0 LCDREG_DT_STR3
+    ; Set BTE Destination image width
+    M_lcdwrite LCDREG_DT_WTH0, lo(LCD_WIDTH)
+    M_lcdwrite LCDREG_DT_WTH1, hi(LCD_WIDTH)
+    ; Set BTE Color depth to 16bpp
+    M_lcdwrite LCDREG_BTE_COLR, 0x25	; S0, S1, and DT color depth 16bpp
     ;	Memory_XY_Mode();
     ;	Memory_16bpp_Mode();
     M_lcdwrite LCDREG_AW_COLOR, 0x01
@@ -1481,42 +1507,89 @@ lcd_rand_fgcolor::
     pop	    hl
     ret
 
+; void lcd_out32(uint8_t reg, uint16_t v1, uint16_t v2)
+; - "reg" in A
+; - "v1" in DE
+; - "v2" in HL
+; - writes v1, v2 to the four consecutive 8-bit LCD registers starting at reg
+lcd_out32::
+    push    bc
+    ld	    c, PORT_LCDDAT
+    out	    (PORT_LCDCMD), a
+    out	    (c), e
+    inc	    a
+    out	    (PORT_LCDCMD), a
+    out	    (c), d
+    inc	    a
+    out	    (PORT_LCDCMD), a
+    out	    (c), l
+    inc	    a
+    out	    (PORT_LCDCMD), a
+    out	    (c), h
+    pop	    bc
+    ret
+
 ; void lcd_line_start_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
 lcd_line_start_xy::
-    M_lcdwrite LCDREG_DLHSR0, e
-    M_lcdwrite LCDREG_DLHSR1, d
-    M_lcdwrite LCDREG_DLVSR0, l
-    M_lcdwrite LCDREG_DLVSR1, h
-    ret
+    ld	    a, LCDREG_DLHSR0
+    jr	    lcd_out32
 
 ; void lcd_line_end_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
 lcd_line_end_xy::
-    M_lcdwrite LCDREG_DLHER0, e
-    M_lcdwrite LCDREG_DLHER1, d
-    M_lcdwrite LCDREG_DLVER0, l
-    M_lcdwrite LCDREG_DLVER1, h
-    ret
+    ld	    a, LCDREG_DLHER0
+    jr	    lcd_out32
 
 ; void lcd_triangle_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
 ; - this sets the third point for a triangle (first two are the "line start" and "line end" points)
 lcd_triangle_xy::
-    M_lcdwrite LCDREG_DTPH0, e
-    M_lcdwrite LCDREG_DTPH1, d
-    M_lcdwrite LCDREG_DTPV0, l
-    M_lcdwrite LCDREG_DTPV1, h
-    ret
+    ld	    a, LCDREG_DTPH0
+    jr	    lcd_out32
+
+; void lcd_source0_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_source0_xy::
+    ld	    a, LCDREG_S0_X0
+    jr	    lcd_out32
+
+; void lcd_source1_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+;lcd_source1_xy::
+;    ld	    a, LCDREG_S1_X0
+;    jr	    lcd_out32
+
+; void lcd_dest_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_dest_xy::
+    ld	    a, LCDREG_DT_X0
+    jr	    lcd_out32
+
+; void lcd_bte_wh(uint16_t width, uint16_t height)
+; - "width" in DE, "height" in HL
+; - set BTE rectangle size
+lcd_bte_wh::
+    ld	    a, LCDREG_BTE_WTH0
+    jr	    lcd_out32
+
+; void lcd_ellipse_xy(uint16_t x, uint16_t y)
+; - "x" in DE, "y" in HL
+lcd_ellipse_xy::
+    ld	    a, LCDREG_DEHR0
+    jr	    lcd_out32
+
+; void lcd_ellipse_radii(uint16_t rx, uint16_t ry)
+; - "rx" in DE, "ry" in HL
+lcd_ellipse_radii::
+    ld	    a, LCDREG_ELL_A0
+    jr	    lcd_out32
 
 ; void lcd_set_text_xy(uint16_t x, uint16_t y)
 ; - "x" in DE, "y" in HL
 lcd_set_text_xy::
-    M_lcdwrite LCDREG_F_CURX0, e
-    M_lcdwrite LCDREG_F_CURX1, d
-    M_lcdwrite LCDREG_F_CURY0, l
-    M_lcdwrite LCDREG_F_CURY1, h
-    ret
+    ld	    a, LCDREG_F_CURX0
+    jr	    lcd_out32
 
 ; void lcd_set_text_x(uint16_t x)
 lcd_set_text_x::
@@ -1525,10 +1598,10 @@ lcd_set_text_x::
     ret
 
 ; void lcd_set_text_y(uint16_t y)
-;lcd_set_text_y::
-;    M_lcdwrite LCDREG_F_CURY0, l
-;    M_lcdwrite LCDREG_F_CURY1, h
-;    ret
+lcd_set_text_y::
+    M_lcdwrite LCDREG_F_CURY0, l
+    M_lcdwrite LCDREG_F_CURY1, h
+    ret
 
 ; uint16_t lcd_get_text_x()
 ; - returns current text X position, in pixels
@@ -1554,17 +1627,54 @@ lcd_get_text_y::
 
 ; void lcd_crlf()
 ; - advance to first column of next line
+; - if this would place us off the bottom of the window, then scroll the window contents up first
+#local
 lcd_crlf::
     push    de
     push    hl
-    call    lcd_get_text_y
-    ld	    de, LCD_TXT_HEIGHT
-    add	    hl, de
+    call    lcd_get_text_y	; HL = text_y
+    ld	    de, LCD_HEIGHT - 2 * LCD_TXT_HEIGHT
+    ex	    de, hl		; DE = text_y, HL = LCD_HEIGHT - 2*LCD_TXT_HEIGHT
+    or	    a			; clear carry flag
+    sbc	    hl, de		; test LCD_HEIGHT - 2 * LCD_TXT_HEIGHT < text_y
+    jr	    nc, noScroll	; if text_y <= LCD_HEIGHT - 2 * LCD_TXT_HEIGHT, no need to scroll
+    ; Scroll screen data upwards
+    push    de			; push text_y (see below)
     ld	    de, 0
-    call    lcd_set_text_xy
+    ld	    hl, LCD_TXT_HEIGHT
+    call    lcd_source0_xy	; set source to (0,LCD_TXT_HEIGHT)
+    ld	    h, d		; DE already 0 from above, set HL = DE
+    ld	    l, e
+    call    lcd_dest_xy		; set destination to (0,0)
+    ld	    de, LCD_WIDTH
+    ld	    hl, LCD_HEIGHT - LCD_TXT_HEIGHT
+    call    lcd_bte_wh		; set bte_width=LCD_WIDTH, bte_height=LCD_HEIGHT-LCD_TXT_HEIGHT
+    M_lcdwrite LCDREG_BTE_CTRL1, 0xC2 ; memory copy with ROP = S0
+    M_lcdwrite LCDREG_BTE_CTRL0, 0x10 ; BTE run
+    call    lcd_wait_idle
+    ; Clear fresh line area at (0, text_y) with size (LCD_WIDTH, LCD_TXT_HEIGHT)
+    ld	    de, 0
+    pop	    hl			; pop text_y into HL (see above)
+    call    lcd_dest_xy		; set destination to (0,text_y)
+    ld	    de, LCD_WIDTH
+    ld	    hl, LCD_TXT_HEIGHT
+    call    lcd_bte_wh		; set bte_width=LCD_WIDTH, bte_height=LCD_TXT_HEIGHT
+    M_lcdwrite LCDREG_BTE_CTRL1, 0x02 ; memory copy with ROP = Blackness
+    M_lcdwrite LCDREG_BTE_CTRL0, 0x10 ; BTE run
+    call    lcd_wait_idle
+    jr	    setX0		; set cursor X to 0, and return
+
+noScroll:			; DE = text_y
+    ld	    hl, LCD_TXT_HEIGHT
+    add	    hl, de		; HL = text_y + LCD_TXT_HEIGHT
+    call    lcd_set_text_y	; advance Y cursor by one text row
+setX0:
+    ld	    hl, 0
+    call    lcd_set_text_x	; move X cursor to left-hand edge
     pop	    hl
     pop	    de
     ret
+#endlocal
 
 ; void lcd_bs()
 ; - move text position back one column
@@ -1590,24 +1700,6 @@ done:
     ret
 #endlocal
 
-; void lcd_ellipse_xy(uint16_t x, uint16_t y)
-; - "x" in DE, "y" in HL
-lcd_ellipse_xy::
-    M_lcdwrite LCDREG_DEHR0, e
-    M_lcdwrite LCDREG_DEHR1, d
-    M_lcdwrite LCDREG_DEVR0, l
-    M_lcdwrite LCDREG_DEVR1, h
-    ret
-
-; void lcd_ellipse_radii(uint16_t rx, uint16_t ry)
-; - "rx" in DE, "ry" in HL
-lcd_ellipse_radii::
-    M_lcdwrite LCDREG_ELL_A0, e
-    M_lcdwrite LCDREG_ELL_A1, d
-    M_lcdwrite LCDREG_ELL_B0, l
-    M_lcdwrite LCDREG_ELL_B1, h
-    ret
-
 ; void lcd_puts(uint8_t *text)
 ; - write the NUL-terminated string at "text" to LCD
 #local
@@ -1616,19 +1708,17 @@ lcd_puts::
     push    bc
     M_out   (PORT_LCDCMD), LCDREG_MRWDP
 next_byte:
-    ld	    a, (hl)
-    inc	    hl
-    or	    a		; fast test a==0
-    jr	    z, done
+    ld	    a, (hl)		; A = output_char
+    or	    a			; test output_char == 0?
+    jr	    z, done		; if output_char == NUL, we're done
+    inc	    hl			; advance buffer
     ld	    b, a
 wait_fifo_room:
-    ; wait until memory FIFO is non-full
-    in	    a, (PORT_LCDCMD)
-    and	    LCDSTAT_WRFULL
+    in	    a, (PORT_LCDCMD)	; A = LCD_status
+    and	    LCDSTAT_WRFULL	; test (LCD_status & LCDSTAT_WRFULL) == 0?
     jr	    nz, wait_fifo_room
-    ; write output character
-    ld	    a, b
-    out	    (PORT_LCDDAT), a	; send byte to LCD panel
+    ld	    a, b		; write output character to LCD panel
+    out	    (PORT_LCDDAT), a	; ...
     jr	    next_byte
 done:
     call    lcd_wait_idle

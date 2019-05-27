@@ -129,6 +129,45 @@ LCDREG_DEHR1	equ 0x7C		; Draw Circle/Ellipse/Circle Square Center X-coords 1
 LCDREG_DEVR0	equ 0x7D		; Draw Circle/Ellipse/Circle Square Center Y-coords 0
 LCDREG_DEVR1	equ 0x7E		; Draw Circle/Ellipse/Circle Square Center Y-coords 1
 
+LCDREG_BTE_CTRL0 equ 0x90		; BTE Function Control Register 0
+LCDREG_BTE_CTRL1 equ 0x91		; BTE Function Control Register 1
+LCDREG_BTE_COLR equ 0x92		; Source 0/1 & Destination Color Depth
+LCDREG_S0_STR0	equ 0x93		; Source 0 memory start address 0
+LCDREG_S0_STR1	equ 0x94		; Source 0 memory start address 1
+LCDREG_S0_STR2	equ 0x95		; Source 0 memory start address 2
+LCDREG_S0_STR3	equ 0x96		; Source 0 memory start address 3
+LCDREG_S0_WTH0	equ 0x97		; Source 0 image width 0
+LCDREG_S0_WTH1	equ 0x98		; Source 0 image width 1
+LCDREG_S0_X0	equ 0x99		; Source 0 Window Upper-Left corner X-coordinates 0
+LCDREG_S0_X1	equ 0x9A		; Source 0 Window Upper-Left corner X-coordinates 1
+LCDREG_S0_Y0	equ 0x9B		; Source 0 Window Upper-Left corner Y-coordinates 0
+LCDREG_S0_Y1	equ 0x9C		; Source 0 Window Upper-Left corner Y-coordinates 1
+LCDREG_S1_STR0	equ 0x9D		; Source 1 memory start address 0
+LCDREG_S1_STR1	equ 0x9E		; Source 1 memory start address 1
+LCDREG_S1_STR2	equ 0x9F		; Source 1 memory start address 2
+LCDREG_S1_STR3	equ 0xA0		; Source 1 memory start address 3
+LCDREG_S1_WTH0	equ 0xA1		; Source 1 image width 0
+LCDREG_S1_WTH1	equ 0xA2		; Source 1 image width 1
+LCDREG_S1_X0	equ 0xA3		; Source 1 Window Upper-Left corner X-coordinates 0
+LCDREG_S1_X1	equ 0xA4		; Source 1 Window Upper-Left corner X-coordinates 1
+LCDREG_S1_Y0	equ 0xA5		; Source 1 Window Upper-Left corner Y-coordinates 0
+LCDREG_S1_Y1	equ 0xA6		; Source 1 Window Upper-Left corner Y-coordinates 1
+LCDREG_DT_STR0	equ 0xA7		; Destination memory start address 0
+LCDREG_DT_STR1	equ 0xA8		; Destination memory start address 1
+LCDREG_DT_STR2	equ 0xA9		; Destination memory start address 2
+LCDREG_DT_STR3	equ 0xAA		; Destination memory start address 3
+LCDREG_DT_WTH0	equ 0xAB		; Destination image width 0
+LCDREG_DT_WTH1	equ 0xAC		; Destination image width 1
+LCDREG_DT_X0	equ 0xAD		; Destination Window Upper-Left corner X-coordinates 0
+LCDREG_DT_X1	equ 0xAE		; Destination Window Upper-Left corner X-coordinates 1
+LCDREG_DT_Y0	equ 0xAF		; Destination Window Upper-Left corner Y-coordinates 0
+LCDREG_DT_Y1	equ 0xB0		; Destination Window Upper-Left corner Y-coordinates 1
+LCDREG_BTE_WTH0	equ 0xB1		; BTE Window Width 0
+LCDREG_BTE_WTH1	equ 0xB2		; BTE Window Width 1
+LCDREG_BTE_HIG0	equ 0xB3		; BTE Window Height 0
+LCDREG_BTE_HIG1	equ 0xB4		; BTE Window Height 1
+LCDREG_APB_CTRL equ 0xB5		; Alpha Blending
+
 LCDREG_CCR0	equ 0xCC		; Character Control Register 0
 LCDREG_CCR1	equ 0xCD		; Character Control Register 1
 
