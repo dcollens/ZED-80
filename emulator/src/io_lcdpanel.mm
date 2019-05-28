@@ -55,7 +55,7 @@ uint64_t LcdPanelDevice::tickCallback(int numTicks, uint64_t pins) {
 }
 
 // static
-NSColor *LcdPanelDevice::Gfx_ops::nscolor(Color c) {
+NSColor *LcdPanelDevice::Gfx_ops::nsColor(Color c) {
     return [NSColor colorWithSRGBRed:CGFloat(c.r) / 0xFF
                                green:CGFloat(c.g) / 0xFF
                                 blue:CGFloat(c.b) / 0xFF
@@ -63,58 +63,59 @@ NSColor *LcdPanelDevice::Gfx_ops::nscolor(Color c) {
 }
 
 // static
-NSRect LcdPanelDevice::Gfx_ops::nsrect(Point p1, Point p2) {
+NSRect LcdPanelDevice::Gfx_ops::nsRectFromPoints(Point p1, Point p2) {
     return NSMakeRect(min(p1.x, p2.x), min(p1.y, p2.y),
-                      abs(p2.x - p1.y), abs(p2.y - p1.y));
+                      abs(p2.x - p1.x) + 1, abs(p2.y - p1.y) + 1);
 }
 
 void LcdPanelDevice::Gfx_ops::draw_line(Color c, Point p1, Point p2) {
     [_panelView drawLineFrom:NSMakePoint(p1.x, p1.y)
                           to:NSMakePoint(p2.x, p2.y)
-                   withColor:nscolor(c)];
+                   withColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::draw_rect(Color c, Point p1, Point p2) {
-    [_panelView drawRect:nsrect(p1, p2) withColor:nscolor(c)];
+    [_panelView drawRect:nsRectFromPoints
+     (p1, p2) withColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::fill_rect(Color c, Point p1, Point p2) {
-    [_panelView fillRect:nsrect(p1, p2) withColor:nscolor(c)];
+    [_panelView fillRect:nsRectFromPoints(p1, p2) withColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::draw_triangle(Color c, Point p1, Point p2, Point p3) {
     [_panelView drawTriangleFrom:NSMakePoint(p1.x, p1.y)
                               to:NSMakePoint(p2.x, p2.y)
                               to:NSMakePoint(p3.x, p3.y)
-                       withColor:nscolor(c)];
+                       withColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::fill_triangle(Color c, Point p1, Point p2, Point p3) {
     [_panelView fillTriangleFrom:NSMakePoint(p1.x, p1.y)
                               to:NSMakePoint(p2.x, p2.y)
                               to:NSMakePoint(p3.x, p3.y)
-                       withColor:nscolor(c)];
+                       withColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::draw_ellipse(Color c, Point center, Point radii) {
     [_panelView drawEllipseAt:NSMakePoint(center.x, center.y)
                     withRadii:NSMakeSize(radii.x, radii.y)
-                        color:nscolor(c)];
+                        color:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::fill_ellipse(Color c, Point center, Point radii) {
     [_panelView fillEllipseAt:NSMakePoint(center.x, center.y)
                     withRadii:NSMakeSize(radii.x, radii.y)
-                        color:nscolor(c)];
+                        color:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::draw_text(uint8_t ch, Point p, Color fg, Color bg,
                                         bool transparent_bg)
 {
-    NSColor *bgColor = transparent_bg ? NSColor.clearColor : nscolor(bg);
+    NSColor *bgColor = transparent_bg ? NSColor.clearColor : nsColor(bg);
     [_panelView drawGlyph:ch
                   atPoint:NSMakePoint(p.x, p.y)
-      withForegroundColor:nscolor(fg)
+      withForegroundColor:nsColor(fg)
           backgroundColor:bgColor];
 }
 
@@ -135,9 +136,13 @@ void LcdPanelDevice::Gfx_ops::set_cursor_size(Point size) {
 }
 
 void LcdPanelDevice::Gfx_ops::set_cursor_color(Color c) {
-    [_panelView setCursorColor:nscolor(c)];
+    [_panelView setCursorColor:nsColor(c)];
 }
 
 void LcdPanelDevice::Gfx_ops::set_cursor_blink_period(float seconds) {
     [_panelView setCursorBlinkPeriod:seconds];
+}
+
+void LcdPanelDevice::Gfx_ops::copy(Point src, Point dst, Point sz) {
+    [_panelView copyRect:NSMakeRect(src.x, src.y, sz.x, sz.y) toPoint:NSMakePoint(dst.x, dst.y)];
 }

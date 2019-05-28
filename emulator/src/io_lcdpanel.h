@@ -19,8 +19,8 @@ class LcdPanelDevice : public IoDevice {
         
         LcdPanelView *_panelView;
         
-        static NSColor *nscolor(Color c);
-        static NSRect nsrect(Point p1, Point p2);
+        static NSColor *nsColor(Color c);
+        static NSRect nsRectFromPoints(Point p1, Point p2);
 
     public:
         void set_panel_view(LcdPanelView *panelView) {
@@ -45,6 +45,8 @@ class LcdPanelDevice : public IoDevice {
         void set_cursor_size(Point size) override;
         void set_cursor_color(Color c) override;
         void set_cursor_blink_period(float seconds) override;
+
+        void copy(Point src, Point dst, Point sz) override;
     };
     
     Gfx_ops _gfx_ops;

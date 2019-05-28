@@ -136,7 +136,7 @@ static constexpr size_t PANEL_HEIGHT = 600;
 
 - (void)fillRect:(NSRect)rect withColor:(NSColor *)c {
     CGContextRef gfx = self.gfxContext.CGContext;
-    
+
     CGContextSetFillColorWithColor(gfx, c.CGColor);
     CGContextFillRect(gfx, rect);
     
@@ -214,10 +214,12 @@ withForegroundColor:(NSColor *)fg
         NSBackgroundColorAttributeName: bg,
         NSFontAttributeName: _font,
     };
+    
     [NSGraphicsContext saveGraphicsState];
     [NSGraphicsContext setCurrentContext:self.gfxContext];
     [text drawAtPoint:p withAttributes:attr];
     [NSGraphicsContext restoreGraphicsState];
+    
     [self setNeedsDisplay:YES];
 }
 
@@ -257,6 +259,15 @@ withForegroundColor:(NSColor *)fg
 - (void)setCursorBlinkPeriod:(NSTimeInterval)blinkPeriod {
     _cursorBlinkPeriod = blinkPeriod;
     [self startCursorBlinkTimer];
+}
+
+- (void)copyRect:(NSRect)rect toPoint:(NSPoint)dest {
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext:self.gfxContext];
+    [_panelImage drawAtPoint:dest fromRect:rect operation:NSCompositingOperationCopy fraction:1];
+    [NSGraphicsContext restoreGraphicsState];
+    
+    [self setNeedsDisplay:YES];
 }
 
 @end

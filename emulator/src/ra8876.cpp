@@ -43,6 +43,18 @@ static constexpr uint8_t DCR1_DRWRR =   0x30;   // Draw round-rectangle
 static constexpr uint8_t DCR1_FILL =    0x40;   // Fill (0 = outline, 1 = fill)
 static constexpr uint8_t DCR1_RUN =     0x80;   // Start drawing / drawing in progress
 
+// BTE_CTRL0 (register $90) register values
+static constexpr uint8_t BTE_CTRL0_RUN = 0x10;  // Start BTE / BTE is busy
+
+// BTE_CTRL1 (register $91) register values
+// We only support the listed OP & ROP values for now.
+static constexpr uint8_t BTE_OP_MEMCPY = 0x02;  // Memory copy with ROP
+
+static constexpr uint8_t BTE_ROP_BLACK = 0x00;  // ROP = Black (i.e. zero-fill)
+static constexpr uint8_t BTE_ROP_S1 = 0xA0;     // ROP = Source1
+static constexpr uint8_t BTE_ROP_S0 = 0xC0;     // ROP = Source0
+static constexpr uint8_t BTE_ROP_WHITE = 0xF0;  // ROP = White (i.e. one-fill)
+
 // Register numbers within the RA8876 chip
 static constexpr uint8_t REG_SRR = 0x00;        // Software Reset Register
 static constexpr uint8_t REG_CCR = 0x01;        // Chip Configuration Register
@@ -136,6 +148,45 @@ static constexpr uint8_t REG_DEHR1 = 0x7C;      // Draw Circle/Ellipse/Circle Sq
 static constexpr uint8_t REG_DEVR0 = 0x7D;      // Draw Circle/Ellipse/Circle Square Center Y-coords 0
 static constexpr uint8_t REG_DEVR1 = 0x7E;      // Draw Circle/Ellipse/Circle Square Center Y-coords 1
 
+static constexpr uint8_t REG_BTE_CTRL0 = 0x90;  // BTE Function Control Register 0
+static constexpr uint8_t REG_BTE_CTRL1 = 0x91;  // BTE Function Control Register 1
+static constexpr uint8_t REG_BTE_COLR = 0x92;   // Source 0/1 & Destination Color Depth
+static constexpr uint8_t REG_S0_STR0 = 0x93;    // Source 0 memory start address 0
+static constexpr uint8_t REG_S0_STR1 = 0x94;    // Source 0 memory start address 1
+static constexpr uint8_t REG_S0_STR2 = 0x95;    // Source 0 memory start address 2
+static constexpr uint8_t REG_S0_STR3 = 0x96;    // Source 0 memory start address 3
+static constexpr uint8_t REG_S0_WTH0 = 0x97;    // Source 0 image width 0
+static constexpr uint8_t REG_S0_WTH1 = 0x98;    // Source 0 image width 1
+static constexpr uint8_t REG_S0_X0 = 0x99;      // Source 0 Window Upper-Left corner X-coordinates 0
+static constexpr uint8_t REG_S0_X1 = 0x9A;      // Source 0 Window Upper-Left corner X-coordinates 1
+static constexpr uint8_t REG_S0_Y0 = 0x9B;      // Source 0 Window Upper-Left corner Y-coordinates 0
+static constexpr uint8_t REG_S0_Y1 = 0x9C;      // Source 0 Window Upper-Left corner Y-coordinates 1
+static constexpr uint8_t REG_S1_STR0 = 0x9D;    // Source 1 memory start address 0
+static constexpr uint8_t REG_S1_STR1 = 0x9E;    // Source 1 memory start address 1
+static constexpr uint8_t REG_S1_STR2 = 0x9F;    // Source 1 memory start address 2
+static constexpr uint8_t REG_S1_STR3 = 0xA0;    // Source 1 memory start address 3
+static constexpr uint8_t REG_S1_WTH0 = 0xA1;    // Source 1 image width 0
+static constexpr uint8_t REG_S1_WTH1 = 0xA2;    // Source 1 image width 1
+static constexpr uint8_t REG_S1_X0 = 0xA3;      // Source 1 Window Upper-Left corner X-coordinates 0
+static constexpr uint8_t REG_S1_X1 = 0xA4;      // Source 1 Window Upper-Left corner X-coordinates 1
+static constexpr uint8_t REG_S1_Y0 = 0xA5;      // Source 1 Window Upper-Left corner Y-coordinates 0
+static constexpr uint8_t REG_S1_Y1 = 0xA6;      // Source 1 Window Upper-Left corner Y-coordinates 1
+static constexpr uint8_t REG_DT_STR0 = 0xA7;    // Destination memory start address 0
+static constexpr uint8_t REG_DT_STR1 = 0xA8;    // Destination memory start address 1
+static constexpr uint8_t REG_DT_STR2 = 0xA9;    // Destination memory start address 2
+static constexpr uint8_t REG_DT_STR3 = 0xAA;    // Destination memory start address 3
+static constexpr uint8_t REG_DT_WTH0 = 0xAB;    // Destination image width 0
+static constexpr uint8_t REG_DT_WTH1 = 0xAC;    // Destination image width 1
+static constexpr uint8_t REG_DT_X0 = 0xAD;      // Destination Window Upper-Left corner X-coordinates 0
+static constexpr uint8_t REG_DT_X1 = 0xAE;      // Destination Window Upper-Left corner X-coordinates 1
+static constexpr uint8_t REG_DT_Y0 = 0xAF;      // Destination Window Upper-Left corner Y-coordinates 0
+static constexpr uint8_t REG_DT_Y1 = 0xB0;      // Destination Window Upper-Left corner Y-coordinates 1
+static constexpr uint8_t REG_BTE_WTH0 = 0xB1;   // BTE Window Width 0
+static constexpr uint8_t REG_BTE_WTH1 = 0xB2;   // BTE Window Width 1
+static constexpr uint8_t REG_BTE_HIG0 = 0xB3;   // BTE Window Height 0
+static constexpr uint8_t REG_BTE_HIG1 = 0xB4;   // BTE Window Height 1
+static constexpr uint8_t REG_APB_CTRL = 0xB5;   // Alpha Blending
+
 static constexpr uint8_t REG_CCR0 = 0xCC;       // Character Control Register 0
 static constexpr uint8_t REG_CCR1 = 0xCD;       // Character Control Register 1
 
@@ -154,6 +205,11 @@ static constexpr uint8_t REG_SDR_REF_ITVL0 = 0xE2; // SDRAM auto refresh interva
 static constexpr uint8_t REG_SDR_REF_ITVL1 = 0xE3; // SDRAM auto refresh interval
 static constexpr uint8_t REG_SDRCR = 0xE4;      // SDRAM Control Register
 #pragma clang diagnostic pop
+
+//static
+const RA8876::Color RA8876::Color::BLACK(0, 0, 0);
+//static
+const RA8876::Color RA8876::Color::WHITE(255, 255, 255);
 
 RA8876::RA8876(Gfx_ops &gfx_ops) : _gfx_ops(gfx_ops) {
     reset();
@@ -231,6 +287,19 @@ RA8876::Point RA8876::get_ellipse_radii() const {
     return get_pt(REG_ELL_A0);
 }
 
+RA8876::Point RA8876::get_source0_pt() const {
+    return get_pt(REG_S0_X0);
+}
+RA8876::Point RA8876::get_source1_pt() const {
+    return get_pt(REG_S1_X0);
+}
+RA8876::Point RA8876::get_dest_pt() const {
+    return get_pt(REG_DT_X0);
+}
+RA8876::Point RA8876::get_dest_sz() const {
+    return get_pt(REG_BTE_WTH0);
+}
+
 void RA8876::advance_text_position() {
     int char_width = 0;
     int char_height = 0;
@@ -265,6 +334,43 @@ void RA8876::advance_text_position() {
     set_text_pt(p);
 }
 
+void RA8876::run_bte_operation() {
+    uint8_t const bte_ctrl1 = _regs.at(REG_BTE_CTRL1);
+    uint8_t const bte_rop = bte_ctrl1 & 0xF0;
+    uint8_t const bte_op = bte_ctrl1 & 0x0F;
+    
+    switch (bte_op) {
+        case BTE_OP_MEMCPY:
+            bte_op_memcpy(bte_rop);
+            break;
+        default:
+            cout << "RA8876: ignoring unsupported BTE operation $" << to_hex(bte_op) << endl;
+            break;
+    }
+}
+
+void RA8876::bte_op_memcpy(uint8_t bte_rop) {
+    switch (bte_rop) {
+        case BTE_ROP_BLACK:
+        case BTE_ROP_WHITE: {
+            Color c = bte_rop == BTE_ROP_BLACK ? Color::BLACK : Color::WHITE;
+            Point p1 = get_dest_pt();
+            Point sz = get_dest_sz();
+            _gfx_ops.fill_rect(c, p1, Point(p1.x + sz.x - 1, p1.y + sz.y - 1));
+            break;
+        }
+        case BTE_ROP_S0:
+        case BTE_ROP_S1: {
+            Point src = bte_rop == BTE_ROP_S0 ? get_source0_pt() : get_source1_pt();
+            _gfx_ops.copy(src, get_dest_pt(), get_dest_sz());
+            break;
+        }
+        default:
+            cout << "RA8876: ignoring unsupported BTE ROP $" << to_hex(bte_rop) << endl;
+            break;
+    }
+}
+
 void RA8876::write_data(uint8_t value) {
     // The approach is to whitelist any write operations, making sure we mask off the bits that
     // are read-only in the register space. Some registers trigger operations, in which case we
@@ -276,6 +382,7 @@ void RA8876::write_data(uint8_t value) {
             }
             break;
         case REG_CCR:
+        case REG_BTE_COLR:
             wr(value & 0x7F);
             break;
         case REG_MACR:
@@ -338,11 +445,25 @@ void RA8876::write_data(uint8_t value) {
         case REG_ELL_A1:
         case REG_ELL_B1:
         case REG_FLDR:
+        case REG_S0_WTH1:
+        case REG_S1_WTH1:
+        case REG_DT_WTH1:
+        case REG_S0_X1:
+        case REG_S0_Y1:
+        case REG_S1_X1:
+        case REG_S1_Y1:
+        case REG_DT_X1:
+        case REG_DT_Y1:
+        case REG_BTE_WTH1:
+        case REG_BTE_HIG1:
             wr(value & 0x1F);
             break;
         case REG_MISA0:
         case REG_CVSSA0:
         case REG_CVS_IMWTH0:
+        case REG_S0_WTH0:
+        case REG_S1_WTH0:
+        case REG_DT_WTH0:
             wr(value & 0xFC);
             break;
         case REG_SDRCR:
@@ -385,6 +506,15 @@ void RA8876::write_data(uint8_t value) {
         case REG_SDRMD:
         case REG_SDR_REF_ITVL0:
         case REG_SDR_REF_ITVL1:
+        case REG_S0_X0:
+        case REG_S0_Y0:
+        case REG_S1_X0:
+        case REG_S1_Y0:
+        case REG_DT_X0:
+        case REG_DT_Y0:
+        case REG_BTE_WTH0:
+        case REG_BTE_HIG0:
+        case REG_BTE_CTRL1:
             wr(value);
             break;
         case REG_DCR0:
@@ -488,6 +618,12 @@ void RA8876::write_data(uint8_t value) {
             _gfx_ops.set_cursor_size(Point(width, height));
             break;
         }
+        case REG_BTE_CTRL0:
+            wr(value & 0x01);
+            if ((value & BTE_CTRL0_RUN) != 0) {
+                run_bte_operation();
+            }
+            break;
         default:
             cout << "RA8876: ignoring write of $" << to_hex(value)
                  << " to register $" << to_hex(_address) << endl;

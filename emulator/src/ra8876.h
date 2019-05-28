@@ -22,6 +22,9 @@ public:
         uint8_t r, g, b;
 
         Color(uint8_t rr, uint8_t gg, uint8_t bb) : r(rr), g(gg), b(bb) {}
+        
+        static const Color BLACK;
+        static const Color WHITE;
     };
     class Gfx_ops {
     public:
@@ -43,6 +46,8 @@ public:
         virtual void set_cursor_size(Point size) = 0;
         virtual void set_cursor_color(Color c) = 0;
         virtual void set_cursor_blink_period(float seconds) = 0;
+        
+        virtual void copy(Point src, Point dst, Point sz) = 0;
     };
 
 private:
@@ -73,8 +78,16 @@ private:
     Point get_ellipse_pt() const;
     Point get_ellipse_radii() const;
     
+    Point get_source0_pt() const;
+    Point get_source1_pt() const;
+    Point get_dest_pt() const;
+    Point get_dest_sz() const;
+    
     void advance_text_position();
     
+    void run_bte_operation();
+    void bte_op_memcpy(uint8_t bte_rop);
+
 public:
     RA8876(Gfx_ops &gfx_ops);
     

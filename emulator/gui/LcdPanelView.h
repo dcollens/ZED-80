@@ -48,6 +48,8 @@ withForegroundColor:(NSColor *)fg
 - (void)setCursorColor:(NSColor *)c;
 - (void)setCursorBlinkPeriod:(NSTimeInterval)blinkPeriod;
 
+- (void)copyRect:(NSRect)rect toPoint:(NSPoint)dest;
+
 @end
 
 NS_ASSUME_NONNULL_END
