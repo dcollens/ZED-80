@@ -1,3 +1,6 @@
+Getting Started
+===============
+
 To get zasm, go to:
     https://k1.spdns.de/Develop/Projects/zasm/Distributions/
     Scroll to the bottom and download the file
@@ -12,3 +15,36 @@ To program the ROM run:
 
 On Dan's MacBook, you can connect to the serial port with:
     minicom usbserial
+
+
+Shared Library Routines
+=======================
+
+The 'lib' folder holds common library source code that is reused between multiple assembly
+language programs. We reuse these library routines as source code because the assembler we
+use (zasm) does not support output as a relocatable object file with separate linker phase.
+
+Instead, we include the assembly language source directly into each top-level program that
+needs any given function.
+
+To avoid including unused routines, we separate each function into its own file. There is
+no automated dependency resolution: the onus is on the top-level program to (recursively)
+include all the files for all the dependencies of each required routine. (This is because
+there is no way to protect against multiple inclusion in zasm.)
+
+Some functions require some static data too. For example, the pseudorandom number
+generator functions use static data to hold the random seed value. These data declarations
+must be included into a DATA segment instead of the CODE segment, so they are kept in
+a separate file.
+
+The convention in the 'lib' folder is to name each file after the function it defines. The
+file that contains static data declarations for a module is named "data_<module>.inc".
+For example:
+    - lib/rand_init.inc
+    - lib/rand16.inc
+    - lib/rand16_modn.inc
+    - lib/data_rand.inc
+
+Note that this means that functions in the shared library should be named with a consistent
+mnemonic prefix (e.g. "sio", "pio", "ctc", "joy", "rand", "math", "lcd", "kbd", etc.) to
+prevent collisions both in the assembly language symbol namespace and in the filesystem.

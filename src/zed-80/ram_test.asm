@@ -29,7 +29,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #code TEXT,0x4000
 
-#local
+; Careful, don't put anything before "init", as this is the entry point to our code.
 init::
     ; zero the DATA segment
     ld	    hl, DATA
@@ -39,30 +39,12 @@ init::
     ; run the test program
     call    joy_test
     ret
-#endlocal
 
-; void bzero(uint8_t *ptr, uint16_t len)
-; NOTE: ptr in HL, len in BC
-; - zero "len" bytes starting at address "ptr"
-#local
-bzero::
-    push    de
-    ld	    a, b
-    or	    c
-    jr	    z, done		; len is 0
-    ld	    (hl), 0		; zero first byte of DATA seg
-    dec	    bc
-    ld	    a, b
-    or	    c
-    jr	    z, done		; len is 1
-    ld	    e, l
-    ld	    d, h
-    inc	    de			; de = hl + 1
-    ldir			; zero last len-1 bytes
-done:
-    pop	    de
-    ret
-#endlocal
+; Include library routines.
+#include "lib/bzero.inc"
+#include "lib/seg_init.inc"
+#include "lib/seg0_write.inc"
+#include "lib/seg1_write.inc"
 
 ; void joy_test()
 #local
@@ -136,33 +118,9 @@ done_fire:
     ret
 #endlocal
 
-; void seg_init()
-seg_init::
-    xor	    a
-    call    seg0_write
-    call    seg1_write
-    ret
-
-; void seg0_write(uint8_t bits)
-; - parameter passed in A
-; - write raw bits to first 7-segment display register
-seg0_write::
-    ld	    (Seg0_data), a
-    out	    (PORT_SEG0), a
-    ret
-
-; void seg1_write(uint8_t bits)
-; - parameter passed in A
-; - write raw bits to second 7-segment display register
-seg1_write::
-    ld	    (Seg1_data), a
-    out	    (PORT_SEG1), a
-    ret
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; data segment immediately follows code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #data DATA,TEXT_end
 ; define static variables here
-Seg0_data:: defs 1	; current value of first 7-segment display byte
-Seg1_data:: defs 1	; current value of second 7-segment display byte
+#include "lib/data_seg.inc"
