@@ -132,7 +132,9 @@ init::
     ld	    sp, RAM_end-1
     ; reset peripherals
     M_pio_reset
+#if !defined(EMULATOR)
     M_sio_reset
+#endif
     M_ctc_reset
     ; set up interrupts
     ld	    a, hi(IVT)
@@ -143,17 +145,21 @@ init::
     call    seg_init
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
+#if defined(EMULATOR)
+    call    0x4000
+#else
     call    sio_init
     ; print startup banner
     M_sio_puts startup_msg
     call    cmd_loop
+#endif
     jr	    $		    ; loop forever
 
 ; Include library routines.
-#include "lib/delay_1ms.inc"
 #include "lib/seg_init.inc"
 #include "lib/seg0_write.inc"
 #include "lib/seg1_write.inc"
+#include "lib/delay_1ms.inc"
 
 ; void ctc_init()
 #local
