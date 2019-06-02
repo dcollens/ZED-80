@@ -93,17 +93,17 @@ M_lcd_rand_ellipse_fill macro
 
 M_sio_puts  macro str
     ; Destroys A
-    push    hl
-    ld	    hl, &str
-    call    sio_puts
-    pop	    hl
+    push    de
+    ld	    de, &str
+    call    sioA_puts
+    pop	    de
     endm
 
 M_sio_putc  macro ch
     ; Destroys A
     push    hl
     ld	    l, &ch
-    call    sio_putc
+    call    sioA_putc
     pop	    hl
     endm
 
@@ -130,14 +130,6 @@ init::
 ;    call    delay_ms
 ;    call    lcd_test_drawing
     ret
-
-; Include library routines.
-#include "lib/bzero.inc"
-#include "lib/seg_init.inc"
-#include "lib/seg0_write.inc"
-#include "lib/seg1_write.inc"
-#include "lib/delay_1ms.inc"
-#include "lib/delay_ms.inc"
 
 hello_message::
     .text   "ZED-80 Personal Computer", NUL
@@ -567,7 +559,7 @@ zero:
     ld      a, b
     ; The following routine divides AC by DE and places the quotient in AC and
     ; the remainder in HL.
-    call    div_ac_de
+    call    divmod16
     push    hl
     ld      b, a
     ld      de, (Forth_orig_de)
@@ -949,6 +941,7 @@ no_skip:
 
 ; - pushes a random number mod N onto the stack.
     M_forth_native "rndn", 0, rndn
+    ld	    hl, bc
     call    rand16_modn
     ld      bc, hl
     jp      forth_next
@@ -1171,34 +1164,29 @@ parse_hex16::
 ; - parses an 8-bit hex value from "s".
 #local
 parse_hex8::
-    push    de
     push    bc
 
     ; Parse first nybble.
-    ld      bc, hl
-    ld      l, (hl)
+    ld      a, (hl)
     call    hex2bin
 
     ; Shift left into high nybble.
-    ld      e, l
-    sla     e
-    sla     e
-    sla     e
-    sla     e
+    add	    a
+    add	    a
+    add	    a
+    add	    a
+    ld	    b, a
 
     ; Parse second nybble.
-    ld      hl, bc
     inc     hl
-    ld      l, (hl)
+    ld      a, (hl)
     call    hex2bin
 
     ; Combine nybbles.
-    ld      a, e
-    or      l
+    or      b
     ld      l, a
 
     pop     bc
-    pop     de
     ret
 #endlocal
 
@@ -1292,7 +1280,6 @@ lcd_init::
     push    de
     push    hl
     in	    a, (PORT_LCDCMD)	    ; read status byte
-    ld	    l, a
     call    seg_writehex
     ; RA8876_initial()
     ;	RA8876_SW_Reset();
@@ -1766,14 +1753,17 @@ lcd_wait_idle::
 lcd_puthex8::
     push    hl
     ld	    h, l
-    srl	    l
-    srl	    l
-    srl	    l
-    srl	    l
+    ld	    a, l
+    rrca
+    rrca
+    rrca
+    rrca
     call    bin2hex
+    ld	    l, a
     call    lcd_putc
-    ld	    l, h
+    ld	    a, h
     call    bin2hex
+    ld	    l, a
     call    lcd_putc
     pop	    hl
     ret
@@ -1791,37 +1781,34 @@ lcd_puthex16::
 ; - set up random coordinates for line start & line end
 #local
 lcd_rand_line_coords::
-    push    bc
     push    de
     push    hl
 do_line_coords:
-    ld	    bc, LCD_WIDTH
+    ld	    hl, LCD_WIDTH
     call    rand16_modn
     ex	    de, hl
-    ld	    bc, LCD_HEIGHT
+    ld	    hl, LCD_HEIGHT
     call    rand16_modn
     call    lcd_line_start_xy	    ; random start X,Y
-    ld	    bc, LCD_WIDTH
+    ld	    hl, LCD_WIDTH
     call    rand16_modn
     ex	    de, hl
-    ld	    bc, LCD_HEIGHT
+    ld	    hl, LCD_HEIGHT
     call    rand16_modn
     call    lcd_line_end_xy	    ; random end X,Y
     pop	    hl
     pop	    de
-    pop	    bc
     ret
 
 ; void lcd_rand_triangle_coords()
 ; - set up random coordinates for the three triangle vertices
 lcd_rand_triangle_coords::
-    push    bc
     push    de
     push    hl
-    ld	    bc, LCD_WIDTH
+    ld	    hl, LCD_WIDTH
     call    rand16_modn
     ex	    de, hl
-    ld	    bc, LCD_HEIGHT
+    ld	    hl, LCD_HEIGHT
     call    rand16_modn
     call    lcd_triangle_xy	    ; random triangle 3rd vertex X,Y
     jr	    do_line_coords	    ; random triangle 1st & 2nd vertices
@@ -1830,24 +1817,22 @@ lcd_rand_triangle_coords::
 ; void lcd_rand_ellipse_coords()
 ; - set up random coordinates and size for ellipse/circle
 lcd_rand_ellipse_coords::
-    push    bc
     push    de
     push    hl
-    ld	    bc, LCD_WIDTH
+    ld	    hl, LCD_WIDTH
     call    rand16_modn
     ex	    de, hl
-    ld	    bc, LCD_HEIGHT
+    ld	    hl, LCD_HEIGHT
     call    rand16_modn
     call    lcd_ellipse_xy	    ; random center X,Y
-    ld	    bc, LCD_WIDTH/2
+    ld	    hl, LCD_WIDTH/2
     call    rand16_modn
     ex	    de, hl
-    ld	    bc, LCD_HEIGHT/2
+    ld	    hl, LCD_HEIGHT/2
     call    rand16_modn
     call    lcd_ellipse_radii	    ; random radii
     pop	    hl
     pop	    de
-    pop	    bc
     ret
 
 ; void strcpy(uint8_t *dst (HL), uint8_t *src (BC))
@@ -1869,146 +1854,6 @@ loop:
     pop     bc
     pop     hl
 
-    ret
-#endlocal
-
-rand_init::
-    push    hl
-    ld	    hl, 0x2019
-    ld	    (Rand16_seed1), hl
-    ld	    hl, 0xA05F
-    ld	    (Rand16_seed2), hl
-    pop	    hl
-    ret
-
-; uint16_t rand16()
-; Inputs:
-;   (Rand16_seed1) contains a 16-bit seed value
-;   (Rand16_seed2) contains a NON-ZERO 16-bit seed value
-; Outputs:
-;   HL is the result
-;   BC, DE is preserved
-; Destroys:
-;   AF
-; cycle: 4,294,901,760 (almost 4.3 billion)
-; 160cc
-; 26 bytes
-rand16:
-    push bc
-    ld hl,(Rand16_seed1)
-    ld b,h
-    ld c,l
-    add hl,hl
-    add hl,hl
-    inc l
-    add hl,bc
-    ld (Rand16_seed1),hl
-    ld hl,(Rand16_seed2)
-    add hl,hl
-    sbc a,a
-    and %00101101
-    xor l
-    ld l,a
-    ld (Rand16_seed2),hl
-    add hl,bc
-    pop bc
-    ret
-
-; uint16_t rand16_modn(uint16_t n)
-; - pass "n" in BC
-; - returns a 16-bit pseudo-random number on the interval [0, n) in HL
-rand16_modn::
-    push    de
-    ld	    d, b
-    ld	    e, c	; DE = BC
-    call    rand16	; HL = rand16()
-    ld	    a, h
-    ld	    c, l	; AC = HL
-    call    div_ac_de	; (AC, HL) = divmod16(AC, DE)
-    pop	    de		; we don't want the quotient, only the remainder in HL
-    ret
-
-; (uint32_t (DEHL)) mul16(uint16_t a (DE), uint16_t, b (BC))
-; http://z80-heaven.wikidot.com/math#toc4
-#local
-mul16::
-    ld      hl, 0
-    ld      a, 16
-
-loop:
-    add     hl, hl
-    rl      e
-    rl      d
-    jr      nc, skip
-    add     hl, bc
-    jr      nc, skip
-    inc     de
-skip:
-    dec     a
-    jr      nz, loop
-    ret
-#endlocal
-
-; (uint16_t, uint16_t) divmod16(uint16_t n, uint16_t d)
-; - divides "n" by "d", returning n / d and n % d
-; - pass "n" in DE, "d" in BC
-; - returns quotient (n/d) in DE, remainder (n%d) in HL
-#local
-divmod16_me::
-    ld	    a, 16	; max 16 iterations
-    ld	    hl, 0
-    jr	    start
-loop:
-    add	    hl, bc	; HL += "d"
-loop2:
-    dec	    a		; decrement loop counter
-    ret	    z		; return if done
-start:
-    sla	    e
-    rl	    d		; shift DE left 1, high bit to carry flag
-    adc	    hl, hl	; HL = (HL << 1) + carry, with carry flag receiving shifted-out bit
-    sbc	    hl, bc	; HL = HL - "d" - carry
-    jr	    nc, loop	; jump if carry == 0
-    inc	    e		; set low bit of DE
-    jr	    loop2
-#endlocal
-
-#local
-divmod16_z80heaven::
-     ld a,16        ;7
-     ld hl,0        ;10
-     jp $+5         ;10
-DivLoop:
-       add hl,bc    ;--
-       dec a        ;64
-       ret z        ;86
-
-       sla e        ;128
-       rl d         ;128
-       adc hl,hl    ;240
-       sbc hl,bc    ;240
-       jr nc,DivLoop ;23|21
-       inc e        ;--
-       jp DivLoop+1
-#endlocal
-
-; The following routine divides AC by DE and places the quotient in AC and the remainder in HL.
-#local
-div_ac_de::
-    ld	    hl, 0
-    ld	    b, 16
-
-loop:
-    sll	    c
-    rla
-    adc	    hl, hl
-    sbc	    hl, de
-    jr	    nc, $+4
-    add	    hl, de
-    dec	    c
-    
-    djnz    loop
-    
     ret
 #endlocal
 
@@ -2044,18 +1889,8 @@ poll:
     jr	    z, poll
     in	    a, (PORT_KBD)	; read keyboard latch
     cpl				; invert signal (shift register is fed from ~KDAT)
-    ld	    l, a
-    ; clear shift register to prepare for next byte
-; FALLING THROUGH!!!
-
-; void pio_srclr()
-; - clear shift register by toggling ~SRCLR line, leaving it HIGH
-pio_srclr::
-    xor	    a
-    out	    (PORT_PIOADAT), a
-    ld	    a, 0x08	; bit 3
-    out	    (PORT_PIOADAT), a
-    ret
+    ld	    l, a		; return value in L
+    jp	    pio_srclr		; clear shift register to prepare for next byte
 #endlocal
 
 ; uint8_t kbd_get_keycode()
@@ -2254,211 +2089,13 @@ Key_shift_tbl:
     .byte "PQRSTUVWXYZ{|}~", $7F ; $70-7F
 #endlocal
 
-; uint8_t bin2hex(uint8_t val)
-; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
-#local
-bin2hex::
-    ld	    a, l
-    and	    0xF
-    cp	    0xA
-    jr	    c, decimal
-    add	    'A'-10
-    ld	    l, a
-    ret
-decimal:
-    add	    '0'
-    ld	    l, a
-    ret
-#endlocal
-
-; uint8_t hex2bin(uint8_t val)
-; - converts the hexadecimal character (0-9,A-F,a-f) to a 4-bit value.
-; - assumes that the character is a valid hex digit, upper or lower case.
-#local
-hex2bin::
-    ld	    a, l
-    sub     a, '0'
-    cp      10
-    jr      c, done         ; If we borrowed, then it's less than 10 and we're done.
-
-    ; Adjust for A-F.
-    sub     a, 'A'-'0'-10
-
-    ; Handle lower case (has 0x20 OR'ed in).
-    and     0x0F
-
-done:
-    ld	    l, a
-    ret
-#endlocal
-
-; void sio_putc(uint8_t ch)
-; - write the specified character "ch" to port A
-#local
-sio_putc::
-waitTX:
-    ; wait until transmitter is idle
-    in	    a, (PORT_SIOACTL)
-    bit	    SIORR0_IDX_TBE, a
-    jr	    z, waitTX
-    ; write output character
-    ld	    a, l
-    out	    (PORT_SIOADAT), a	; send byte out serial port
-    ret
-#endlocal
-
-; void sio_puts(uint8_t *text)
-; - write the NUL-terminated string at "text" to port A
-#local
-sio_puts::
-    push    hl
-    push    bc
-nextByte:
-    ld	    a, (hl)
-    inc	    hl
-    or	    a		; fast test a==0
-    jr	    z, done
-    ld	    b, a
-waitTX:
-    ; wait until transmitter is idle
-    in	    a, (PORT_SIOACTL)
-    bit	    SIORR0_IDX_TBE, a
-    jr	    z, waitTX
-    ; write output character
-    ld	    a, b
-    out	    (PORT_SIOADAT), a	; send byte out serial port
-    jr	    nextByte
-done:
-    pop	    bc
-    pop	    hl
-    ret
-#endlocal
-
-; void sio_puthex8(uint8_t val)
-; - writes the specified 8-bit value "val" as a pair of hex digits to port A
-sio_puthex8::
-    push    hl
-    ld	    h, l
-    srl	    l
-    srl	    l
-    srl	    l
-    srl	    l
-    call    bin2hex
-    call    sio_putc
-    ld	    l, h
-    call    bin2hex
-    call    sio_putc
-    pop	    hl
-    ret
-
-; void sio_puthex16(uint16_t val)
-; - writes the specified 16-bit value "val" as a quad of hex digits to port A
-sio_puthex16::
-    push    hl
-    ld	    l, h
-    call    sio_puthex8
-    pop	    hl
-    jr	    sio_puthex8
-
-; void seg_writehex(uint8_t val)
-; - write the two hex digits of "val" to the 7-segment displays
-seg_writehex::
-    push    hl
-    call    seg1_writehex
-    ld	    a, l
-    rlca
-    rlca
-    rlca
-    rlca
-    ld	    l, a
-    call    seg0_writehex
-    pop	    hl
-    ret
-
-#local
-; void seg0_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg0_writehex::
-    push    hl
-    push    bc
-    ld	    bc, hex2seg_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-    ld	    a, (Seg0_data)
-    and	    SEG_DP
-    or	    (hl)    ; a = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
-    call    seg0_write
-    pop	    bc
-    pop	    hl
-    ret
-
-; void seg1_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg1_writehex::
-    push    hl
-    push    bc
-    ld	    bc, hex2seg_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-    ld	    a, (Seg1_data)
-    and	    SEG_DP
-    or	    (hl)    ; a = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
-    call    seg1_write
-    pop	    bc
-    pop	    hl
-    ret
-
-hex2seg_table:
-    ; 0
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
-    ; 1
-    .byte SEG_B | SEG_C
-    ; 2
-    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
-    ; 3
-    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
-    ; 4
-    .byte SEG_F | SEG_G | SEG_B | SEG_C
-    ; 5
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
-    ; 6
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; 7
-    .byte SEG_A | SEG_B | SEG_C
-    ; 8
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
-    ; 9
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
-    ; A
-    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
-    ; b
-    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; C
-    .byte SEG_A | SEG_D | SEG_E | SEG_F
-    ; d
-    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
-    ; E
-    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
-    ; F
-    .byte SEG_A | SEG_E | SEG_F | SEG_G
-#endlocal
+#include library "libcode"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; data segment immediately follows code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #data DATA,TEXT_end
 ; define static variables here
-#include "lib/data_seg.inc"
-
-Rand16_seed1:: defs 2	; seed value for rand16() routine
-Rand16_seed2:: defs 2	; seed value for rand16() routine
-
 Kbd_modifiers:: defs 1	; active modifier keys (1=pressed, 0=released), see KMOD_xxx_BIT
 
 Gets_buffer:: defs 100  ; input buffer for lcd_gets() routine
@@ -2475,3 +2112,4 @@ Forth_base:: defs 2     ; Current base for printing numbers.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
+#include library "libdata"

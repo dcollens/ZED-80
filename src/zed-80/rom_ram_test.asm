@@ -6,9 +6,6 @@
 ; 16 bits: HL
 ; 32 bits: DEHL
 ;
-; Additional parameters are passed on the stack, left-to-right.
-; Parameters and return values larger than 32 bits are passed on the stack (return value
-; space set up by caller as a hidden first argument).
 ; Callee saves/restores any modified registers.
 ; Caller pops arguments after call returns.
 ; AF registers are scratch (caller preserves, if needed).
@@ -31,12 +28,6 @@
 ; PG1: 0x4000-0x7FFF RAM physical page 8 (RAM page 0)
 ; PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)
 ; PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
-
-#data RAM, 0x4000, 0xC000
-; define static variables here
-Sysreg::    defs 1	; current value of SYSREG
-Seg0_data:: defs 1	; current value of first 7-segment display byte
-Seg1_data:: defs 1	; current value of second 7-segment display byte
 
 #code ROM, 0, 0x4000
 
@@ -123,10 +114,7 @@ init::
     ld	    i, a	    ; I gets high byte of IVT address
     im	    2		    ; select interrupt mode 2
     ei
-    ; clear 7-segment display
-    ld	    l, 0
-    call    seg0_write
-    call    seg1_write
+    call    seg_init
     call    snd_test	    ; boot sound
 ;    call    ctc_test	    ; need to set up CTC to get SIO working (need baud rate gen)
 ;    call    sio_test
@@ -136,10 +124,6 @@ init::
     call    joy_test	    ; may as well run the joystick test if we get here
     jr	    $		    ; loop forever
 
-; Include library routines.
-#include "lib/delay_1ms.inc"
-#include "lib/delay_ms.inc"
-
 ; void countup()
 #local
 countup::
@@ -147,7 +131,7 @@ countup::
     ld	    h, 0	; counter in h
 ; increment count every 500ms and toggle DP
 forever:
-    ld	    l, h
+    ld	    a, h
     call    seg_writehex    ; display counter
     ld	    l, SEG_DP
     call    seg0_toggle	    ; toggle DP
@@ -209,13 +193,13 @@ forever:
     add	    a, a
     add	    a, a
     add	    a, a		; shift SRPRTY left 3 bits to bit 7 (SEG_DP)
-    ld	    l, a
     call    seg0_write
     ; read keyboard latch, displaying hex value after inverting
     in	    a, (PORT_KBD)
     cpl
     ld	    l, a
     call    pio_srclr		; clear shift register to prepare for next byte
+    ld	    a, l
     call    seg_writehex
     jr	    forever
     pop	    bc
@@ -231,15 +215,6 @@ pioB_cfg:
     .byte 0xFF	    ; everything is an input
     .byte PIOC_ICTL | PIOICTL_INTDIS | PIOICTL_OR | PIOICTL_HIGH
 #endlocal
-
-; void pio_srclr()
-; - clear shift register by toggling ~SRCLR line, leaving it HIGH
-pio_srclr::
-    xor	    a
-    out	    (PORT_PIOADAT), a
-    ld	    a, 0x08	; bit 3
-    out	    (PORT_PIOADAT), a
-    ret
 
 ; void sio_test()
 #local
@@ -489,16 +464,17 @@ forever:
 
 ; uint8_t joy_map2seg(uint8_t joy)
 ; - map the joystick status bits in "joy" to a value suitable for writing to the 7-segment display
+; - returns in A
 #local
 joy_map2seg::
     xor	    a			; start with no bits on 7-segment display
     bit	    JOY_IDX_UP, l	; test for UP
     jr	    nz, done_up
-    set	    SEG_IDX_A, a	; turn on top segment
+    or	    SEG_A		; turn on top segment
 done_up:
     bit	    JOY_IDX_DOWN, l	; test for DOWN
     jr	    nz, done_down
-    set	    SEG_IDX_D, a	; turn on bottom segment
+    or	    SEG_D		; turn on bottom segment
 done_down:
     ; if neither UP nor DOWN are active, activate (clear) both to get both top & bottom side segments
     bit	    JOY_IDX_UP, l
@@ -512,140 +488,31 @@ sides:
     jr	    nz, done_left
     bit	    JOY_IDX_UP, l	; if UP, set top-left segment
     jr	    nz, no_top_left
-    set	    SEG_IDX_F, a
+    or	    SEG_F
 no_top_left:
     bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-left segment
     jr	    nz, done_left
-    set	    SEG_IDX_E, a
+    or	    SEG_E
 done_left:
     bit	    JOY_IDX_RIGHT, l	; test for RIGHT
     jr	    nz, done_right
     bit	    JOY_IDX_UP, l	; if UP, set top-right segment
     jr	    nz, no_top_right
-    set	    SEG_IDX_B, a
+    or	    SEG_B
 no_top_right:
     bit	    JOY_IDX_DOWN, l	; if DOWN, set bottom-right segment
     jr	    nz, done_right
-    set	    SEG_IDX_C, a
+    or	    SEG_C
 done_right:
     bit	    JOY_IDX_FIRE, l	; test for FIRE
-    jr	    nz, done_fire
-    set	    SEG_IDX_DP, a
-done_fire:
-    ld	    l, a		; return segment mask
+    ret	    nz
+    or	    SEG_DP
     ret
 #endlocal
 
-; Library routines
-; ----------------
-
-; void sysreg_sndbus(uint8_t bits)
-; - set only bits SYS_BDIR and SYS_BC1 to specified values (from 'bits') in SYSREG
-sysreg_sndbus::
-    ld	    a, (Sysreg)		    ; read current value of SYSREG
-    and	    ~(SYS_BDIR | SYS_BC1)   ; turn off bus control bits
-    or	    l			    ; set any specified bits
-    ; FALLING THROUGH!!!
-
-; void sysreg_write(uint8_t bits)
-; - 'bits' passed in A register
-; - write raw bits to SYSREG
-sysreg_write::
-    out	    (PORT_SYSREG), a
-    ld	    (Sysreg), a
-    ret
-
-; void seg_writehex(uint8_t val)
-; - write the two hex digits of "val" to the 7-segment displays
-seg_writehex::
-    push    hl
-    call    seg1_writehex
-    ld	    a, l
-    rlca
-    rlca
-    rlca
-    rlca
-    ld	    l, a
-    call    seg0_writehex
-    pop	    hl
-    ret
-
-; void seg0_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg0_writehex::
-    push    hl
-    push    bc
-    ld	    bc, HEX_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = HEX_table + (val & 0xF)
-    ld	    a, (Seg0_data)
-    and	    SEG_DP
-    or	    (hl)
-    ld	    l, a    ; l = (*Seg0_data & SEG_DP) | HEX_table[val & 0xF]
-    call    seg0_write
-    pop	    bc
-    pop	    hl
-    ret
-
-; void seg1_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg1_writehex::
-    push    hl
-    push    bc
-    ld	    bc, HEX_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = HEX_table + (val & 0xF)
-    ld	    a, (Seg1_data)
-    and	    SEG_DP
-    or	    (hl)
-    ld	    l, a    ; l = (*Seg1_data & SEG_DP) | HEX_table[val & 0xF]
-    call    seg1_write
-    pop	    bc
-    pop	    hl
-    ret
-
-HEX_table::
-    ; 0
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
-    ; 1
-    .byte SEG_B | SEG_C
-    ; 2
-    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
-    ; 3
-    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
-    ; 4
-    .byte SEG_F | SEG_G | SEG_B | SEG_C
-    ; 5
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
-    ; 6
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; 7
-    .byte SEG_A | SEG_B | SEG_C
-    ; 8
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
-    ; 9
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
-    ; A
-    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
-    ; b
-    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; C
-    .byte SEG_A | SEG_D | SEG_E | SEG_F
-    ; d
-    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
-    ; E
-    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
-    ; F
-    .byte SEG_A | SEG_E | SEG_F | SEG_G
-
 ; void seg0_fig8(uint8_t step)
 ; - advance first 7-segment display to specified figure-8 step (0-7)
+#local
 seg0_fig8::
     push    hl
     push    bc
@@ -661,47 +528,16 @@ seg0_fig8::
     pop	    hl
     ret
 
-FIG8_table::
+FIG8_table:
     .byte SEG_A, SEG_B, SEG_G, SEG_E, SEG_D, SEG_C, SEG_G, SEG_F
+#endlocal
 
-; void seg0_toggle(uint8_t bits)
-; - toggle specified bits of first 7-segment display register
-seg0_toggle::
-    push    hl
-    ld	    a, (Seg0_data)
-    xor	    l
-    ld	    l, a
-    call    seg0_write
-    pop	    hl
-    ret
-
-; void seg1_toggle(uint8_t bits)
-; - toggle specified bits of second 7-segment display register
-seg1_toggle::
-    push    hl
-    ld	    a, (Seg1_data)
-    xor	    l
-    ld	    l, a
-    call    seg1_write
-    pop	    hl
-    ret
-
-; void seg0_write(uint8_t bits)
-; - write raw bits to first 7-segment display register
-seg0_write::
-    ld	    a, l
-    ld	    (Seg0_data), a
-    out	    (PORT_SEG0), a
-    ret
-
-; void seg1_write(uint8_t bits)
-; - write raw bits to second 7-segment display register
-seg1_write::
-    ld	    a, l
-    ld	    (Seg1_data), a
-    out	    (PORT_SEG1), a
-    ret
+#include library "libcode"
 
 ; Remaining 48KB and 64KB segments to fill up ROM image
 #code FILLER1, 0, 0xC000
 #code FILLER2, 0, 0x10000
+
+#data RAM, 0x4000, 0xC000
+; define static variables here
+#include library "libdata"

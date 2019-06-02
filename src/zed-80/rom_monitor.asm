@@ -28,13 +28,15 @@
 
 ; some macros that we have to declare before use
 M_sio_puts  macro str
-    ld	    hl, &str
-    call    sio_puts
+    push    de
+    ld	    de, &str
+    call    sioA_puts
+    pop	    de
     endm
 
 M_sio_putc  macro ch
     ld	    l, &ch
-    call    sio_putc
+    call    sioA_putc
     endm
 
 ; We set up the MMU so the Z80's memory map is as follows:
@@ -42,13 +44,6 @@ M_sio_putc  macro ch
 ; PG1: 0x4000-0x7FFF RAM physical page 8 (RAM page 0)
 ; PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)
 ; PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
-
-; We map our RAM area high so that our data fields don't clobber low memory where we're
-; likely to be loading programs.
-#data RAM, 0xFC00, 0x400
-; define static variables here
-Sysreg::    defs 1	; current value of SYSREG
-#include "lib/data_seg.inc"
 
 #code ROM, 0, 0x4000
 
@@ -155,52 +150,6 @@ init::
 #endif
     jr	    $		    ; loop forever
 
-; Include library routines.
-#include "lib/seg_init.inc"
-#include "lib/seg0_write.inc"
-#include "lib/seg1_write.inc"
-#include "lib/delay_1ms.inc"
-
-; void ctc_init()
-#local
-ctc_init::
-    ; load CTC Interrupt Vector Register
-    ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
-    out	    (PORT_CTCIVEC), a
-    ; channel 0 is the baud rate generator for serial 0
-    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
-    out	    (PORT_CTC0), a
-    ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x16 gives 38400 baud)
-    out	    (PORT_CTC0), a
-    ; channel 1 is the baud rate generator for serial 1
-    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR
-    out	    (PORT_CTC1), a
-    ld	    a, 3	    ; 1.8432MHz divided by 3 is 614.4kHz (SIO at x16 gives 38400 baud)
-    out	    (PORT_CTC1), a
-    call    ctc_tick_on
-    ret
-#endlocal
-
-; void ctc_tick_off()
-ctc_tick_off::
-    ld	    a, CTC_CONTROL | CTC_INTDIS
-    out	    (PORT_CTC3), a
-    ret
-
-; void ctc_tick_on()
-ctc_tick_on::
-    ; channel 2 is used as a timer to divide down the system clock for channel 3
-    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR
-    out	    (PORT_CTC2), a
-    ld	    a, 250	    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
-    out	    (PORT_CTC2), a
-    ; channel 3 is used as a counter on the 2.5kHz signal from channel 2
-    ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA
-    out	    (PORT_CTC3), a
-    ld	    a, 250	    ; 2.5kHz divided by 250 is 10Hz
-    out	    (PORT_CTC3), a
-    ret
-
 ; CTC channel 3 ISR
 ; - do not modify IX or IY, or call any routine that does, as they aren't saved/restored!
 ISR_ctc3::
@@ -213,35 +162,6 @@ ISR_ctc3::
     ei
     reti
 
-; void sio_init()
-#local
-sio_init::
-    push    hl
-    push    bc
-    ; configure SIO port A
-    ld	    bc, 0x0700 | PORT_SIOACTL
-    ld	    hl, sioA_cfg
-    otir
-    ; configure SIO port B
-    ld	    bc, 0x0700 | PORT_SIOBCTL
-    ld	    hl, sioB_cfg
-    otir
-    pop	    bc
-    pop	    hl
-    ret
-sioA_cfg:
-sioB_cfg:
-    .byte SIOWR0_CMD_RST_CHAN
-    .byte SIOWR0_PTR_R4
-    .byte SIOWR4_TXSTOP_1 | SIOWR4_CLK_x16
-    ; No need to set up WR1/WR2, as they are only used for interrupts
-    .byte SIOWR0_PTR_R3
-    .byte SIOWR3_RXENA | SIOWR3_RX_8_BITS
-    .byte SIOWR0_PTR_R5
-    .byte SIOWR5_RTS | SIOWR5_TXENA | SIOWR5_TX_8_BITS | SIOWR5_DTR
-    ; No need to set up WR6/WR7, as they are only used for synchronous modes
-#endlocal
-
 ; void cmd_loop()
 #local
 cmd_loop::
@@ -252,9 +172,9 @@ prompt:
 nextByte:
     call    sio_getc
     ; map input byte to upper case
+    ld	    a, l
     call    toupper
     ; switch on input byte, and dispatch to appropriate subroutine
-    ld	    a, l
     ld	    hl, cmd_chars
     ld	    bc, num_cmds
     cpir
@@ -308,7 +228,7 @@ failure:
 success:
     ld	    l, 'A'
 putcAndDone:
-    call    sio_putc
+    call    sioA_putc
 done:
     pop	    de
     pop	    bc
@@ -501,91 +421,6 @@ cmd_equals_str::
 cmd_ok_str::
     .text   CR, LF, "OK", NUL
 
-; Library routines
-; ----------------
-
-; Call jp_hl to make a call to the address in hl. What actually happens is the call to jp_hl loads
-; the return address on the stack, then control transfers to jp_hl, which jumps to the address
-; in hl, thus giving the effect of "call hl", which isn't a Z80 instruction.
-jp_hl::
-    jp	    hl
-
-; Call jp_bc to make a call to the address in bc. What actually happens is the call to jp_bc loads
-; the return address on the stack, then control transfers to jp_bc, which jumps to the address
-; in bc, thus giving the effect of "call bc", which isn't a Z80 instruction.
-jp_bc::
-    push    bc
-    ret
-
-; uint8_t toupper(uint8_t ch)
-; - map character "ch" to upper-case, if it is a lower-case letter
-#local
-toupper::
-    ld	    a, l
-    cp	    'a'
-    ret	    c
-    cp	    'z'+1
-    ret	    nc
-    and	    ~0x20
-    ld	    l, a
-    ret
-#endlocal
-
-; Z_flag isxdigit(uint8_t ch)
-; - set Z flag iff "ch" is a digit 0-9 or A-F
-#local
-isxdigit::
-    ld	    a, l
-    cp	    '0'
-    jr	    c, no
-    cp	    '9'+1
-    jr	    c, yes
-    cp	    'A'
-    jr	    c, no
-    cp	    'F'+1
-    jr	    c, yes
-    ; otherwise, no
-no:
-    cp	    '0'		; reset Z flag (a != '0', so Z is reset)
-    ret
-yes:
-    xor	    a		; set Z flag
-    ret
-#endlocal
-
-; uint8_t hex2bin(uint8_t ch)
-; - converts the single hex digit "ch" (must be 0-9 or A-F) into a binary value between 0-15
-#local
-hex2bin::
-    ld	    a, l
-    cp	    'A'
-    jr	    nc, hex
-    sub	    '0'
-    ld	    l, a
-    ret
-hex:
-    sub	    'A'-10
-    ld	    l, a
-    ret
-#endlocal
-
-; uint8_t bin2hex(uint8_t val)
-; - converts the lower 4 bits of the 8-bit value "val" to hexadecimal (0-9,A-F)
-#local
-bin2hex::
-    ld	    a, l
-    and	    0xF
-    cp	    0xA
-    jr	    c, decimal
-    add	    'A'-10
-    ld	    l, a
-    ret
-decimal:
-    add	    '0'
-    ld	    l, a
-    ret
-#endlocal
-
 ; uint8_t sio_getc()
 ; - wait synchronously until a byte is available from port A, and return it
 #local
@@ -593,11 +428,11 @@ sio_getc::
 waitRX:
     ; wait for an input character
     in	    a, (PORT_SIOACTL)
-    bit	    SIORR0_IDX_RCA, a
+    and	    SIORR0_RCA
     jr	    z, waitRX
     ; read input character
     in	    a, (PORT_SIOADAT)
-    ld	    l, a
+    ld	    l, a	    ; return value goes in L
     call    seg_writehex
     ret
 #endlocal
@@ -620,7 +455,8 @@ getFirst:
     call    toupper
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getFirst
-    call    sio_putc	; echo digit
+    ld	    l, a
+    call    sioA_putc	; echo digit
     ld	    b, l	; store high digit in b
 getSecond:
     call    sio_getc
@@ -629,13 +465,14 @@ getSecond:
     jr	    z, abort
     cp	    BS
     jr	    nz, notBS1
-    call    sio_putc	; echo BS
+    call    sioA_putc	; echo BS
     jr	    getFirst
 notBS1:
     call    toupper
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getSecond
-    call    sio_putc	; echo digit
+    ld	    l, a
+    call    sioA_putc	; echo digit
     ld	    c, l	; store low digit in c
 getThird:
     call    sio_getc
@@ -647,21 +484,19 @@ getThird:
     cp	    BS
     jr	    nz, getThird
     ; handle backspace
-    call    sio_putc	; echo BS
+    call    sioA_putc	; echo BS
     jr	    getSecond
 convert:
-    ld	    l, b
+    ld	    a, c
     call    hex2bin
-    ld	    b, l
-    ld	    l, c
-    call    hex2bin
-    ; compute a = (b << 4) | l
+    ld	    c, a
     ld	    a, b
+    call    hex2bin
     add	    a
     add	    a
     add	    a
     add	    a
-    or	    l
+    or	    c
     ld	    l, a
     ld	    h, 0
     pop	    bc
@@ -672,168 +507,34 @@ abort:
     ret	    
 #endlocal
 
-; void sio_putc(uint8_t ch)
-; - write the specified character "ch" to port A
-#local
-sio_putc::
-waitTX:
-    ; wait until transmitter is idle
-    in	    a, (PORT_SIOACTL)
-    bit	    SIORR0_IDX_TBE, a
-    jr	    z, waitTX
-    ; write output character
-    ld	    a, l
-    out	    (PORT_SIOADAT), a	; send byte out serial port
-    ret
-#endlocal
-
-; void sio_puts(uint8_t *text)
-; - write the NUL-terminated string at "text" to port A
-#local
-sio_puts::
-    push    hl
-    push    bc
-nextByte:
-    ld	    a, (hl)
-    inc	    hl
-    or	    a		; fast test a==0
-    jr	    z, done
-    ld	    b, a
-waitTX:
-    ; wait until transmitter is idle
-    in	    a, (PORT_SIOACTL)
-    bit	    SIORR0_IDX_TBE, a
-    jr	    z, waitTX
-    ; write output character
-    ld	    a, b
-    out	    (PORT_SIOADAT), a	; send byte out serial port
-    jr	    nextByte
-done:
-    pop	    bc
-    pop	    hl
-    ret
-#endlocal
-
 ; void sio_puthex8(uint8_t val)
 ; - writes the specified 8-bit value "val" as a pair of hex digits to port A
 sio_puthex8::
     push    hl
     ld	    h, l
-    srl	    l
-    srl	    l
-    srl	    l
-    srl	    l
+    ld	    a, l
+    rrca
+    rrca
+    rrca
+    rrca
     call    bin2hex
-    call    sio_putc
-    ld	    l, h
+    ld	    l, a
+    call    sioA_putc
+    ld	    a, h
     call    bin2hex
-    call    sio_putc
-    pop	    hl
-    ret
-
-; void seg_writehex(uint8_t val)
-; - write the two hex digits of "val" to the 7-segment displays
-seg_writehex::
-    push    hl
-    call    seg1_writehex
-    ld	    a, l
-    rlca
-    rlca
-    rlca
-    rlca
     ld	    l, a
-    call    seg0_writehex
+    call    sioA_putc
     pop	    hl
     ret
 
-; void seg0_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg0_writehex::
-    push    hl
-    push    bc
-    ld	    bc, hex2seg_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-    ld	    a, (Seg0_data)
-    and	    SEG_DP
-    or	    (hl)    ; a = (*Seg0_data & SEG_DP) | hex2seg_table[val & 0xF]
-    call    seg0_write
-    pop	    bc
-    pop	    hl
-    ret
-
-; void seg1_writehex(uint8_t val)
-; - write hex digit in lower nybble of "val" to 7-segment display
-seg1_writehex::
-    push    hl
-    push    bc
-    ld	    bc, hex2seg_table
-    ld	    a, l
-    and	    0xF	    ; mask off upper nybble of l
-    ld	    l, a
-    ld	    h, 0
-    add	    hl, bc  ; hl = hex2seg_table + (val & 0xF)
-    ld	    a, (Seg1_data)
-    and	    SEG_DP
-    or	    (hl)    ; a = (*Seg1_data & SEG_DP) | hex2seg_table[val & 0xF]
-    call    seg1_write
-    pop	    bc
-    pop	    hl
-    ret
-
-hex2seg_table::
-    ; 0
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F
-    ; 1
-    .byte SEG_B | SEG_C
-    ; 2
-    .byte SEG_A | SEG_B | SEG_G | SEG_E | SEG_D
-    ; 3
-    .byte SEG_A | SEG_B | SEG_G | SEG_C | SEG_D
-    ; 4
-    .byte SEG_F | SEG_G | SEG_B | SEG_C
-    ; 5
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D
-    ; 6
-    .byte SEG_A | SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; 7
-    .byte SEG_A | SEG_B | SEG_C
-    ; 8
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G
-    ; 9
-    .byte SEG_A | SEG_B | SEG_C | SEG_D | SEG_F | SEG_G
-    ; A
-    .byte SEG_A | SEG_B | SEG_C | SEG_E | SEG_F | SEG_G
-    ; b
-    .byte SEG_F | SEG_G | SEG_C | SEG_D | SEG_E
-    ; C
-    .byte SEG_A | SEG_D | SEG_E | SEG_F
-    ; d
-    .byte SEG_B | SEG_C | SEG_D | SEG_E | SEG_G
-    ; E
-    .byte SEG_A | SEG_D | SEG_E | SEG_F | SEG_G
-    ; F
-    .byte SEG_A | SEG_E | SEG_F | SEG_G
-
-; void seg0_toggle(uint8_t bits)
-; - toggle specified bits of first 7-segment display register
-seg0_toggle::
-    ld	    a, (Seg0_data)
-    xor	    l
-    call    seg0_write
-    ret
-
-; void seg1_toggle(uint8_t bits)
-; - toggle specified bits of second 7-segment display register
-seg1_toggle::
-    ld	    a, (Seg1_data)
-    xor	    l
-    call    seg1_write
-    ret
+#include library "libcode"
 
 ; Remaining 48KB and 64KB segments to fill up ROM image
 #code FILLER1, 0, 0xC000
 #code FILLER2, 0, 0x10000
+
+; We map our RAM area high so that our data fields don't clobber low memory where we're
+; likely to be loading programs.
+#data RAM, 0xFC00, 0x400
+; define static variables here
+#include library "libdata"

@@ -20,31 +20,36 @@ On Dan's MacBook, you can connect to the serial port with:
 Shared Library Routines
 =======================
 
-The 'lib' folder holds common library source code that is reused between multiple assembly
+The "libcode" folder holds common library source code that is reused between multiple assembly
 language programs. We reuse these library routines as source code because the assembler we
 use (zasm) does not support output as a relocatable object file with separate linker phase.
 
 Instead, we include the assembly language source directly into each top-level program that
 needs any given function.
 
-To avoid including unused routines, we separate each function into its own file. There is
-no automated dependency resolution: the onus is on the top-level program to (recursively)
-include all the files for all the dependencies of each required routine. (This is because
-there is no way to protect against multiple inclusion in zasm.)
+To avoid including unused routines, we separate each function into its own file. zasm
+provides some built-in functionality to support this use-case, documented here:
+    https://k1.spdns.de/Develop/Projects/zasm/Documentation/z38.htm#D
+
+In summary, each symbol should be placed in its own file. If the function is named "foo",
+then it should reside in the file "libcode/foo.s". If the data symbol is named "bar", then it
+should reside in the file "libdata/bar.s".
+
+At the end of the CODE segment in the main assembly language source file, place this line:
+    #include library "libcode"
+to automatically resolve all undefined functions from their corresponding implementation files
+in the "libcode" folder.
 
 Some functions require some static data too. For example, the pseudorandom number
 generator functions use static data to hold the random seed value. These data declarations
 must be included into a DATA segment instead of the CODE segment, so they are kept in
-a separate file.
+separate files in the "libdata" folder.
 
-The convention in the 'lib' folder is to name each file after the function it defines. The
-file that contains static data declarations for a module is named "data_<module>.inc".
-For example:
-    - lib/rand_init.inc
-    - lib/rand16.inc
-    - lib/rand16_modn.inc
-    - lib/data_rand.inc
+At the end of the DATA segment in the main assembly language source file, place this line:
+    #include library "libdata"
+to automatically resolve all undefined data symbols from their corresponding implementation
+files.
 
-Note that this means that functions in the shared library should be named with a consistent
+Note that this means that symbols in the shared library should be named with a consistent
 mnemonic prefix (e.g. "sio", "pio", "ctc", "joy", "rand", "math", "lcd", "kbd", etc.) to
 prevent collisions both in the assembly language symbol namespace and in the filesystem.

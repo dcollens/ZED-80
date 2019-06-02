@@ -40,12 +40,6 @@ init::
     call    joy_test
     ret
 
-; Include library routines.
-#include "lib/bzero.inc"
-#include "lib/seg_init.inc"
-#include "lib/seg0_write.inc"
-#include "lib/seg1_write.inc"
-
 ; void joy_test()
 #local
 joy_test::
@@ -118,9 +112,11 @@ done_fire:
     ret
 #endlocal
 
+#include library "libcode"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; data segment immediately follows code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #data DATA,TEXT_end
 ; define static variables here
-#include "lib/data_seg.inc"
+#include library "libdata"
