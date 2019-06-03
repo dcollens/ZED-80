@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 3 11
 Title "7-Segment Display"
-Date "2019-04-15"
+Date "2019-06-02"
 Rev "1"
 Comp ""
 Comment1 ""

@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 9 11
 Title "SD Card Interface"
-Date "2019-04-15"
+Date "2019-06-02"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -561,7 +561,7 @@ Wire Wire Line
 Wire Wire Line
 	9900 6450 1500 6450
 Text HLabel 1500 6300 0    60   Output ~ 0
-~SDWP
+SDWP
 Text HLabel 1500 6450 0    60   Output ~ 0
 ~SDCD
 Wire Wire Line

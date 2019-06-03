@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 2 11
 Title "Joystick Ports"
-Date "2019-04-15"
+Date "2019-06-02"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -629,7 +629,7 @@ Wire Wire Line
 Text HLabel 2850 6000 0    60   Input ~ 0
 ~SDCD
 Text HLabel 2850 6100 0    60   Input ~ 0
-~SDWP
+SDWP
 Wire Wire Line
 	5350 2650 5350 2750
 Wire Wire Line

@@ -6,7 +6,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 11
 Title "ZED-80 Personal Computer"
-Date "2019-04-15"
+Date "2019-06-02"
 Rev "1"
 Comp ""
 Comment1 ""
@@ -437,7 +437,7 @@ F3 "~IORQ0" I L 5050 5050 60
 F4 "~IORQ1" I L 5050 5150 60 
 F5 "D[0..7]" B L 5050 4750 60 
 F6 "~SDCD" I R 6050 4750 60 
-F7 "~SDWP" I R 6050 4850 60 
+F7 "SDWP" I R 6050 4850 60 
 $EndSheet
 Text Label 4300 5350 2    60   ~ 0
 ~IORQ3
@@ -1318,7 +1318,7 @@ F6 "SDCLK" I L 5050 7250 60
 F7 "~SDCS" I L 5050 7350 60 
 F8 "OCLK" I L 5050 7550 60 
 F9 "~ICLR" I L 5050 7450 60 
-F10 "~SDWP" O R 5800 6750 60 
+F10 "SDWP" O R 5800 6750 60 
 F11 "~SDCD" O R 5800 6850 60 
 $EndSheet
 $Sheet
