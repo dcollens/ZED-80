@@ -55,12 +55,13 @@ ZED80::ZED80()
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
     _keyboardDevice = make_shared<KeyboardDevice>();
+    _sioDevice = make_shared<SioDevice>();
     _pioDevice = make_shared<PioDevice>(_keyboardDevice);
     _ctcDevice = make_shared<CtcDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
     _iommu->setDevice(0, _joySegDevice);
     _iommu->setDevice(1, _joySegDevice);
-    // TODO: _iommu->setDevice(2, _sioDevice);
+    _iommu->setDevice(2, _sioDevice);
     _iommu->setDevice(3, _pioDevice);
     _iommu->setDevice(4, _ctcDevice);
     _iommu->setDevice(5, _lcdPanelDevice);
@@ -170,6 +171,7 @@ void ZED80::reset() {
     _audioDevice.reset();
     _sysRegDevice->reset();
     _joySegDevice->reset();
+    _sioDevice->reset();
     _pioDevice->reset();
     _ctcDevice->reset();
     _lcdPanelDevice->reset();

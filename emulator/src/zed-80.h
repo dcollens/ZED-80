@@ -19,6 +19,7 @@
 #include "io_keyboard.h"
 #include "io_ctc.h"
 #include "io_pio.h"
+#include "io_sio.h"
 #include "audiodevice.h"
 
 using std::unique_ptr;
@@ -30,6 +31,7 @@ class ZED80 {
     
     shared_ptr<SysRegDevice>    _sysRegDevice;
     shared_ptr<JoySegDevice>    _joySegDevice;
+    shared_ptr<SioDevice>       _sioDevice;
     shared_ptr<PioDevice>       _pioDevice;
     shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
