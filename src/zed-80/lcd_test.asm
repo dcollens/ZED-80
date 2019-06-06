@@ -959,6 +959,20 @@ boot_sound:
     .byte $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
 #endlocal
 
+; - gets the status of the joystick. Pushes 16-bit joystick status, with
+; - LSB joystick 0 and MSB joystick 1.
+    M_forth_native "joystick", 0, joystick
+    push    bc
+    in	    a, (PORT_JOY0)	; read joystick 0
+    cpl                         ; invert A
+    and     0x1F                ; keep only useful bits.
+    ld      c, a                ; MSB
+    in	    a, (PORT_JOY1)	; read joystick 1
+    cpl                         ; invert A
+    and     0x1F                ; keep only useful bits.
+    ld      b, a                ; LSB
+    jp      forth_next
+
 ; - pushes a random 16-bit number onto the stack.
     M_forth_native "rnd", 0, rnd
     push    bc
@@ -980,6 +994,11 @@ boot_sound:
     M_forth_const state, Forth_compiling
     M_forth_const here, Forth_here
     M_forth_const base, Forth_base
+    M_forth_const joy_up, JOY_UP
+    M_forth_const joy_down, JOY_DOWN
+    M_forth_const joy_left, JOY_LEFT
+    M_forth_const joy_right, JOY_RIGHT
+    M_forth_const joy_fire, JOY_FIRE
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
