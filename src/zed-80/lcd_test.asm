@@ -290,6 +290,20 @@ Forth_init_cmd:
     .text   ": rl rx ry rx ry line ; "
     .text   ": rc rnd rnd rnd color ; "
     .text   ": demo begin rc rl again ; "
+
+    ; Game.
+    .text   ": 2dup over over ; "
+    .text   ": sprite over 0030 + over 0030 + line ; "
+    .text   ": game lcd_width 0002 / lcd_height 0002 / "
+    .text   "      begin "
+    .text   "           2dup rc sprite "
+    .text   "           joystick "
+    .text   "               dup joy_up and if swap 0001 - swap then "
+    .text   "               dup joy_down and if swap 0001 + swap then "
+    .text   "               dup joy_left and if rot 0001 - -rot then "
+    .text   "               dup joy_right and if rot 0001 + -rot then "
+    .text   "           drop "
+    .text   "      again ; "
     .text   NUL
 
 ; void forth_dump_pstack()
@@ -503,6 +517,36 @@ zero:
     pop     hl
     push    bc
     ld      bc, hl
+    jp      forth_next
+
+; - duplicates the second-to-last word on the stack.
+    M_forth_native "over", 0, over
+    pop     hl
+    push    hl
+    push    bc
+    ld      bc, hl
+    jp      forth_next
+
+; - rotates the stack: ( a b c -- b c a )
+    M_forth_native "rot", 0, rot
+    pop     hl
+    ld      (Forth_tmp1), hl        ; "b" above
+    pop     hl
+    ld      (Forth_tmp2), hl        ; "a" above
+    ld      hl, (Forth_tmp1)
+    push    hl
+    push    bc
+    ld      bc, (Forth_tmp2)
+    jp      forth_next
+
+; - rotates the stack: ( a b c -- c a b )
+    M_forth_native "-rot", 0, negrot
+    pop     hl
+    ld      (Forth_tmp1), hl        ; "b" above
+    pop     hl                      ; "a" above
+    push    bc
+    push    hl
+    ld      bc, (Forth_tmp1)
     jp      forth_next
 
 ; - reads the pointer at the top of the stack.
@@ -2254,6 +2298,8 @@ Forth_psp:: defs 2      ; Pointer into Forth_pstack.
 Forth_input:: defs 2    ; Pointer to input buffer.
 Forth_compiling:: defs 2 ; Whether compiling (vs. immediate mode). (Normally called STATE.)
 Forth_orig_de:: defs 2  ; Temporary for saving DE.
+Forth_tmp1:: defs 2     ; Temporary.
+Forth_tmp2:: defs 2     ; Temporary.
 Forth_base:: defs 2     ; Current base for printing numbers.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
