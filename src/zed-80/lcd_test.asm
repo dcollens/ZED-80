@@ -532,6 +532,28 @@ zero:
     pop     bc
     jp      forth_next
 
+; - bit-wise ands the top two entries in the parameter stack.
+    M_forth_native "and", 0, and
+    pop     hl
+    ld      a, c        ; LSB
+    and     l
+    ld      c, a
+    ld      a, b        ; LSB
+    and     h
+    ld      b, a
+    jp      forth_next
+
+; - bit-wise ors the top two entries in the parameter stack.
+    M_forth_native "or", 0, or
+    pop     hl
+    ld      a, c        ; LSB
+    or      l
+    ld      c, a
+    ld      a, b        ; LSB
+    or      h
+    ld      b, a
+    jp      forth_next
+
 ; - adds the top two entries in the parameter stack.
     M_forth_native "+", 0, add
     pop     hl
