@@ -25,6 +25,7 @@
 #include "z84c40.inc"
 #include "keyboard.inc"
 #include "ascii.inc"
+#include "sound.inc"
 
 FORTH_RSTACK_SIZE   equ   256
 FORTH_PSTACK_SIZE   equ   256
@@ -118,6 +119,11 @@ init::
     ld	    hl, DATA
     ld	    bc, DATA_size
     call    bzero
+
+    ; Set Sysreg to the value that we know the ROM monitor set it to.
+    ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
+    ld	    (Sysreg), a
+
     call    seg_init
     call    rand_init
     call    kbd_init
@@ -931,6 +937,27 @@ no_skip:
     M_lcdwrite LCDREG_FGCR, c       ; red
     pop     bc
     jp      forth_next
+
+; - plays a beep on the audio port.
+    M_forth_native "beep", 0, beep
+; Bart's Alice 3 boot sound:
+; E2, B2, G#3, all 3 channels tone/no noise, all 3 channels on envelope, ~1.3s envelope, rampdown
+;     $7B, $01, $FD, $00, $96, $00, $00, $38, $10,$10,$10, $A1,$13, $09, $00,$00
+; With IO ports set to output mode, and a test pattern on the outputs:
+;     $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
+#local
+;    ld	    hl, 0xFF00 | SNDREG_ENABLE
+;    call    snd_write		; set ports A and B to output mode, disable all channels
+;    ld	    hl, 0xA500 | SNDREG_PORTA
+;    call    snd_write
+;    ld	    hl, 0x5A00 | SNDREG_PORTB
+;    call    snd_write
+    ld	    hl, boot_sound
+    call    snd_writeall
+    jp      forth_next
+boot_sound:
+    .byte $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
+#endlocal
 
 ; - pushes a random 16-bit number onto the stack.
     M_forth_native "rnd", 0, rnd
@@ -2087,6 +2114,84 @@ Key_shift_tbl:
     .byte "PQRSTUVWXYZ{|}^_" ; $50-5F
     .byte "~ABCDEFGHIJKLMNO" ; $60-6F
     .byte "PQRSTUVWXYZ{|}~", $7F ; $70-7F
+#endlocal
+
+; Set the mode for PIO port B. 'mode' is one of the PIOMODE_xxx constants.
+M_pio_set_portB_mode	macro mode
+    ld	    a, PIOC_MODE | &mode
+    out	    (PORT_PIOBCTL), a
+    endm
+
+; void snd_writeall(uint8_t *data)
+; - write 16 byte values from 'data' to the 16 registers of the sound chip
+#local
+snd_writeall::
+    push    bc
+    push    de
+    push    hl
+    ex	    de, hl		; DE = data
+    ld	    l, 0		; L = regnum
+    ld	    b, 16		; B = loop count
+writeNext:
+    ld	    a, (de)		; A = *data
+    ld	    h, a
+    call    snd_write		; snd_write(regnum, *data)
+    inc	    l			; ++regnum
+    inc	    de			; ++data
+    djnz    writeNext
+    pop	    hl
+    pop	    de
+    pop	    bc
+    ret
+#endlocal
+
+; void snd_write(uint8_t addr, uint8_t data)
+; - write 'data' to 'addr' on the sound chip
+; - 'addr' in L, 'data' in H
+#local
+snd_write::
+    push    hl
+    call    snd_setaddr
+    ld	    l, h
+    call    snd_put
+    pop	    hl
+    ret
+#endlocal
+
+; void snd_setaddr(uint8_t address)
+; - set the audio chip's internal register address to 'address'
+; - assumes audio chip's bus control lines are set IDLE at entry
+; TODO: This can probably be carefully open-coded to be more efficient
+#local
+snd_setaddr::
+    push    hl
+    M_pio_set_portB_mode PIOMODE_OUTPUT
+    ld	    a, l
+    out	    (PORT_PIOBDAT), a	; write address to PIO port B
+    ld	    l, SNDBUS_ADDR
+    call    sysreg_sndbus	; set SYSREG bus control lines to write address (1,1)
+    ld	    l, SNDBUS_IDLE
+    call    sysreg_sndbus	; set SYSREG bus control lines to idle (0,0)
+    pop	    hl
+    ret
+#endlocal
+
+; void snd_put(uint8_t data)
+; - set the audio chip's currently-addressed register to 'data'
+; - assumes audio chip's bus control lines are set IDLE at entry
+; TODO: This can probably be carefully open-coded to be more efficient
+#local
+snd_put::
+    push    hl
+    M_pio_set_portB_mode PIOMODE_OUTPUT
+    ld	    a, l
+    out	    (PORT_PIOBDAT), a	; write data to PIO port B
+    ld	    l, SNDBUS_WRITE
+    call    sysreg_sndbus	; set SYSREG bus control lines to write data (1,0)
+    ld	    l, SNDBUS_IDLE
+    call    sysreg_sndbus	; set SYSREG bus control lines to idle (0,0)
+    pop	    hl
+    ret
 #endlocal
 
 #include library "libcode"

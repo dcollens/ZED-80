@@ -13,3 +13,6 @@ rom_for_emulator.rom: rom_monitor.asm
 
 %.rom %.bin: %.asm *.inc libcode/* libdata/*
 	zasm -yu -i $<
+
+%.pkt: %.bin
+	../pkt/pkt $< > $@
