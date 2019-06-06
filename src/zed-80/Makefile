@@ -11,7 +11,7 @@ clean:
 # Extra dependency for emulator ROM monitor.
 rom_for_emulator.rom: rom_monitor.asm
 
-%.rom %.bin: %.asm *.inc libcode/* libdata/*
+%.rom %.bin: %.asm *.inc libcode/* libdata/* ../ym2asm/*.asm
 	zasm -yu -i $<
 
 %.pkt: %.bin

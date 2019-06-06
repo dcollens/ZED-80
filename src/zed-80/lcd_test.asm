@@ -1025,6 +1025,40 @@ boot_sound:
     .byte $7B, $01, $FD, $00, $96, $00, $00, $F8, $10,$10,$10, $A1,$13, $09, $A5,$5A
 #endlocal
 
+; - plays a song on the audio port.
+    M_forth_native "song", 0, song
+#local
+    push    bc
+    push    de
+
+    ld	    hl, song_data
+    ld      de, 16
+    ld      bc, Audio_frame_count
+
+next_frame:
+    call    snd_writeall
+    add     hl, de
+    push    hl
+    ld      l, 20
+    call    delay_ms
+    pop     hl
+    dec     bc
+    ld      a, b
+    or      c
+    jp      nz, next_frame
+
+    ld	    hl, silence
+    call    snd_writeall
+
+    pop     de
+    pop     bc
+    jp      forth_next
+song_data:
+#include "../ym2asm/axelf.asm"
+silence:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+#endlocal
+
 ; - gets the status of the joystick. Pushes 16-bit joystick status, with
 ; - LSB joystick 0 and MSB joystick 1.
     M_forth_native "joystick", 0, joystick
