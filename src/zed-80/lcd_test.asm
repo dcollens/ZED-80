@@ -289,6 +289,18 @@ Forth_init_cmd:
     .text   ": decimal 000a base ! ; "
     .text   ": hex 0010 base ! ; "
     .text   ": u. base @ /mod ?dup if recurse then dup 000a < if 0030 else 000a - 0041 then + emit ; "
+    .text   ": nip swap drop ; " ; ( x y -- y )
+    .text   ": tuck swap over ; " ; (x y -- y x y )
+    .text   ": 1+ 0001 + ; "
+    .text   ": pick " ; ( x_u ... x_1 x_0 u -- x_u ... x_1 x_0 x_u )
+    .text   "    1+ " ; add one because of 'u' on the stack
+    .text   "    0002 * " ; multiply by the word size
+    .text   "    dsp@ + " ; add to the stack pointer
+    .text   "    @ " ; and fetch
+    .text   "; "
+    .text   ": constant word create ' enter , ' lit , , ' exit , ; " ; define a constant
+    .text   ": variable here @ 0000 , word create ' enter , ' lit , , ' exit , ; " ; def a var
+
     ; The rest are for testing. XXX delete.
     .text   ": rx lcd_width rndn ; "
     .text   ": ry lcd_height rndn ; "
@@ -304,16 +316,25 @@ Forth_init_cmd:
     .text   ": max 2dup < if swap drop else drop then ; "
     .text   ": size 0030 ; "
     .text   ": sprite over size + over size + line ; "
-    .text   ": game lcd_width 0002 / lcd_height 0002 / "
+    .text   "variable x "
+    .text   "variable y "
+    .text   ": game "
+    .text   "      lcd_width 0002 / x ! "
+    .text   "      lcd_height 0002 / y ! "
     .text   "      begin "
-    .text   "           rc 2dup sprite "
+    .text   "           rc x @ y @ sprite "
     .text   "           joy0 "
-    .text   "               dup joy_up and if swap dup 0000 > if 0001 - then swap then "
-    .text   "               dup joy_down and if swap 0001 + lcd_height size - min swap then "
-    .text   "               dup joy_left and if rot dup 0000 > if 0001 - then -rot then "
-    .text   "               dup joy_right and if rot 0001 + lcd_width size - min -rot then "
+    .text   "               dup joy_up and if y @ 0000 > if y @ 0001 - y ! then then "
+    .text   "               dup joy_down and if y @ 0001 + lcd_height size - min y ! then "
+    .text   "               dup joy_left and if x @ 0000 > if x @ 0001 - x ! then then "
+    .text   "               dup joy_right and if x @ 0001 + lcd_width size - min x ! then "
     .text   "           drop "
-    .text   "      again ; "
+    .text   "      again "
+    .text   "; "
+
+    ; YM2149 editor.
+    .text   ": ym "
+    .text   "; "
     .text   NUL
 
 ; void forth_dump_pstack()
@@ -1107,6 +1128,14 @@ silence:
     M_forth_const joy_fire, JOY_FIRE
     M_forth_const joy0_port, PORT_JOY0
     M_forth_const joy1_port, PORT_JOY1
+
+; - Read the stack pointer.
+    M_forth_native "dsp@", 0, dsp_read
+    push    bc
+    ld      hl, 0
+    add     hl, sp
+    ld      bc, hl
+    jp      forth_next
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
