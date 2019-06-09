@@ -268,7 +268,7 @@ forth_init::
     ret
 
 Forth_init_cmd:
-#insert "init.f"
+#insert "init.fs"
     .text   NUL
 
 ; void forth_dump_pstack()
