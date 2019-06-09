@@ -268,168 +268,7 @@ forth_init::
     ret
 
 Forth_init_cmd:
-    .text   ": / /mod swap drop ; "
-    .text   ": mod /mod drop ; "
-    .text   ": 2dup over over ; "
-    .text   ": if immediate ' 0branch , here @ 0000 , ; "
-    .text   ": then immediate dup here @ swap - swap ! ; "
-    .text   ": else immediate ' branch , here @ 0000 , swap dup here @ swap - swap ! ; "
-    .text   ": begin immediate here @ ; "
-    .text   ": until immediate ' 0branch , here @ - , ; "
-    .text   ": again immediate ' branch , here @ - , ; "
-    .text   ": while immediate ' 0branch , here @ 0000 , ; "
-    .text   ": repeat immediate ' branch , swap here @ - , dup here @ swap - swap ! ; "
-    .text   ": not if 0000 else 0001 then ; "
-    .text   ": <= 2dup < -rot = or ; "
-    .text   ": > <= not ; "
-    .text   ": >= < not ; "
-    .text   ": <> = not ; "
-    .text   ": space 0020 emit ; "
-    .text   ": words latest @ begin ?dup while dup 0003 + tell space @ repeat cr ; "
-    .text   ": recurse immediate latest @ >cfa , ; "
-    .text   ": decimal 000a base ! ; "
-    .text   ": hex 0010 base ! ; "
-    .text   ": u. base @ /mod ?dup if recurse then dup 000a < if 0030 else 000a - 0041 then + emit ; "
-    .text   ": nip swap drop ; " ; ( x y -- y )
-    .text   ": tuck swap over ; " ; (x y -- y x y )
-    .text   ": 1+ 0001 + ; "
-    .text   ": pick " ; ( x_u ... x_1 x_0 u -- x_u ... x_1 x_0 x_u )
-    .text   "    1+ " ; add one because of 'u' on the stack
-    .text   "    0002 * " ; multiply by the word size
-    .text   "    dsp@ + " ; add to the stack pointer
-    .text   "    @ " ; and fetch
-    .text   "; "
-    .text   ": constant word create ' enter , ' lit , , ' exit , ; " ; define a constant
-    .text   ": variable here @ 0000 , word create ' enter , ' lit , , ' exit , ; " ; def a var
-
-    ; The rest are for testing. XXX delete.
-    .text   ": rx lcd_width rndn ; "
-    .text   ": ry lcd_height rndn ; "
-    .text   ": rl rx ry rx ry line ; "
-    .text   ": rc rnd rnd rnd color ; "
-    .text   ": demo begin rc rl again ; "
-
-    ; Game.
-    .text   ": joy_read io@ invert 001F and ; "
-    .text   ": joy0 joy0_port joy_read ; "
-    .text   ": joy1 joy1_port joy_read ; "
-    .text   ": min 2dup < if drop else swap drop then ; "
-    .text   ": max 2dup < if swap drop else drop then ; "
-    .text   "0020 constant size "
-    .text   "size 0002 / constant half_size "
-    .text   "variable x "
-    .text   "variable y "
-    .text   ": sprite half_size half_size ellipsef ; "
-    .text   ": game "
-    .text   "      lcd_width 0002 / x ! "
-    .text   "      lcd_height 0002 / y ! "
-    .text   "      begin "
-    .text   "           rc x @ y @ sprite "
-    .text   "           joy0 "
-    .text   "               dup joy_up and if y @ half_size > if y @ 0001 - y ! then then "
-    .text   "               dup joy_down and if y @ 0001 + lcd_height half_size - min y ! then "
-    .text   "               dup joy_left and if x @ half_size > if x @ 0001 - x ! then then "
-    .text   "               dup joy_right and if x @ 0001 + lcd_width half_size - min x ! then "
-    .text   "           drop "
-    .text   "      again "
-    .text   "; "
-
-    ; My own array words.
-    .text   ": array here @ dup rot 0002 * + here ! word create ' enter , ' lit , , ' exit , ; " ; def an array, specify size in elements
-    .text   ": a[] swap 0002 * + ; " ; ( index array -- address )
-    .text   ": a@ a[] @ ; " ; ( index array -- value )
-    .text   ": a! a[] ! ; " ; ( value index array -- )
-    .text   ": @low @ 00FF and ; "
-    .text   ": @high @ 8>> ; "
-    .text   ": !low dup @ FF00 and rot 00FF and or swap ! ; "
-    .text   ": !high dup @ 00FF and rot 8<< or swap ! ; "
-    .text   ": a@low a[] @low ; "
-    .text   ": a@high a[] @high ; "
-    .text   ": a!low a[] !low ; " ; ( value index array -- )
-    .text   ": a!high a[] !high ; " ; ( value index array -- )
-
-    ; YM2149 editor.
-    .text   "0008 array r "         ; YM registers.
-    .text   "variable i 0000 i ! "  ; currently-selected virtual register (0-12).
-    .text   ": clear 0000 begin dup 0000 swap r a! 0001 + dup 0008 = until drop ; "
-    .text   ": hl i @ = if 00FF 0000 00FF else 00FF 00FF 00FF then color ; "
-    .text   ": r@ "  ; Read from registers. Parameter is 0 to 12.
-    .text   "     dup 0000 = if drop 0000 r a@ else "
-    .text   "     dup 0001 = if drop 0001 r a@ else "
-    .text   "     dup 0002 = if drop 0002 r a@ else "
-    .text   "     dup 0003 = if drop 0003 r a@low else "
-    .text   "     dup 0004 = if drop 0003 r a@high else "
-    .text   "     dup 0005 = if drop 0004 r a@low else "
-    .text   "     dup 0006 = if drop 0004 r a@high else "
-    .text   "     dup 0007 = if drop 0005 r a@low else "
-    .text   "     dup 0008 = if drop 0005 r a@high else "
-    .text   "     dup 0009 = if drop 0006 r a@low else "
-    .text   "     dup 000A = if drop 0006 r a@high else "
-    .text   "     dup 000B = if drop 0007 r a@low else "
-    .text   "     dup 000C = if drop 0007 r a@high else "
-    .text   "     drop FFFF then then then then then then then then then then then then then "
-    .text   "; "
-    .text   ": r! "  ; Write to registers. Parameters are value and index (0 to 12).
-    .text   "     dup 0000 = if drop 0000 r a! else "
-    .text   "     dup 0001 = if drop 0001 r a! else "
-    .text   "     dup 0002 = if drop 0002 r a! else "
-    .text   "     dup 0003 = if drop 0003 r a!low else "
-    .text   "     dup 0004 = if drop 0003 r a!high else "
-    .text   "     dup 0005 = if drop 0004 r a!low else "
-    .text   "     dup 0006 = if drop 0004 r a!high else "
-    .text   "     dup 0007 = if drop 0005 r a!low else "
-    .text   "     dup 0008 = if drop 0005 r a!high else "
-    .text   "     dup 0009 = if drop 0006 r a!low else "
-    .text   "     dup 000A = if drop 0006 r a!high else "
-    .text   "     dup 000B = if drop 0007 r a!low else "
-    .text   "     dup 000C = if drop 0007 r a!high else "
-    .text   "     drop then then then then then then then then then then then then then "
-    .text   "; "
-    .text   ": dump "
-    .text   "     0000 "
-    .text   "     begin "
-    .text   "         dup hl "
-    .text   "         dup r@ "
-    .text   "         over 0003 < if . else .b then "
-    .text   "         0001 + dup 000D = "
-    .text   "     until drop 000D hl cr "
-    .text   "; "
-    .text   ": loadbeep "
-    .text   "     017B 0000 r a! "
-    .text   "     00FD 0001 r a! "
-    .text   "     0096 0002 r a! "
-    .text   "     F800 0003 r a! "
-    .text   "     1010 0004 r a! "
-    .text   "     A110 0005 r a! "
-    .text   "     0913 0006 r a! "
-    .text   "     5AA5 0007 r a! "
-    .text   "; "
-    ; Wait until the joystick changes. Leaves the new value on the stack.
-    .text   ": joy0_change "
-    .text   "     joy0 "            ; Initial value.
-    .text   "     dup "             ; Dummy secondary value.
-    .text   "     begin "
-    .text   "         drop "        ; Drop secondary value.
-    .text   "         dup "         ; Duplicate original.
-    .text   "         joy0 "        ; Read new value.
-    .text   "         dup -rot "    ; Keep it around just in case.
-    .text   "         <> "          ; See if it's changed.
-    .text   "     until "
-    .text   "     swap drop "       ; Keep only new.
-    .text   "; "
-    ; YM editor
-    .text   ": ym "
-    .text   "     begin "
-    .text   "         dump "
-    .text   "         key "
-    .text   "               dup 001E = if i @ dup r@ 0001 + swap r! then "
-    .text   "               dup 001F = if i @ dup r@ 0001 - swap r! then "
-    .text   "               dup 0011 = i @ 0000 > and if i @ 0001 - i ! then "
-    .text   "               dup 0010 = i @ 000C < and if i @ 0001 + i ! then "
-    .text   "               dup 0020 = if r play then "
-    .text   "         0071 = "
-    .text   "     until "
-    .text   "; "
+#insert "init.f"
     .text   NUL
 
 ; void forth_dump_pstack()
@@ -1025,43 +864,68 @@ loop:
 ; - The pointer will point to a NUL byte if we're at the end of the buffer.
 #local
 forth_word::
+    push    de
     ld      hl, (Forth_input)
 
-    ; Skip whitespace.
+    ; Skip whitespace and comments.
 whitespace_loop:
     ld      a, (hl)
     cp      ' '
+    jr      z, whitespace
+    cp      HT
+    jr      z, whitespace
+    cp      LF
+    jr      z, whitespace
+    cp      CR
+    jr      z, whitespace
+    cp      0x5C ; backslash
     jr      nz, end_of_whitespace
+
+    ; Just saw backslash, read until end of line or end of buffer.
+comment_loop:
+    inc     hl
+    ld      a, (hl)
+    cp      NUL
+    jr      z, end_of_whitespace
+    cp      LF
+    jr      z, whitespace
+    cp      CR
+    jr      nz, comment_loop
+
+whitespace:
     inc     hl
     jr      whitespace_loop
 
 end_of_whitespace:
-    ; We're at the start of the word, record that.
-    push    hl
-
-    ; Skip word.
+    ; Copy word
+    ld      de, Forth_word
 word_loop:
     ld      a, (hl)
     cp      ' '
     jr      z, end_of_word
+    cp      LF
+    jr      z, end_of_word
+    cp      CR
+    jr      z, end_of_word
+    cp      0x5C ; backslash
+    jr      z, end_of_word
     cp      NUL
-    jr      z, end_of_string
+    jr      z, end_of_word
+    ld      (de), a
     inc     hl
+    inc     de
     jr      word_loop
 
 end_of_word:
     ; NUL-terminate word.
-    ld      (hl), NUL
+    ld      a, NUL
+    ld      (de), a
 
-    ; Skip new NUL.
-    inc     hl
-
-end_of_string:
     ; Record new position.
     ld      (Forth_input), hl
 
-    ; Skip back to start of word.
-    pop     hl
+    ld      hl, Forth_word
+    pop     de
     ret
 #endlocal
 
@@ -2566,6 +2430,7 @@ Forth_orig_de:: defs 2  ; Temporary for saving DE.
 Forth_tmp1:: defs 2     ; Temporary.
 Forth_tmp2:: defs 2     ; Temporary.
 Forth_base:: defs 2     ; Current base for printing numbers.
+Forth_word:: defs 32    ; Typical max length of Forth word.
 Forth_code:: defs FORTH_CODE_SIZE
 Forth_rstack:: defs FORTH_RSTACK_SIZE
 Forth_pstack:: defs FORTH_PSTACK_SIZE
