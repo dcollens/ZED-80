@@ -283,6 +283,7 @@ Forth_init_cmd:
     .text   ": <= 2dup < -rot = or ; "
     .text   ": > <= not ; "
     .text   ": >= < not ; "
+    .text   ": <> = not ; "
     .text   ": space 0020 emit ; "
     .text   ": words latest @ begin ?dup while dup 0003 + tell space @ repeat cr ; "
     .text   ": recurse immediate latest @ >cfa , ; "
@@ -333,8 +334,70 @@ Forth_init_cmd:
     .text   "      again "
     .text   "; "
 
+    ; My own array words.
+    .text   ": array here @ dup rot 0002 * + here ! word create ' enter , ' lit , , ' exit , ; " ; def an array, specify size in elements
+    .text   ": a@ swap 0002 * + @ ; " ; ( index array -- value )
+    .text   ": a! swap 0002 * + ! ; " ; ( value index array -- )
+
     ; YM2149 editor.
+    .text   "0008 array r "         ; YM registers.
+    .text   "variable i 0000 i ! "  ; currently-selected virtual register (0-12).
+    .text   ": clear 0000 begin dup 0000 swap r a! 0001 + dup 0008 = until drop ; "
+    .text   ": hl i @ = if 00FF 0000 00FF else 00FF 00FF 00FF then color ; "
+    .text   ": dump "
+    .text   "     0000 hl 0000 r a@ . " ; A pitch
+    .text   "     0001 hl 0001 r a@ . " ; B pitch
+    .text   "     0002 hl 0002 r a@ . " ; C pitch
+    .text   "     0003 hl 0003 r a@ dup 00FF and .b " ; Noise
+    .text   "     0004 hl >>8 .b " ; Mixer
+    .text   "     0005 hl 0004 r a@ dup 00FF and .b " ; A amplitude
+    .text   "     0006 hl >>8 .b " ; B amplitude
+    .text   "     0007 hl 0005 r a@ dup 00FF and .b" ; C amplitude
+    .text   "     0008 hl >>8 .b " ; A envelope
+    .text   "     0009 hl 0006 r a@ dup 00FF and .b" ; B envelope
+    .text   "     000A hl >>8 .b " ; C envelope
+    .text   "     000B hl 0007 r a@ dup 00FF and .b" ; I/O port
+    .text   "     000C hl >>8 .b " ; I/O port
+    .text   "     000D hl cr "
+    .text   "; "
+    .text   ": loadbeep "
+    .text   "     017B 0000 r a! "
+    .text   "     00FD 0001 r a! "
+    .text   "     0096 0002 r a! "
+    .text   "     F800 0003 r a! "
+    .text   "     1010 0004 r a! "
+    .text   "     A110 0005 r a! "
+    .text   "     0913 0006 r a! "
+    .text   "     5AA5 0007 r a! "
+    .text   "; "
+    ; Wait until the joystick changes. Leaves the new value on the stack.
+    .text   ": joy0_change "
+    .text   "     joy0 "            ; Initial value.
+    .text   "     dup "             ; Dummy secondary value.
+    .text   "     begin "
+    .text   "         drop "        ; Drop secondary value.
+    .text   "         dup "         ; Duplicate original.
+    .text   "         joy0 "        ; Read new value.
+    .text   "         dup -rot "    ; Keep it around just in case.
+    .text   "         <> "          ; See if it's changed.
+    .text   "     until "
+    .text   "     swap drop "       ; Keep only new.
+    .text   "; "
+    ; YM editor
     .text   ": ym "
+    .text   "     dump "
+    .text   "     begin "
+    .text   "         joy0_change "
+    .text   "               dup joy_left and not not i @ 0000 > and if i @ 0001 - i ! then "
+    .text   "               dup joy_right and not not i @ 000C < and if i @ 0001 + i ! then "
+    .text   "               dup joy_fire and if r play then "
+    .text   "         drop "
+    .text   "         dump "
+    ;.text   "         0100 delay "
+    .text   "         begin " ; Wait for user to let go.
+    .text   "             joy0_change 0000 = "
+    .text   "         until "
+    .text   "     again "
     .text   "; "
     .text   NUL
 
@@ -640,6 +703,12 @@ zero:
     ld      b, a
     jp      forth_next
 
+; - shift the top stack entry right eight bits.
+    M_forth_native ">>8", 0, high_byte
+    ld      c, b
+    ld      b, 0
+    jp      forth_next
+
 ; - adds the top two entries in the parameter stack.
     M_forth_native "+", 0, add
     pop     hl
@@ -710,6 +779,15 @@ not_less_than:
     ld      hl, bc
     pop     bc
     call    lcd_puthex16
+    ld      l, ' '
+    call    lcd_putc
+    jp      forth_next
+
+; - prints the lowest byte of the number on the top of the stack.
+    M_forth_native ".b", 0, dot_byte
+    ld      hl, bc
+    pop     bc
+    call    lcd_puthex8
     ld      l, ' '
     call    lcd_putc
     jp      forth_next
@@ -1159,6 +1237,16 @@ song_data:
 #include "../ym2asm/axelf.asm"
 silence:
     .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+#endlocal
+
+; - plays a song on the audio port. parameter is the address of the frame data.
+    M_forth_native "play", 0, play
+#local
+    ld	    hl, bc              ; Address of data.
+    call    snd_writeall
+
+    pop     bc
+    jp      forth_next
 #endlocal
 
 ; - pushes a random 16-bit number onto the stack.
