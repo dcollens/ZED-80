@@ -270,6 +270,7 @@ forth_init::
 Forth_init_cmd:
     .text   ": / /mod swap drop ; "
     .text   ": mod /mod drop ; "
+    .text   ": 2dup over over ; "
     .text   ": if immediate ' 0branch , here @ 0000 , ; "
     .text   ": then immediate dup here @ swap - swap ! ; "
     .text   ": else immediate ' branch , here @ 0000 , swap dup here @ swap - swap ! ; "
@@ -292,12 +293,14 @@ Forth_init_cmd:
     .text   ": demo begin rc rl again ; "
 
     ; Game.
-    .text   ": 2dup over over ; "
+    .text   ": joy_read io@ invert 001F and ; "
+    .text   ": joy0 joy0_port joy_read ; "
+    .text   ": joy1 joy1_port joy_read ; "
     .text   ": sprite over 0030 + over 0030 + line ; "
     .text   ": game lcd_width 0002 / lcd_height 0002 / "
     .text   "      begin "
     .text   "           2dup rc sprite "
-    .text   "           joystick "
+    .text   "           joy0 "
     .text   "               dup joy_up and if swap 0001 - swap then "
     .text   "               dup joy_down and if swap 0001 + swap then "
     .text   "               dup joy_left and if rot 0001 - -rot then "
@@ -579,10 +582,10 @@ zero:
 ; - bit-wise ands the top two entries in the parameter stack.
     M_forth_native "and", 0, and
     pop     hl
-    ld      a, c        ; LSB
+    ld      a, c
     and     l
     ld      c, a
-    ld      a, b        ; LSB
+    ld      a, b
     and     h
     ld      b, a
     jp      forth_next
@@ -590,11 +593,21 @@ zero:
 ; - bit-wise ors the top two entries in the parameter stack.
     M_forth_native "or", 0, or
     pop     hl
-    ld      a, c        ; LSB
+    ld      a, c
     or      l
     ld      c, a
-    ld      a, b        ; LSB
+    ld      a, b
     or      h
+    ld      b, a
+    jp      forth_next
+
+; - bit-wise inverts top entry in the parameter stack.
+    M_forth_native "invert", 0, invert
+    ld      a, c
+    cpl
+    ld      c, a
+    ld      a, b
+    cpl
     ld      b, a
     jp      forth_next
 
@@ -1059,20 +1072,6 @@ silence:
     .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 #endlocal
 
-; - gets the status of the joystick. Pushes 16-bit joystick status, with
-; - LSB joystick 0 and MSB joystick 1.
-    M_forth_native "joystick", 0, joystick
-    push    bc
-    in	    a, (PORT_JOY0)	; read joystick 0
-    cpl                         ; invert A
-    and     0x1F                ; keep only useful bits.
-    ld      c, a                ; MSB
-    in	    a, (PORT_JOY1)	; read joystick 1
-    cpl                         ; invert A
-    and     0x1F                ; keep only useful bits.
-    ld      b, a                ; LSB
-    jp      forth_next
-
 ; - pushes a random 16-bit number onto the stack.
     M_forth_native "rnd", 0, rnd
     push    bc
@@ -1099,6 +1098,8 @@ silence:
     M_forth_const joy_left, JOY_LEFT
     M_forth_const joy_right, JOY_RIGHT
     M_forth_const joy_fire, JOY_FIRE
+    M_forth_const joy0_port, PORT_JOY0
+    M_forth_const joy1_port, PORT_JOY1
 
 ; - finds the string pointed to by HL in the dictionary.
 ; - returns a pointer to the dictionary entry or NULL if not found.
