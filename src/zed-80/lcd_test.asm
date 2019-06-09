@@ -419,20 +419,16 @@ Forth_init_cmd:
     .text   "; "
     ; YM editor
     .text   ": ym "
-    .text   "     dump "
     .text   "     begin "
-    .text   "         joy0_change "
-    .text   "               dup joy_up and if i @ dup r@ 0001 + swap r! then "
-    .text   "               dup joy_down and if i @ dup r@ 0001 - swap r! then "
-    .text   "               dup joy_left and not not i @ 0000 > and if i @ 0001 - i ! then "
-    .text   "               dup joy_right and not not i @ 000C < and if i @ 0001 + i ! then "
-    .text   "               dup joy_fire and if r play then "
-    .text   "         drop "
     .text   "         dump "
-    .text   "         begin " ; Wait for user to let go.
-    .text   "             joy0_change 0000 = "
-    .text   "         until "
-    .text   "     again "
+    .text   "         key "
+    .text   "               dup 001E = if i @ dup r@ 0001 + swap r! then "
+    .text   "               dup 001F = if i @ dup r@ 0001 - swap r! then "
+    .text   "               dup 0011 = i @ 0000 > and if i @ 0001 - i ! then "
+    .text   "               dup 0010 = i @ 000C < and if i @ 0001 + i ! then "
+    .text   "               dup 0020 = if r play then "
+    .text   "         0071 = "
+    .text   "     until "
     .text   "; "
     .text   NUL
 
@@ -1302,6 +1298,14 @@ silence:
     ld	    hl, bc
     call    rand16_modn
     ld      bc, hl
+    jp      forth_next
+
+; - blocks and reads a character from the keyboard.
+    M_forth_native "key", 0, key
+    push    bc
+    call    kbd_getc
+    ld      c, l
+    ld      b, 0
     jp      forth_next
 
 ; - various constants.
