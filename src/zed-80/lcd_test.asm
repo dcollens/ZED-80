@@ -315,19 +315,20 @@ Forth_init_cmd:
     .text   ": min 2dup < if drop else swap drop then ; "
     .text   ": max 2dup < if swap drop else drop then ; "
     .text   "0020 constant size "
+    .text   "size 0002 / constant half_size "
     .text   "variable x "
     .text   "variable y "
-    .text   ": sprite over size + over size + rectf ; "
+    .text   ": sprite half_size half_size ellipsef ; "
     .text   ": game "
-    .text   "      lcd_width size - 0002 / x ! "
-    .text   "      lcd_height size - 0002 / y ! "
+    .text   "      lcd_width 0002 / x ! "
+    .text   "      lcd_height 0002 / y ! "
     .text   "      begin "
     .text   "           rc x @ y @ sprite "
     .text   "           joy0 "
-    .text   "               dup joy_up and if y @ 0000 > if y @ 0001 - y ! then then "
-    .text   "               dup joy_down and if y @ 0001 + lcd_height size - min y ! then "
-    .text   "               dup joy_left and if x @ 0000 > if x @ 0001 - x ! then then "
-    .text   "               dup joy_right and if x @ 0001 + lcd_width size - min x ! then "
+    .text   "               dup joy_up and if y @ half_size > if y @ 0001 - y ! then then "
+    .text   "               dup joy_down and if y @ 0001 + lcd_height half_size - min y ! then "
+    .text   "               dup joy_left and if x @ half_size > if x @ 0001 - x ! then then "
+    .text   "               dup joy_right and if x @ 0001 + lcd_width half_size - min x ! then "
     .text   "           drop "
     .text   "      again "
     .text   "; "
@@ -1058,6 +1059,36 @@ no_skip:
     pop     de                      ; x1
     call    lcd_line_start_xy
     M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT
+    call    lcd_wait_idle           ; wait for graphics operation to complete
+    ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
+; - draws an ellipse. args are cx, cy, rx, ry, pushed in that order.
+    M_forth_native "ellipse", 0, ellipse
+    ld      hl, bc                  ; ry
+    ld      bc, de                  ; save DE
+    pop     de                      ; rx
+    call    lcd_ellipse_radii
+    pop     hl                      ; cy
+    pop     de                      ; cx
+    call    lcd_ellipse_xy
+    M_lcdwrite LCDREG_DCR1, DCR1_DRAWELL
+    call    lcd_wait_idle           ; wait for graphics operation to complete
+    ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
+; - draws a filled ellipse. args are cx, cy, rx, ry, pushed in that order.
+    M_forth_native "ellipsef", 0, ellipsef
+    ld      hl, bc                  ; ry
+    ld      bc, de                  ; save DE
+    pop     de                      ; rx
+    call    lcd_ellipse_radii
+    pop     hl                      ; cy
+    pop     de                      ; cx
+    call    lcd_ellipse_xy
+    M_lcdwrite LCDREG_DCR1, DCR1_FILLELL
     call    lcd_wait_idle           ; wait for graphics operation to complete
     ld      de, bc                  ; restore DE
     pop     bc
