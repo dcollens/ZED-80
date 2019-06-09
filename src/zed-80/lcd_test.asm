@@ -29,7 +29,7 @@
 
 FORTH_RSTACK_SIZE   equ   256
 FORTH_PSTACK_SIZE   equ   256
-FORTH_CODE_SIZE     equ   2048
+FORTH_CODE_SIZE     equ   16384
 
 DCR0_DRAWLINE	equ LCDDCR0_DRWLIN | LCDDCR0_RUN
 DCR0_DRAWTRI	equ LCDDCR0_DRWTRI | LCDDCR0_RUN
@@ -336,29 +336,63 @@ Forth_init_cmd:
 
     ; My own array words.
     .text   ": array here @ dup rot 0002 * + here ! word create ' enter , ' lit , , ' exit , ; " ; def an array, specify size in elements
-    .text   ": a@ swap 0002 * + @ ; " ; ( index array -- value )
-    .text   ": a! swap 0002 * + ! ; " ; ( value index array -- )
+    .text   ": a[] swap 0002 * + ; " ; ( index array -- address )
+    .text   ": a@ a[] @ ; " ; ( index array -- value )
+    .text   ": a! a[] ! ; " ; ( value index array -- )
+    .text   ": @low @ 00FF and ; "
+    .text   ": @high @ 8>> ; "
+    .text   ": !low dup @ FF00 and rot 00FF and or swap ! ; "
+    .text   ": !high dup @ 00FF and rot 8<< or swap ! ; "
+    .text   ": a@low a[] @low ; "
+    .text   ": a@high a[] @high ; "
+    .text   ": a!low a[] !low ; " ; ( value index array -- )
+    .text   ": a!high a[] !high ; " ; ( value index array -- )
 
     ; YM2149 editor.
     .text   "0008 array r "         ; YM registers.
     .text   "variable i 0000 i ! "  ; currently-selected virtual register (0-12).
     .text   ": clear 0000 begin dup 0000 swap r a! 0001 + dup 0008 = until drop ; "
     .text   ": hl i @ = if 00FF 0000 00FF else 00FF 00FF 00FF then color ; "
+    .text   ": r@ "  ; Read from registers. Parameter is 0 to 12.
+    .text   "     dup 0000 = if drop 0000 r a@ else "
+    .text   "     dup 0001 = if drop 0001 r a@ else "
+    .text   "     dup 0002 = if drop 0002 r a@ else "
+    .text   "     dup 0003 = if drop 0003 r a@low else "
+    .text   "     dup 0004 = if drop 0003 r a@high else "
+    .text   "     dup 0005 = if drop 0004 r a@low else "
+    .text   "     dup 0006 = if drop 0004 r a@high else "
+    .text   "     dup 0007 = if drop 0005 r a@low else "
+    .text   "     dup 0008 = if drop 0005 r a@high else "
+    .text   "     dup 0009 = if drop 0006 r a@low else "
+    .text   "     dup 000A = if drop 0006 r a@high else "
+    .text   "     dup 000B = if drop 0007 r a@low else "
+    .text   "     dup 000C = if drop 0007 r a@high else "
+    .text   "     drop FFFF then then then then then then then then then then then then then "
+    .text   "; "
+    .text   ": r! "  ; Write to registers. Parameters are value and index (0 to 12).
+    .text   "     dup 0000 = if drop 0000 r a! else "
+    .text   "     dup 0001 = if drop 0001 r a! else "
+    .text   "     dup 0002 = if drop 0002 r a! else "
+    .text   "     dup 0003 = if drop 0003 r a!low else "
+    .text   "     dup 0004 = if drop 0003 r a!high else "
+    .text   "     dup 0005 = if drop 0004 r a!low else "
+    .text   "     dup 0006 = if drop 0004 r a!high else "
+    .text   "     dup 0007 = if drop 0005 r a!low else "
+    .text   "     dup 0008 = if drop 0005 r a!high else "
+    .text   "     dup 0009 = if drop 0006 r a!low else "
+    .text   "     dup 000A = if drop 0006 r a!high else "
+    .text   "     dup 000B = if drop 0007 r a!low else "
+    .text   "     dup 000C = if drop 0007 r a!high else "
+    .text   "     drop then then then then then then then then then then then then then "
+    .text   "; "
     .text   ": dump "
-    .text   "     0000 hl 0000 r a@ . " ; A pitch
-    .text   "     0001 hl 0001 r a@ . " ; B pitch
-    .text   "     0002 hl 0002 r a@ . " ; C pitch
-    .text   "     0003 hl 0003 r a@ dup 00FF and .b " ; Noise
-    .text   "     0004 hl >>8 .b " ; Mixer
-    .text   "     0005 hl 0004 r a@ dup 00FF and .b " ; A amplitude
-    .text   "     0006 hl >>8 .b " ; B amplitude
-    .text   "     0007 hl 0005 r a@ dup 00FF and .b" ; C amplitude
-    .text   "     0008 hl >>8 .b " ; A envelope
-    .text   "     0009 hl 0006 r a@ dup 00FF and .b" ; B envelope
-    .text   "     000A hl >>8 .b " ; C envelope
-    .text   "     000B hl 0007 r a@ dup 00FF and .b" ; I/O port
-    .text   "     000C hl >>8 .b " ; I/O port
-    .text   "     000D hl cr "
+    .text   "     0000 "
+    .text   "     begin "
+    .text   "         dup hl "
+    .text   "         dup r@ "
+    .text   "         over 0003 < if . else .b then "
+    .text   "         0001 + dup 000D = "
+    .text   "     until drop 000D hl cr "
     .text   "; "
     .text   ": loadbeep "
     .text   "     017B 0000 r a! "
@@ -388,12 +422,13 @@ Forth_init_cmd:
     .text   "     dump "
     .text   "     begin "
     .text   "         joy0_change "
+    .text   "               dup joy_up and if i @ dup r@ 0001 + swap r! then "
+    .text   "               dup joy_down and if i @ dup r@ 0001 - swap r! then "
     .text   "               dup joy_left and not not i @ 0000 > and if i @ 0001 - i ! then "
     .text   "               dup joy_right and not not i @ 000C < and if i @ 0001 + i ! then "
     .text   "               dup joy_fire and if r play then "
     .text   "         drop "
     .text   "         dump "
-    ;.text   "         0100 delay "
     .text   "         begin " ; Wait for user to let go.
     .text   "             joy0_change 0000 = "
     .text   "         until "
@@ -704,9 +739,15 @@ zero:
     jp      forth_next
 
 ; - shift the top stack entry right eight bits.
-    M_forth_native ">>8", 0, high_byte
+    M_forth_native "8>>", 0, shift_right
     ld      c, b
     ld      b, 0
+    jp      forth_next
+
+; - shift the top stack entry left eight bits.
+    M_forth_native "8<<", 0, shift_left
+    ld      b, c
+    ld      c, 0
     jp      forth_next
 
 ; - adds the top two entries in the parameter stack.
