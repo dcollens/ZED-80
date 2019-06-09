@@ -314,13 +314,13 @@ Forth_init_cmd:
     .text   ": joy1 joy1_port joy_read ; "
     .text   ": min 2dup < if drop else swap drop then ; "
     .text   ": max 2dup < if swap drop else drop then ; "
-    .text   ": size 0030 ; "
-    .text   ": sprite over size + over size + line ; "
+    .text   "0020 constant size "
     .text   "variable x "
     .text   "variable y "
+    .text   ": sprite over size + over size + rectf ; "
     .text   ": game "
-    .text   "      lcd_width 0002 / x ! "
-    .text   "      lcd_height 0002 / y ! "
+    .text   "      lcd_width size - 0002 / x ! "
+    .text   "      lcd_height size - 0002 / y ! "
     .text   "      begin "
     .text   "           rc x @ y @ sprite "
     .text   "           joy0 "
@@ -1028,6 +1028,36 @@ no_skip:
     pop     de                      ; x1
     call    lcd_line_start_xy
     M_lcdwrite LCDREG_DCR0, DCR0_DRAWLINE
+    call    lcd_wait_idle           ; wait for graphics operation to complete
+    ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
+; - draws a rectangle. args are x1, y1, x2, y2, pushed in that order.
+    M_forth_native "rect", 0, rect
+    ld      hl, bc                  ; y2
+    ld      bc, de                  ; save DE
+    pop     de                      ; x2
+    call    lcd_line_end_xy
+    pop     hl                      ; y1
+    pop     de                      ; x1
+    call    lcd_line_start_xy
+    M_lcdwrite LCDREG_DCR1, DCR1_DRAWRECT
+    call    lcd_wait_idle           ; wait for graphics operation to complete
+    ld      de, bc                  ; restore DE
+    pop     bc
+    jp      forth_next
+
+; - draws a filled rectangle. args are x1, y1, x2, y2, pushed in that order.
+    M_forth_native "rectf", 0, rectf
+    ld      hl, bc                  ; y2
+    ld      bc, de                  ; save DE
+    pop     de                      ; x2
+    call    lcd_line_end_xy
+    pop     hl                      ; y1
+    pop     de                      ; x1
+    call    lcd_line_start_xy
+    M_lcdwrite LCDREG_DCR1, DCR1_FILLRECT
     call    lcd_wait_idle           ; wait for graphics operation to complete
     ld      de, bc                  ; restore DE
     pop     bc
