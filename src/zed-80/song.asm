@@ -61,14 +61,10 @@ nextFrame:
     or      c
     jp      nz, nextFrame
 
-    ld	    hl, silence
-    call    snd_writeall
     jr	    playSong
 
 song_data:
 #include "../ym2asm/axelf.asm"
-silence:
-    .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 #endlocal
 
 #include library "libcode"

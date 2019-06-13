@@ -12,5 +12,4 @@ ym2asm: ym2asm.c
 test_audio: test_audio.c
 
 axelf.asm: ym2asm axelf.ym
-	./ym2asm --limit 2000 < axelf.ym > axelf.asm
-
+	./ym2asm --limit 2900 < axelf.ym > axelf.asm
