@@ -1,7 +1,7 @@
 .PHONY: all clean
 
-PRODUCTS := rom_monitor.rom rom_only_test.rom rom_ram_test.rom \
-	lcd_test.bin ram_test.bin sdcard_test.bin rom_for_emulator.rom
+PRODUCTS := rom_monitor.rom rom_only_test.rom rom_ram_test.rom rom_for_emulator.rom \
+	lcd_test.bin ram_test.bin sdcard_test.bin forth.bin song.bin
 
 all: $(PRODUCTS)
 
