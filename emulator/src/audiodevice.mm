@@ -23,7 +23,7 @@ void AudioDevice::audioQueueOutputCallback(void *userData, AudioQueueRef audioQu
 
 AudioDevice::AudioDevice(uint32_t cpuClockFrequency, uint32_t audioClockDivisor)
 : _cpuClockFrequency(cpuClockFrequency), _audioClockDivisor(audioClockDivisor), _clockCount(0),
-  _pins(0), _audioQueue(nullptr)
+  _pins(0), _audioQueue(nullptr), _audioQueueStarted(false), _numQueuedSinceReset(0)
 {
     ay38910_desc_t desc;
     desc.type = AY38910_TYPE_8910;
@@ -73,13 +73,6 @@ void AudioDevice::initializeAudioQueue() {
         
         _audioBuffers.emplace(buffer);
     }
-    
-    result = AudioQueueStart(_audioQueue, NULL);
-    if (result != 0) {
-        cout << "AudioDevice: could not start output audio queue, error " << result
-             << " ($" << to_hex(result) << ")" << endl;
-        return;
-    }
 }
 
 void AudioDevice::yieldSample(float sample) {
@@ -87,6 +80,7 @@ void AudioDevice::yieldSample(float sample) {
         cout << "AudioDevice: audio buffer underflow, discarding sample" << endl;
         return;
     }
+    
     auto buffer = _audioBuffers.front();
     float *data = static_cast<float *>(buffer->mAudioData);
     data[buffer->mAudioDataByteSize / sizeof(float)] = sample;
@@ -94,12 +88,25 @@ void AudioDevice::yieldSample(float sample) {
     if (buffer->mAudioDataByteSize >= buffer->mAudioDataBytesCapacity) {
         _audioBuffers.pop();
         auto result = AudioQueueEnqueueBuffer(_audioQueue, buffer, 0, NULL);
-        if (result != 0) {
+        if (result == 0) {
+            ++_numQueuedSinceReset;
+        } else {
             cout << "AudioDevice: could not enqueue audio output buffer, error " << result
                  << " ($" << to_hex(result) << ")" << endl;
             // Put the buffer back, empty.
             buffer->mAudioDataByteSize = 0;
             _audioBuffers.emplace(buffer);
+        }
+    }
+    
+    if (!_audioQueueStarted && _numQueuedSinceReset >= N_QUEUE_BEFORE_START) {
+        auto result = AudioQueueStart(_audioQueue, NULL);
+        if (result == 0) {
+            _audioQueueStarted = true;
+        } else {
+            cout << "AudioDevice: could not start output audio queue, error " << result
+                 << " ($" << to_hex(result) << ")" << endl;
+            return;
         }
     }
 }
@@ -147,7 +154,10 @@ void AudioDevice::audioQueueOutputCallback(AudioQueueRef audioQueue, AudioQueueB
 }
 
 void AudioDevice::reset() {
-    AudioQueueReset(_audioQueue);
+    AudioQueueStop(_audioQueue, true);
+    _audioQueueStarted = false;
+    _numQueuedSinceReset = 0;
+    
     _clockCount = 0;
     _pins = 0;
     ay38910_reset(&_chip);

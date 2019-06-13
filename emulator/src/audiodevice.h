@@ -23,8 +23,10 @@
  */
 class AudioDevice {
     static constexpr int AUDIO_OUTPUT_HZ = 44100;
-    static constexpr int N_AUDIO_BUFFERS = 16;
+    
+    static constexpr int N_AUDIO_BUFFERS = 32;
     static constexpr int N_SAMPLES_PER_BUFFER = 1024;
+    static constexpr int N_QUEUE_BEFORE_START = 8;
     
     uint32_t                        _cpuClockFrequency;
     uint32_t                        _audioClockDivisor;
@@ -34,6 +36,8 @@ class AudioDevice {
     
     AudioQueueRef                   _audioQueue;
     std::queue<AudioQueueBufferRef> _audioBuffers;
+    bool                            _audioQueueStarted;
+    size_t                          _numQueuedSinceReset;   // number of buffers sent to AQ
     
     void initializeAudioQueue();
 

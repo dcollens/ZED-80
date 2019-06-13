@@ -160,11 +160,11 @@ void ZED80::run() {
     }
 }
 
-void ZED80::smallRun(uint64_t ms) {
-    uint32_t ticks = uint32_t(ms * CPU_CLOCK_HZ / 1000);
+uint64_t ZED80::smallRun(uint64_t nanos) {
+    uint32_t ticks = uint32_t(nanos * CPU_CLOCK_HZ / NANOS_PER_SECOND);
 
     ticks = z80_exec(&_cpu, ticks);
-//    cout << "CPU: ran for " << ticks << " ticks" << endl;
+    return ticks * NANOS_PER_SECOND / CPU_CLOCK_HZ;
 }
 
 void ZED80::reset() {

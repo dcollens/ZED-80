@@ -6,6 +6,7 @@
 //  Copyright © 2019 The Head. All rights reserved.
 //
 
+#include <mach/mach_time.h>
 #include <fstream>
 #include "zed-80.h"
 
@@ -24,9 +25,19 @@ using std::vector;
 using std::string;
 using std::ifstream;
 
+static constexpr NSTimeInterval EMULATION_SLICE = 0.010;    // 10ms emulation quantum
+
+static uint64_t nanosSinceBoot() {
+    uint64_t ticksSinceBoot = mach_absolute_time();     // this clock stops when machine sleeps
+
+    mach_timebase_info_data_t timebase;
+    mach_timebase_info(&timebase);
+    return ticksSinceBoot * timebase.numer / timebase.denom;
+}
+
 // Return the pathname without the extension ("file.x" becomes "file").
 // If the pathname does not have an extension, it is returned unchanged.
-string stripExtension(string const &pathname) {
+static string stripExtension(string const &pathname) {
     auto slash = pathname.rfind('/');
     auto dot = pathname.rfind('.');
     if (dot == pathname.npos || (slash != pathname.npos && dot < slash)) {
@@ -41,7 +52,9 @@ string stripExtension(string const &pathname) {
 static NSDate *modificationDateOfFile(string const &fileName) {
     NSString *nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
 
-    NSDictionary<NSFileAttributeKey, id> *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:nsFileName error:nil];
+    NSDictionary<NSFileAttributeKey, id> *attrs =
+        [[NSFileManager defaultManager] attributesOfItemAtPath:nsFileName
+                                                         error:nil];
     if (attrs == nil) {
         return nil;
     }
@@ -87,8 +100,10 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 @end
 
 @implementation ViewController {
-    ZED80 _zed80;
-    NSTimer *_emulatorRunTimer;
+    ZED80           _zed80;
+    NSTimer *       _emulatorRunTimer;
+    uint64_t        _emulatorTimestamp; // last timestamp at which we emulated
+    uint64_t        _nanosToEmulate; // number of nanoseconds of real time we still need to emulate
 }
 
 - (void)loadView {
@@ -147,17 +162,27 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
 }
 
 - (void)startEmulator {
-    int periodMs = 10;
+    _emulatorTimestamp = nanosSinceBoot();
+    _nanosToEmulate = 0;
 
-    _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:periodMs / 1000.0
+    auto emulatorBlock = ^(NSTimer * _Nonnull timer) {
+        uint64_t now = nanosSinceBoot();
+        self->_nanosToEmulate += now - self->_emulatorTimestamp;
+        self->_emulatorTimestamp = now;
+        
+        uint64_t nanosEmulated = self->_zed80.smallRun(self->_nanosToEmulate);
+        self->_nanosToEmulate -= nanosEmulated;
+    };
+
+    _emulatorRunTimer = [NSTimer scheduledTimerWithTimeInterval:EMULATION_SLICE
                                                         repeats:YES
-                                                          block:^(NSTimer * _Nonnull timer) {
-                                                              self->_zed80.smallRun(periodMs);
-                                                          }];
+                                                          block:emulatorBlock];
 }
 
 - (void)stopEmulator {
     [self cancelEmulatorTimer];
+    _emulatorTimestamp = 0;
+    _nanosToEmulate = 0;
 }
 
 - (IBAction)emulatorGo:(id)sender {

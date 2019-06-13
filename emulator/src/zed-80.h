@@ -25,6 +25,7 @@
 using std::unique_ptr;
 
 class ZED80 {
+    static constexpr uint64_t   NANOS_PER_SECOND = 1000000000ULL;
     static constexpr uint32_t   CPU_CLOCK_HZ = 10000000;    // 10MHz
     
     static constexpr uint32_t   AUDIO_CLOCK_DIVISOR = 5;    // 2MHz audio clock
@@ -64,7 +65,7 @@ public:
     void receivedKeyboardScanCode(uint8_t scanCode);
 
     void run();
-    void smallRun(uint64_t ms);
+    uint64_t smallRun(uint64_t nanos);      // returns number of nanoseconds actually emulated
     void reset();
 };
 
