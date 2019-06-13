@@ -29,10 +29,18 @@ PIOICTL_MASKNXT equ 0x10	; next control byte written must be the input interrupt
 				; 1 = input masked, 0 = input enabled
 
 M_pio_reset	macro
+    ; destroys A
     ld	    a, PIOC_MODE | PIOMODE_INPUT
     out	    (PORT_PIOACTL), a
     out	    (PORT_PIOBCTL), a
     ld	    a, PIOC_ICTL | PIOICTL_INTDIS
     out	    (PORT_PIOACTL), a
+    out	    (PORT_PIOBCTL), a
+    endm
+
+; Set the mode for PIO port B. 'mode' is one of the PIOMODE_xxx constants.
+M_pio_set_portB_mode	macro mode
+    ; destroys A
+    ld	    a, PIOC_MODE | &mode
     out	    (PORT_PIOBCTL), a
     endm

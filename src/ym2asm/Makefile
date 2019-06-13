@@ -1,6 +1,11 @@
+.PHONY: all clean
 
-.PHONY: all
-all: ym2asm test_audio axelf.asm
+PRODUCTS = ym2asm test_audio axelf.asm
+
+all: $(PRODUCTS)
+
+clean:
+	rm -f $(PRODUCTS)
 
 ym2asm: ym2asm.c
 
