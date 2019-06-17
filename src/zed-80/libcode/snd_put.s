@@ -9,6 +9,6 @@ snd_put::
     out	    (PORT_PIOBDAT), a	; write 'data' to PIO port B
     ld	    a, (Sysreg)		    ; read current value of SYSREG
     or	    l			    ; set requested audio chip 'bus_cycle' bits
-    call    sysreg_write	    ; note: preserves A
+    out	    (PORT_SYSREG), a	    ; write bus bits
     and	    ~(SYS_BDIR | SYS_BC1)   ; turn off audio chip bus control bits
     jp	    sysreg_write	    ; write bus bits and return
