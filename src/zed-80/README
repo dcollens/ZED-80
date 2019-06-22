@@ -16,6 +16,9 @@ To program the ROM run:
 On Dan's MacBook, you can connect to the serial port with:
     minicom usbserial
 
+On Lawrence's MacBook, you can connect to the serial port with:
+    minicom --baudrate 38400 --device /dev/cu.usbserial-AK068DDT
+
 
 Shared Library Routines
 =======================
