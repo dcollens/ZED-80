@@ -32,10 +32,9 @@
 ; Careful, don't put anything before "init", as this is the entry point to our code.
 #local
 init::
-    ; zero the DATA segment
     ld	    hl, DATA
     ld	    bc, DATA_size
-    call    bzero
+    call    bzero		    ; zero the DATA segment
 
     ; Set Sysreg to the value that we know the ROM monitor set it to.
     ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR

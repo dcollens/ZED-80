@@ -10,7 +10,7 @@ SYS_BDIR	    equ 0x20		; Audio chip BDIR line (bus direction)
 SYS_BC1		    equ 0x40		; Audio chip BC1 line (bus control 1)
 SYS_RESERVED	    equ 0x80		; Reserved for future use
 
-; These are the bit numbers (usefil for bit, set, and res instructions).
+; These are the bit numbers (useful for bit, set, and res instructions).
 SYS_IDX_MMUEN	    equ 0
 SYS_IDX_SDCLK	    equ 1
 SYS_IDX_SDCS	    equ 2

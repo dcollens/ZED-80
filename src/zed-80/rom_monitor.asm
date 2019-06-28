@@ -367,8 +367,8 @@ cmd_do_input::
     ; I/O address is in l
     ld	    c, l
     M_sio_puts cmd_equals_str
-    in	    l, (c)
-    call    sio_puthex8
+    in	    a, (c)
+    call    sioA_puthex8
 done:
     M_sio_puts crlf
     pop	    bc
@@ -504,26 +504,6 @@ abort:
     pop	    bc
     ret	    
 #endlocal
-
-; void sio_puthex8(uint8_t val)
-; - writes the specified 8-bit value "val" as a pair of hex digits to port A
-sio_puthex8::
-    push    hl
-    ld	    h, l
-    ld	    a, l
-    rrca
-    rrca
-    rrca
-    rrca
-    call    bin2hex
-    ld	    l, a
-    call    sioA_putc
-    ld	    a, h
-    call    bin2hex
-    ld	    l, a
-    call    sioA_putc
-    pop	    hl
-    ret
 
 #include library "libcode"
 
