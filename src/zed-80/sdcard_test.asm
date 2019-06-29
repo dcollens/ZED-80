@@ -32,17 +32,10 @@ SYS_SDCLOCKS	    equ SYS_SDCLK | SYS_SDOCLK
 SDC_POLL_COUNT	    equ 1000
 
 ; SD card flags set in the SDC_flags variable.
-SDF_PRESENT	    equ 0x01	    ; Is card present?
-SDF_WP		    equ 0x02	    ; Is card write-protected?
-SDF_V2		    equ 0x04	    ; Is card v2? (Otherwise v1)
-
-; some macros that we have to declare before use
-M_sio_puts  macro str
-    push    de
-    ld	    de, &str
-    call    sioA_puts
-    pop	    de
-    endm
+SDF_PRESENT	    equ 0x01	    ; Card present?
+SDF_WP		    equ 0x02	    ; Card write-protected?
+SDF_V2		    equ 0x04	    ; Card v2? (Otherwise v1)
+SDF_BLOCK	    equ 0x08	    ; Card uses block addresses? (Otherwise byte)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; our code will load immediately above the ROM
@@ -115,14 +108,16 @@ doneWP:
     ; Send CMD0 to reset the card
     ld	    de, msg_cmd0
     call    sioA_puts
-    call    sdc_cmd0		    ; send CMD0 to reset the card
+    ld	    hl, sdc_cmd0_data
+    call    sdc_command		    ; send CMD0 to reset the card
     call    sioA_puthex8	    ; display response byte
     call    sioA_crlf
 
     ; Send CMD8 to determine major version, and unlock v2 features (if present)
     ld	    de, msg_cmd8
     call    sioA_puts
-    call    sdc_cmd8		    ; next we send CMD8
+    ld	    hl, sdc_cmd8_data
+    call    sdc_command_resp4	    ; next we send CMD8
     cp	    0xFF		    ; test response == 0xFF?
     jr	    z, fail		    ; if response == 0xFF, fail
     ld	    l, a
@@ -153,6 +148,32 @@ doneCmd8:
     or	    a			    ; test response == 0?
     jr	    nz, fail		    ; if response != 0, fail
 
+    ; For v2 cards, send CMD58 to determine if block vs. byte address
+    ld	    a, (SDC_flags)
+    and	    SDF_V2		    ; test SDC_flags & SDF_V2
+    jr	    z, doneCmd58
+    ld	    de, msg_cmd58
+    call    sioA_puts
+    ld	    hl, sdc_cmd58_data
+    call    sdc_command_resp4	    ; send CMD58
+    ld	    l, a
+    call    sioA_puthex8	    ; display response byte
+    call    sioA_crlf
+    ld	    a, l
+    or	    a			    ; test response == 0?
+    jr	    nz, doneCmd58	    ; if response != 0, ignore result
+    ld	    a, (SDC_buffer)
+    and	    0x40		    ; test SDC_buffer[0] & 0x40?
+    jr	    z, doneCmd58	    ; if SDC_buffer[0] & 0x40 == 0, card is byte addressed
+    ld	    a, (SDC_flags)
+    or	    SDF_BLOCK
+    ld	    (SDC_flags), a	    ; set BLOCK flag
+    ld	    de, msg_block_addr
+    call    sioA_writeln	    ; display block addressing message
+doneCmd58:
+
+    ; TODO: For v1 cards, send CMD16 to set block length to 512
+
 done:
     pop	    hl
     pop	    de
@@ -181,12 +202,23 @@ msg_cmd8:
     .text "CMD8: ", NUL
 msg_acmd41:
     .text "ACMD41: ", NUL
+msg_cmd58:
+    .text "CMD58: ", NUL
 msg_fail:
     .text "Fail", NUL
 msg_sdcard_v1:
     .text "SDcardV1", NUL
 msg_sdcard_v2:
     .text "SDcardV2", NUL
+msg_block_addr:
+    .text "BlkAddr", NUL
+
+sdc_cmd0_data:
+    .byte $40, $00,$00,$00,$00, $95
+sdc_cmd8_data:
+    .byte $48, $00,$00,$01,$AA, $87
+sdc_cmd58_data:
+    .byte $7A, $00,$00,$00,$00, $FD
 #endlocal
 
 ; void sdc_cs_low()
@@ -294,6 +326,7 @@ writeByte:
 
 ; uint8_t sdc_command(uint8_t data[6])
 ; - 'data' pointer in HL
+; - send specified 6-byte command to SD card
 ; - returns response byte in A
 #local
 sdc_command::
@@ -308,44 +341,24 @@ sdc_command::
     ret
 #endlocal
 
-; uint8_t sdc_cmd0()
-; - send CMD0 to reset SD card
+; uint8_t sdc_command_resp4(uint8_t data[6])
+; - 'data' pointer in HL
+; - send specified 6-byte command to SD card
 ; - returns response byte in A
+; - if command was successful, 4-byte response payload is in SDC_buffer
 #local
-sdc_cmd0::
-    push    hl
-    ld	    hl, cmd0_data
-    call    sdc_command
-    pop	    hl
-    ret
-
-cmd0_data:
-    .byte $40, $00,$00,$00,$00, $95
-#endlocal
-
-; uint8_t sdc_cmd8()
-; - send CMD8 to SD card to get version, and unlock v2 features (if present)
-; - returns response byte in A
-; - if command was successful, full response payload is in SDC_buffer
-#local
-sdc_cmd8::
+sdc_command_resp4::
     push    bc
-    push    hl
-    ld	    hl, cmd8_data
     call    sdc_command
-    cp	    0x01		    ; test response == 0x01?
-    jr	    nz, done		    ; if response != 0x01, return fail
+    cp	    0x02		    ; test response < 0x02?
+    jr	    nc, done		    ; if response >= 0x02, return fail
     ld	    b, 4
     ld	    c, a		    ; C = response
     call    sdc_getbytes	    ; read 4 bytes from SD card into SDC_buffer
     ld	    a, c		    ; A = response
 done:
-    pop	    hl
     pop	    bc
     ret
-
-cmd8_data:
-    .byte $40 | 8, $00,$00,$01,$AA, $87
 #endlocal
 
 ; uint8_t sdc_acmd41()
@@ -367,7 +380,7 @@ loop:
     jr	    z, timeout		    ; if retries == 0, return 0x01 (card stuck in idle)
 
     ld	    hl, cmd55_data
-    call    sdc_command
+    call    sdc_command		    ; send CMD55 (APP_CMD prefix)
     cp	    0x02		    ; test response < 0x02?
     jr	    nc, done		    ; if response >= 0x02, fail
 
@@ -379,7 +392,7 @@ cardV1:
     ld	    hl, cmd41_data+1	    ; HL = &cmd41_data[1]
     ld	    (hl), a		    ; cmd41_data[1] = 0x00 (V1) or 0x40 (V2)
     dec	    hl			    ; HL = &cmd41_data[0]
-    call    sdc_command
+    call    sdc_command		    ; send CMD41 (actually ACMD41 because of CMD55 prefix)
     cp	    0x01		    ; test response == 0x01?
     jr	    z, loop		    ; continue if card is still 'idle', otherwise return
 done:
