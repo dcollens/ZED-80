@@ -119,7 +119,7 @@ doneWP:
     ld	    hl, sdc_cmd8_data
     call    sdc_command_resp4	    ; next we send CMD8
     cp	    0xFF		    ; test response == 0xFF?
-    jr	    z, fail		    ; if response == 0xFF, fail
+    jp	    z, fail		    ; if response == 0xFF, fail
     ld	    l, a
     call    sioA_puthex8	    ; display response byte
     ld	    a, l
@@ -151,7 +151,7 @@ doneCmd8:
     ; For v2 cards, send CMD58 to determine if block vs. byte address
     ld	    a, (SDC_flags)
     and	    SDF_V2		    ; test SDC_flags & SDF_V2
-    jr	    z, doneCmd58
+    jr	    z, cardV1
     ld	    de, msg_cmd58
     call    sioA_puts
     ld	    hl, sdc_cmd58_data
@@ -170,10 +170,22 @@ doneCmd8:
     ld	    (SDC_flags), a	    ; set BLOCK flag
     ld	    de, msg_block_addr
     call    sioA_writeln	    ; display block addressing message
+    jr	    doneCmd58
+
+    ; For v1 cards, send CMD16 to set block length to 512
+cardV1:
+    ld	    de, msg_cmd16
+    call    sioA_puts		    ; next we send CMD16
+    ld	    hl, sdc_cmd16_data
+    call    sdc_command		    ; send CMD16
+    ld	    l, a
+    call    sioA_puthex8	    ; display response byte
+    call    sioA_crlf
+    ld	    a, l
+    or	    a			    ; test response == 0?
+    jr	    nz, fail		    ; if response != 0, fail
+
 doneCmd58:
-
-    ; TODO: For v1 cards, send CMD16 to set block length to 512
-
 done:
     pop	    hl
     pop	    de
@@ -204,6 +216,8 @@ msg_acmd41:
     .text "ACMD41: ", NUL
 msg_cmd58:
     .text "CMD58: ", NUL
+msg_cmd16:
+    .text "CMD16: ", NUL
 msg_fail:
     .text "Fail", NUL
 msg_sdcard_v1:
@@ -219,6 +233,8 @@ sdc_cmd8_data:
     .byte $48, $00,$00,$01,$AA, $87
 sdc_cmd58_data:
     .byte $7A, $00,$00,$00,$00, $FD
+sdc_cmd16_data:
+    .byte $50, $00,$00,$02,$00, $01	; 512-byte block, dummy CRC
 #endlocal
 
 ; void sdc_cs_low()
