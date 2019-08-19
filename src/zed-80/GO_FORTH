@@ -1,0 +1,3 @@
+L=/dev/cu.usbserial-AK068DDT
+
+make forth.pkt && cat forth.pkt > $L && cat call-4000-pkt > $L
