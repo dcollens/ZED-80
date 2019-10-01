@@ -26,11 +26,13 @@
 
 ; some macros that we have to declare before use
 M_sio_puts  macro str
+    ; Careful: destroys HL
     ld	    hl, &str
     call    sio_puts
     endm
 
 M_sio_putc  macro ch
+    ; Careful: destroys L
     ld	    l, &ch
     call    sio_putc
     endm
@@ -109,7 +111,7 @@ IVT::
 ; TODO: ISRs for PIO & SIO
 
 startup_msg::
-    .text   CR, LF, "Z80MON v1 ", __date__
+    .text   CR, LF, "Z80MON v2 ", __date__
     ; Falling through...
 crlf::
     .text   CR, LF, NUL
@@ -398,11 +400,36 @@ cmd_do_disp_words::
     pop	    hl
     ret
 
+#local
 cmd_do_call::
     push    hl
-    ; TODO: NYI
+    push    de
+    push    bc
+    M_sio_puts prompt_str
+    call    sio_gethex16
+    jr	    z, done
+    ; call address is in HL
+    ; AF is scratch & we already save/restore BC, DE, HL
+    ; save/restore IX, IY too
+    push    ix
+    push    iy
+    call    ctc_tick_off
+    call    jp_hl	; call HL
+    call    seg_init
+    call    ctc_tick_on
+    pop	    iy
+    pop	    ix
+    M_sio_puts cmd_ok_str
+done:
+    M_sio_puts crlf
+    pop	    bc
+    pop	    de
     pop	    hl
     ret
+
+prompt_str:
+    .asciz  "C$"
+#endlocal
 
 cmd_do_reset::
     push    hl
@@ -417,9 +444,7 @@ cmd_do_input::
     push    bc
     M_sio_puts prompt_str
     call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    jr	    z, done
     ; I/O address is in l
     ld	    c, l
     M_sio_puts cmd_equals_str
@@ -441,16 +466,12 @@ cmd_do_output::
     push    bc
     M_sio_puts prompt_str
     call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    jr	    z, done
     ; I/O address is in l -- stash it in c
     ld	    c, l
     M_sio_puts cmd_equals_str
     call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    jr	    z, done
     ; output value is in l
     out	    (c), l
     M_sio_puts cmd_ok_str
@@ -529,16 +550,40 @@ yes:
 
 ; uint8_t hex2bin(uint8_t ch)
 ; - converts the single hex digit "ch" (must be 0-9 or A-F) into a binary value between 0-15
+; - pass "ch" in A
+; - returns value in low nybble of A
 #local
 hex2bin::
-    ld	    a, l
     cp	    'A'
     jr	    nc, hex
     sub	    '0'
-    ld	    l, a
     ret
 hex:
     sub	    'A'-10
+    ret
+#endlocal
+
+; uint16_t hex2bin2(uint8_t high, uint8_t low)
+; - converts the two hex digits "high" and "low" (must be 0-9 or A-F) into an unsigned 8-bit value
+; - pass "high" in H, and "low" in L
+; - returns result in L
+#local
+hex2bin2::
+    push    hl		; preserve H
+    ld	    a, h
+    call    hex2bin
+    ld	    h, a	; convert digit in H to nybble in H
+    ld	    a, l
+    call    hex2bin
+    ld	    l, a	; convert digit in L to nybble in L
+    ; compute A = (H << 4) | L
+    ld	    a, h
+    add	    a
+    add	    a
+    add	    a
+    add	    a
+    or	    l
+    pop	    hl
     ld	    l, a
     ret
 #endlocal
@@ -572,17 +617,18 @@ waitRX:
     ; read input character
     in	    a, (PORT_SIOADAT)
     ld	    l, a
-    call    seg_writehex
+;    call    seg_writehex
     ret
 #endlocal
 
-; int16_t sio_gethex8()
+; int8_t sio_gethex8()
 ; - read a two-char 8-bit hex value from port A
 ; - echoes chars as entered, erases as backspaced
 ; - BS erases last entered char
 ; - ESC aborts entry at any point
 ; - CR accepts entry
-; - returns unsigned 8-bit value entered, or -1 if aborted
+; - returns unsigned 8-bit value entered in L
+; - Z flag is set if user aborted entry, cleared otherwise
 #local
 sio_gethex8::
     push    bc
@@ -590,17 +636,17 @@ getFirst:
     call    sio_getc
     ld	    a, l
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     call    toupper
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getFirst
     call    sio_putc	; echo digit
-    ld	    b, l	; store high digit in b
+    ld	    b, l	; store high digit in B
 getSecond:
     call    sio_getc
     ld	    a, l
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     cp	    BS
     jr	    nz, notBS1
     call    sio_putc	; echo BS
@@ -610,12 +656,12 @@ notBS1:
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getSecond
     call    sio_putc	; echo digit
-    ld	    c, l	; store low digit in c
+    ld	    c, l	; store low digit in C
 getThird:
     call    sio_getc
     ld	    a, l
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     cp	    CR
     jr	    z, convert
     cp	    BS
@@ -624,26 +670,108 @@ getThird:
     call    sio_putc	; echo BS
     jr	    getSecond
 convert:
-    ld	    l, b
-    call    hex2bin
-    ld	    b, l
-    ld	    l, c
-    call    hex2bin
-    ; compute a = (b << 4) | l
-    ld	    a, b
-    add	    a
-    add	    a
-    add	    a
-    add	    a
-    or	    l
+    push    hl		; save H
+    ld	    hl, bc
+    call    hex2bin2
+    ld	    a, l
+    pop	    hl		; restore H
     ld	    l, a
-    ld	    h, 0
+    or	    b		; reset Z flag by ORing in the ASCII hex digit in B
+abort:
     pop	    bc
     ret
+#endlocal
+
+; int16_t sio_gethex16()
+; - read a four-char 16-bit hex value from port A
+; - echoes chars as entered, erases as backspaced
+; - BS erases last entered char
+; - ESC aborts entry at any point
+; - CR accepts entry
+; - returns unsigned 16-bit value entered in HL
+; - Z flag is set if user aborted entry, cleared otherwise
+#local
+sio_gethex16::
+    push    bc
+    push    de
+getFirst:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jp	    z, abort	; Z is set, return
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getFirst
+    call    sio_putc	; echo digit
+    ld	    b, l	; store digit1 in B
+getSecond:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS1
+    call    sio_putc	; echo BS
+    jr	    getFirst
+notBS1:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getSecond
+    call    sio_putc	; echo digit
+    ld	    c, l	; store digit2 in C
+getThird:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS2
+    call    sio_putc	; echo BS
+    jr	    getSecond
+notBS2:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getThird
+    call    sio_putc	; echo digit
+    ld	    d, l	; store digit3 in D
+getFourth:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS3
+    call    sio_putc	; echo BS
+    jr	    getThird
+notBS3:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getFourth
+    call    sio_putc	; echo digit
+    ld	    e, l	; store digit4 in E
+getFifth:
+    call    sio_getc
+    ld	    a, l
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    CR
+    jr	    z, convert
+    cp	    BS
+    jr	    nz, getFifth
+    ; handle backspace
+    call    sio_putc	; echo BS
+    jr	    getFourth
+convert:
+    ld	    hl, bc	; HL := digit1,digit2
+    call    hex2bin2	; L := hex2bin2(digit1,digit2)
+    ex	    de, hl	; HL := digit3,digit4 ; E := hex2bin2(digit1,digit2)
+    call    hex2bin2	; L := hex2bin2(digit3,digit4)
+    ld	    h, e	; H := hex2bin2(digit1,digit2)
+    or	    b		; reset Z flag by ORing in the ASCII hex digit in B
 abort:
-    ld	    hl, -1
+    pop	    de
     pop	    bc
-    ret	    
+    ret
 #endlocal
 
 ; void sio_putc(uint8_t ch)
