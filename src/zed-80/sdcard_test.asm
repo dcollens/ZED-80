@@ -161,16 +161,16 @@ doneCmd8:
     call    sioA_crlf
     ld	    a, l
     or	    a			    ; test response == 0?
-    jr	    nz, doneCmd58	    ; if response != 0, ignore result
+    jr	    nz, doneInit	    ; if response != 0, ignore result
     ld	    a, (SDC_buffer)
     and	    0x40		    ; test SDC_buffer[0] & 0x40?
-    jr	    z, doneCmd58	    ; if SDC_buffer[0] & 0x40 == 0, card is byte addressed
+    jr	    z, doneInit		    ; if SDC_buffer[0] & 0x40 == 0, card is byte addressed
     ld	    a, (SDC_flags)
     or	    SDF_BLOCK
     ld	    (SDC_flags), a	    ; set BLOCK flag
     ld	    de, msg_block_addr
     call    sioA_writeln	    ; display block addressing message
-    jr	    doneCmd58
+    jr	    doneInit
 
     ; For v1 cards, send CMD16 to set block length to 512
 cardV1:
@@ -185,7 +185,16 @@ cardV1:
     or	    a			    ; test response == 0?
     jr	    nz, fail		    ; if response != 0, fail
 
-doneCmd58:
+doneInit:
+    ld	    bc, 0
+    ld	    de, 0
+    call    sdc_read_sector	    ; read sector 0
+    or	    a			    ; test result == 0?
+    jr	    nz, fail		    ; if result != 0, fail
+    ld	    bc, 512
+    ld	    hl, SDC_buffer
+    call    sioA_hexdump	    ; dump 512 bytes in hex
+
 done:
     pop	    hl
     pop	    de
@@ -302,21 +311,24 @@ writeByte:
     ret
 #endlocal
 
-; uint8_t sdc_getbytes(uint8_t length)
-; - 'length' in B (0 means 256)
+; uint8_t sdc_getbytes(uint16_t length)
+; - 'length' in BC (0 means 65536)
 ; - reads 'length' bytes into SDC_buffer
 ; - requires SDCS to be set by caller, and will not be modified
-; - B is 0 on return
+; - BC is 0 on return
 #local
 sdc_getbytes::
     push    hl
-    ld	    hl, SDC_buffer
-readByte:
+    ld	    hl, SDC_buffer	    ; HL = SDC_buffer
+loop:
     ld	    a, 0xFF
-    call    sdc_xchg
-    ld	    (hl), a
-    inc	    hl
-    djnz    readByte
+    call    sdc_xchg		    ; read next byte
+    ld	    (hl), a		    ; *buffer = byte
+    inc	    hl			    ; ++buffer
+    dec	    bc			    ; --length
+    ld	    a, c
+    or	    b
+    jr	    nz, loop		    ; loop while length != 0
     pop	    hl
     ret
 #endlocal
@@ -368,10 +380,10 @@ sdc_command_resp4::
     call    sdc_command
     cp	    0x02		    ; test response < 0x02?
     jr	    nc, done		    ; if response >= 0x02, return fail
-    ld	    b, 4
-    ld	    c, a		    ; C = response
+    ld	    bc, 4
+    push    af			    ; save response byte
     call    sdc_getbytes	    ; read 4 bytes from SD card into SDC_buffer
-    ld	    a, c		    ; A = response
+    pop	    af			    ; restore response byte
 done:
     pop	    bc
     ret
@@ -423,7 +435,66 @@ timeout:
 cmd55_data:
     .byte $77, $00,$00,$00,$00, $65
 cmd41_data:
-    .byte $69, $00,$00,$00,$00, $01	; dummy CRC, also note byte 1 gets modified above!
+    .byte $69, $00,$00,$00,$00, $01	; dummy CRC, also note byte 1 is modified above!
+#endlocal
+
+; uint8_t sdc_read_sector(uint32_t lba)
+; - 'lba' passed in BCDE
+; - one 512-byte sector is read into SDC_buffer
+; - returns status in A:
+;     0: success
+;     non-0: error
+#local
+sdc_read_sector::
+    push    bc
+    push    de
+    push    hl
+    ld	    a, (SDC_flags)
+    and	    SDF_BLOCK		    ; test SDC_flags & SDF_BLOCK?
+    jr	    nz, begin		    ; if SDC_flags & SDF_BLOCK != 0, begin
+    ex	    de, hl		    ; HL = DE
+    add	    hl, hl		    ; HL <<= 1, top bit shifted into C flag
+    ld	    a, c		    ; A = C
+    adc	    a			    ; A = (C << 1) + carry_in
+    ld	    b, a
+    ld	    c, h
+    ld	    d, l
+    ld	    e, 0		    ; BCDE = AHL0
+begin:
+    ld	    hl, (cmd17_data+1)
+    ld	    (hl), b
+    inc	    hl
+    ld	    (hl), c
+    inc	    hl
+    ld	    (hl), d
+    inc	    hl
+    ld	    (hl), e		    ; copy address from BCDE into command buffer
+    ld	    hl, cmd17_data
+    call    sdc_command		    ; send CMD17
+    or	    a			    ; test response == 0?
+    jr	    nz, done		    ; if response != 0, return failure
+    ld	    bc, 10000
+    call    sdc_poll		    ; poll for data token, up to 100ms
+    cp	    0xFE		    ; test token == 0xFE?
+    jr	    nz, done		    ; if token != 0xFE, return failure
+    ld	    bc, 512
+    call    sdc_getbytes	    ; read 512 bytes into SDC_buffer
+    ld	    a, 0xFF
+    call    sdc_xchg		    ; discard CRC, byte 1
+    ld	    a, 0xFF
+    call    sdc_xchg		    ; discard CRC, byte 2
+    xor	    a			    ; return 0 (success)
+done:
+    ld	    l, a		    ; save response byte in A
+    call    sdc_cs_high		    ; deselect the card when done
+    ld	    a, l		    ; restore response byte to A
+    pop	    hl
+    pop	    de
+    pop	    bc
+    ret
+
+cmd17_data:
+    .byte $51, $00,$00,$00,$00, $01	; dummy CRC, also note middle 4 bytes modified above!
 #endlocal
 
 ; uint8_t sdc_xchg(uint8_t data)
@@ -514,6 +585,46 @@ putByte:
     ret
 #endlocal
 
+; void sioA_hexdump(uint8_t *data, uint16_t length)
+; - 'data' in HL
+; - 'length' in BC
+; - displays 'length' bytes from 'data' in hexadecimal on serial port A
+#local
+sioA_hexdump::
+    push    bc
+    push    de
+    push    hl
+    ; TODO: This is bogus and hardcoded for 512 bytes
+    ld	    b, 32
+line:
+    push    bc
+
+    ld	    de, hl
+    ld	    b, 16
+    call    sioA_puthex8_n
+
+    ld	    l, ' '
+    call    sioA_putc
+    call    sioA_putc
+
+    ; TODO: translate <32 or =127 to '.'
+    ld	    b, 16
+    call    sioA_write
+    call    sioA_crlf
+
+    ld	    hl, de
+    ld	    de, 16
+    add	    hl, de
+
+    pop	    bc
+    djnz    line
+
+    pop	    hl
+    pop	    de
+    pop	    bc
+    ret
+#endlocal
+
 #include library "libcode"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -522,6 +633,6 @@ putByte:
 #data DATA,TEXT_end
 ; define static variables here
 SDC_flags:: defs 1	; flags describing current SD card status (SDF_xxx)
-SDC_buffer:: defs 32	; input buffer for sdc_getbytes
+SDC_buffer:: defs 512	; input buffer for sdc_getbytes
 
 #include library "libdata"
