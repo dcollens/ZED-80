@@ -4,8 +4,7 @@
 lcd_init::
     push    de
     push    hl
-    in	    a, (PORT_LCDCMD)	    ; read status byte
-    call    seg_writehex
+    ;in	    a, (PORT_LCDCMD)	    ; read status byte
     ; RA8876_initial()
     ;	RA8876_SW_Reset();
     M_out   (PORT_LCDCMD), LCDREG_SRR
@@ -172,17 +171,7 @@ wait_sdram:
     ; delay_ms(20);
     ld	    l, 20
     call    delay_ms
-    ; Clear the screen
-    ld	    de, 0
-    ld	    hl, 0
-    call    lcd_set_fgcolor	    ; set FG color to black
-    call    lcd_line_start_xy	    ; set start to 0,0
-    ld	    de, LCD_WIDTH-1
-    ld	    hl, LCD_HEIGHT-1
-    call    lcd_line_end_xy	    ; set end to maxX,maxY
-    ; draw filled rectangle to clear screen
-    M_lcdwrite LCDREG_DCR1, LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN
-    call    lcd_wait_idle
+    call    lcd_clear		    ; clear screen
     call    lcd_bl_on		    ; turn on backlight
     pop	    hl
     pop	    de
