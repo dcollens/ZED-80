@@ -11,7 +11,7 @@ notCR:
     jr	    nz, notLF
     jp	    lcd_lf
 notLF:
-    cp	    BS			; Backspace?
+    cp	    ASC_BS		; Backspace?
     jr	    nz, notBS
     jp	    lcd_bs
 notBS:

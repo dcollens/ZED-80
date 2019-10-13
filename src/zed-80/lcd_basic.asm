@@ -27,9 +27,15 @@
 #include "z84c40.inc"
 #include "lcd.inc"
 #include "keyboard.inc"
+#include "ascii.inc"
 
+#if defined(LOAD_LOW)
+; Our code loads at address 0, with the full address space mapped to RAM.
+#code TEXT,0
+#else
 ; Our code loads immediately above the 16K ROM page
-#code TEXT,0x4000,0x2200
+#code TEXT,0x4000
+#endif
 
 ; GENERAL EQUATES
 
@@ -49,8 +55,7 @@ DEL     .EQU    7FH             ; Delete
 
 ; BASIC WORK SPACE LOCATIONS
 
-; Since the BASIC code itself needs to sit in ram starting at $4000, we
-; have to start after that point.
+; Since the BASIC code itself sits in RAM we have to lay out our data segment after that point.
 AFTER_CODE .EQU TEXT_end
 WRKSPC  .EQU    AFTER_CODE+45H	    ; BASIC Work space
 USR     .EQU    WRKSPC+3H           ; "USR (x)" jump
@@ -141,9 +146,51 @@ MO      .EQU    24H             ; Missing operand
 HX      .EQU    26H             ; HEX error
 BN      .EQU    28H             ; BIN error
 
+#if defined(LOAD_LOW)
+; When we are loaded at address 0, we need to define entry points for the RST/NMI vectors.
+
+; reset vector
+RST0::
+    di
+    jp	    COLD
+    defs    0x08-$
+
+RST1::
+    reti
+    defs    0x10-$
+
+RST2::
+    reti
+    defs    0x18-$
+
+RST3::
+    reti
+    defs    0x20-$
+
+RST4::
+    reti
+    defs    0x28-$
+
+RST5::
+    reti
+    defs    0x30-$
+
+RST6::
+    reti
+    defs    0x38-$
+
+; maskable interrupt handler in interrupt mode 1:
+RST7::
+    reti
+
+; non maskable interrupt:
+; e.g. call debugger and on exit resume.
+    defs    0x66-$
+NMI::
+    retn
+#endif
+
 COLD:		                ; Jump for cold start
-	NOP			; These two bytes get damaged to an "add a,b" by the timer tick
-	NOP			; in my ROM monitor.
 	DI			; disable interrupts so the timer tick doesn't mess with RAM
         LD      IX,0            ; Flag cold start
         JP      CSTART          ; Jump to initialise
@@ -945,10 +992,8 @@ PROCES: LD      A,C             ; Get character
         JP      Z,ENDINP        ; Yes - Terminate input
         CP      CTRLU           ; Is it control "U"?
         JP      Z,KILIN         ; Yes - Get another line
-        CP      '@'             ; Is it "kill line"?
-        JP      Z,OTKLN         ; Yes - Kill line
-        CP      '_'             ; Is it delete?
-        JP      Z,DELCHR        ; Yes - Delete character
+;        CP      '@'             ; Is it "kill line"?
+;        JP      Z,OTKLN         ; Yes - Kill line
         CP      BKSP            ; Is it backspace?
         JP      Z,DELCHR        ; Yes - Delete character
         CP      CTRLR           ; Is it control "R"?

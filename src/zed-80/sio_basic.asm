@@ -138,8 +138,6 @@ BN      .EQU    28H             ; BIN error
 #code TEXT,0x4000
 
 COLD:		                ; Jump for cold start
-	NOP			; These two bytes get damaged to an "add a,b" by the timer tick
-	NOP			; in my ROM monitor.
 	DI			; disable interrupts so the timer tick doesn't mess with RAM
         LD      IX,0            ; Flag cold start
         JP      CSTART          ; Jump to initialise
@@ -957,10 +955,8 @@ PROCES: LD      A,C             ; Get character
         JP      Z,ENDINP        ; Yes - Terminate input
         CP      CTRLU           ; Is it control "U"?
         JP      Z,KILIN         ; Yes - Get another line
-        CP      '@'             ; Is it "kill line"?
-        JP      Z,OTKLN         ; Yes - Kill line
-        CP      '_'             ; Is it delete?
-        JP      Z,DELCHR        ; Yes - Delete character
+;        CP      '@'             ; Is it "kill line"?
+;        JP      Z,OTKLN         ; Yes - Kill line
         CP      BKSP            ; Is it backspace?
         JP      Z,DELCHR        ; Yes - Delete character
         CP      CTRLR           ; Is it control "R"?
