@@ -100,12 +100,10 @@ init::
     call    rand_init		    ; seed RNG
     call    lcd_init		    ; initialize LCD subsystem
     call    lcd_text_init	    ; initialize the text console
-    ld	    hl, hello_message	    ; print welcome banner
+    ld	    de, hello_message	    ; print welcome banner
     call    lcd_puts
-    call    lcd_crlf
-    ld	    hl, copyright_message
+    ld	    de, copyright_message
     call    lcd_puts
-    call    lcd_crlf
     ld	    b, 250		    ; delay 1s
     call    delay_ms
     call    delay_ms
@@ -115,9 +113,9 @@ init::
     ret
 
 hello_message:
-    .text   "ZED-80 Personal Computer", NUL
+    .text   "ZED-80 Personal Computer", CR, LF, NUL
 copyright_message:
-    .text   0xA9, "1976 HeadCode", NUL
+    .text   0xA9, "1976 HeadCode", CR, LF, NUL
 #endlocal
 
 ; void lcd_test_drawing()

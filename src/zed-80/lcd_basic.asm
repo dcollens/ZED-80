@@ -4313,21 +4313,6 @@ BINERR: LD      E,BN            ; ?BIN Error
 MONOUT:				; Output the char in A
 #local
 	push	af
-	cp	CR		; Carriage return?
-	jr	nz, notCR
-	call	lcd_cr
-	jr	done
-notCR:
-	cp	LF		; Line feed?
-	jr	nz, notLF
-	call	lcd_lf
-	jr	done
-notLF:
-	cp	BKSP		; Backspace?
-	jr	nz, notBS
-	call	lcd_bs
-	jr	done
-notBS:
 	cp	CS		; Clear screen?
 	jr	nz, notCS
 	call	lcd_clear

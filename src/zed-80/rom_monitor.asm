@@ -25,18 +25,20 @@
 #include "z84c30.inc"
 #include "z84c40.inc"
 #include "ascii.inc"
+#include "keyboard.inc"
+#include "lcd.inc"
 
 ; some macros that we have to declare before use
-M_sio_puts  macro str
+M_puts	    macro str
     push    de
     ld	    de, &str
-    call    sioA_puts
+    call    mon_puts
     pop	    de
     endm
 
-M_sio_putc  macro ch
+M_putc	    macro ch
     ld	    l, &ch
-    call    sioA_putc
+    call    mon_putc
     endm
 
 ; We set up the MMU so the Z80's memory map is as follows:
@@ -104,7 +106,7 @@ IVT::
 ; TODO: ISRs for PIO & SIO
 
 startup_msg::
-    .text   CR, LF, "ZED-80 monitor v1 ", __date__
+    .text   CR, LF, "ZED-80 monitor v2 ", __date__
     ; Falling through...
 crlf::
     .text   CR, LF, NUL
@@ -123,8 +125,7 @@ init::
     ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
     out	    (PORT_SYSREG), a	; enable MMU
     ld	    (Sysreg), a
-    ; set up a stack
-    ld	    sp, RAM_end-1
+    ld	    sp, RAM_end-1	; set up a stack
     ; reset peripherals
     M_pio_reset
     M_sio_reset
@@ -134,13 +135,14 @@ init::
     ld	    i, a	    ; I gets high byte of IVT address
     im	    2		    ; select interrupt mode 2
     ei
-    ; clear 7-segment display
-    call    seg_init
+    call    seg_init	    ; clear 7-segment display
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
     call    sio_init
-    ; print startup banner
-    M_sio_puts startup_msg
+    call    kbd_init	    ; Initialize keyboard
+    call    lcd_init	    ; Initialize screen
+    call    lcd_text_init   ; Initialize text mode
+    M_puts  startup_msg	    ; print startup banner
 #if defined(EMULATOR)
     call    0x4000
 #else
@@ -166,11 +168,10 @@ cmd_loop::
     push    hl
     push    bc
 prompt:
-    M_sio_putc '>'
+    M_putc  '>'
 nextByte:
-    call    sio_getc
+    call    mon_getc
     ; map input byte to upper case
-    ld	    a, l
     call    toupper
     ; switch on input byte, and dispatch to appropriate subroutine
     ld	    hl, cmd_chars
@@ -185,18 +186,18 @@ nextByte:
     ld	    c, a
     add	    hl, bc
     M_deref_hl
-    ; call hl
-    call    jp_hl
+    call    jp_hl	; call HL
     jr	    prompt
     pop	    bc
     pop	    hl
     ret
 
 cmd_chars:
-    .byte SOH,'B','W','C','R','I','O',CR
+    .byte SOH,'?','B','W','C','R','I','O',CR
 num_cmds	equ $-cmd_chars
 cmd_procs:
     .word cmd_do_packet
+    .word cmd_do_help
     .word cmd_do_disp_bytes
     .word cmd_do_disp_words
     .word cmd_do_call
@@ -211,9 +212,7 @@ cmd_do_packet::
     push    hl
     push    bc
     push    de
-    ; get packet type
-    call    sio_getc
-    ld	    a, l
+    call    sioA_getc	; get packet type
     cp	    'W'
     jr	    z, doWrite
     cp	    'C'
@@ -226,7 +225,7 @@ failure:
 success:
     ld	    l, 'A'
 putcAndDone:
-    call    sioA_putc
+    call    mon_putc
 done:
     pop	    de
     pop	    bc
@@ -242,17 +241,17 @@ doWrite:
     ;	checksum byte
     ;	EOT
     ; place address in de and ix
-    call    sio_getc
-    ld	    e, l
-    call    sio_getc
-    ld	    d, l
+    call    sioA_getc
+    ld	    e, a
+    call    sioA_getc
+    ld	    d, a
     push    de
     pop	    ix
     ; place length in bc
-    call    sio_getc
-    ld	    c, l
-    call    sio_getc
-    ld	    b, l
+    call    sioA_getc
+    ld	    c, a
+    call    sioA_getc
+    ld	    b, a
     ; get a checksum started
     ld	    a, 'W'
     add	    e
@@ -270,19 +269,17 @@ writeLoop:
     sbc	    hl, bc	    ; test bc against 0
     jr	    z, writeDataDone
     dec	    bc
-    call    sio_getc	    ; l = next byte
-    ld	    (ix), l
+    call    sioA_getc	    ; A = next byte
+    ld	    (ix), a
     inc	    ix
     ; checksum data byte
-    ld	    a, d
-    add	    l
+    add	    d
     ld	    d, a
     jr	    writeLoop
 writeDataDone:
-    call    sio_getc	    ; l = incoming checksum
-    ld	    e, l
-    call    sio_getc	    ; expecting an EOT
-    ld	    a, l
+    call    sioA_getc	    ; A = incoming checksum
+    ld	    e, a
+    call    sioA_getc	    ; expecting an EOT
     cp	    EOT
     jr	    nz, failure
     ; validate checksum
@@ -298,14 +295,13 @@ doCall:
     ;	checksum byte
     ;	EOT
     ; place address in bc
-    call    sio_getc
-    ld	    c, l
-    call    sio_getc
-    ld	    b, l
-    call    sio_getc	    ; l = incoming checksum
-    ld	    e, l
-    call    sio_getc	    ; expecting an EOT
-    ld	    a, l
+    call    sioA_getc
+    ld	    c, a
+    call    sioA_getc
+    ld	    b, a
+    call    sioA_getc	    ; A = incoming checksum
+    ld	    e, a
+    call    sioA_getc	    ; expecting an EOT
     cp	    EOT
     jr	    nz, failure
     ; calculate checksum
@@ -315,14 +311,13 @@ doCall:
     ; validate checksum
     cp	    e
     jr	    nz, failure
-    M_sio_putc 'A'
-    ; af is scratch & we already save/restore bc, de, hl
-    ; save/restore ix, iy too
+    M_putc  'A'
+    ; AF is scratch & we already save/restore BC, DE, HL
+    ; save/restore IX, IY too
     push    ix
     push    iy
     call    ctc_tick_off
-    ; call bc
-    call    jp_bc
+    call    jp_bc	    ; call BC
     call    seg_init
     call    ctc_tick_on
     pop	    iy
@@ -330,27 +325,67 @@ doCall:
     jr	    done
 #endlocal
 
+#local
+cmd_do_help::
+    M_puts  help_msg
+    ret
+
+help_msg:
+    .text   CR, LF
+    .text   "Input <PP>", CR, LF
+    .text   "Output <PP>=<NN>", CR, LF
+    .text   "Call <AAAA>", CR, LF
+    .text   "Reset", CR, LF
+    .text   "? help", CR, LF
+    .text   NUL
+#endlocal
+
 cmd_do_disp_bytes::
     push    hl
-    ; TODO: NYI
+    ; Not yet implemented.
     pop	    hl
     ret
 
 cmd_do_disp_words::
     push    hl
-    ; TODO: NYI
+    ; Not yet implemented.
     pop	    hl
     ret
 
+#local
 cmd_do_call::
     push    hl
-    ; TODO: NYI
+    push    de
+    push    bc
+    M_puts  prompt_str
+    call    mon_gethex16
+    jr	    z, done
+    ; call address is in HL
+    ; AF is scratch & we already save/restore BC, DE, HL
+    ; save/restore IX, IY too
+    push    ix
+    push    iy
+    call    ctc_tick_off
+    call    jp_hl	    ; call HL
+    call    seg_init
+    call    ctc_tick_on
+    pop	    iy
+    pop	    ix
+    M_puts cmd_ok_str
+done:
+    M_puts crlf
+    pop	    bc
+    pop	    de
     pop	    hl
     ret
+
+prompt_str:
+    .asciz  "C$"
+#endlocal
 
 cmd_do_reset::
     push    hl
-    M_sio_putc 'R'
+    M_putc  'R'
     call    delay_1ms
     di
     rst	    0x00	; reset
@@ -359,18 +394,16 @@ cmd_do_reset::
 cmd_do_input::
     push    hl
     push    bc
-    M_sio_puts prompt_str
-    call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    M_puts  prompt_str
+    call    mon_gethex8
+    jr	    z, done
     ; I/O address is in l
     ld	    c, l
-    M_sio_puts cmd_equals_str
+    M_puts  cmd_equals_str
     in	    a, (c)
-    call    sioA_puthex8
+    call    mon_puthex8
 done:
-    M_sio_puts crlf
+    M_puts  crlf
     pop	    bc
     pop	    hl
     ret
@@ -383,23 +416,19 @@ prompt_str:
 cmd_do_output::
     push    hl
     push    bc
-    M_sio_puts prompt_str
-    call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    M_puts  prompt_str
+    call    mon_gethex8
+    jr	    z, done
     ; I/O address is in l -- stash it in c
     ld	    c, l
-    M_sio_puts cmd_equals_str
-    call    sio_gethex8
-    ld	    a, h
-    or	    a		; fast test a==0
-    jr	    nz, done
+    M_puts  cmd_equals_str
+    call    mon_gethex8
+    jr	    z, done
     ; output value is in l
     out	    (c), l
-    M_sio_puts cmd_ok_str
+    M_puts  cmd_ok_str
 done:
-    M_sio_puts crlf
+    M_puts  crlf
     pop	    bc
     pop	    hl
     ret
@@ -410,7 +439,7 @@ prompt_str:
 
 cmd_do_cr::
     push    hl
-    M_sio_puts crlf
+    M_puts  crlf
     pop	    hl
     ret
 
@@ -419,91 +448,235 @@ cmd_equals_str::
 cmd_ok_str::
     .text   CR, LF, "OK", NUL
 
-; uint8_t sio_getc()
-; - wait synchronously until a byte is available from port A, and return it
-#local
-sio_getc::
-waitRX:
-    ; wait for an input character
-    in	    a, (PORT_SIOACTL)
-    and	    SIORR0_RCA
-    jr	    z, waitRX
-    ; read input character
-    in	    a, (PORT_SIOADAT)
-    ld	    l, a	    ; return value goes in L
-    call    seg_writehex
-    ret
-#endlocal
-
-; int16_t sio_gethex8()
-; - read a two-char 8-bit hex value from port A
+; int8_t mon_gethex8()
+; - read a two-char 8-bit hex value from port A and/or keyboard
 ; - echoes chars as entered, erases as backspaced
 ; - BS erases last entered char
 ; - ESC aborts entry at any point
 ; - CR accepts entry
-; - returns unsigned 8-bit value entered, or -1 if aborted
+; - returns unsigned 8-bit value entered in L
+; - Z flag is set if user aborted entry, cleared otherwise
 #local
-sio_gethex8::
+mon_gethex8::
     push    bc
 getFirst:
-    call    sio_getc
-    ld	    a, l
+    call    mon_getc
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     call    toupper
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getFirst
     ld	    l, a
-    call    sioA_putc	; echo digit
-    ld	    b, l	; store high digit in b
+    call    mon_putc	; echo digit
+    ld	    b, l	; store high digit in B
 getSecond:
-    call    sio_getc
-    ld	    a, l
+    call    mon_getc
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     cp	    BS
     jr	    nz, notBS1
-    call    sioA_putc	; echo BS
+    ld	    l, a
+    call    mon_putc	; echo BS
     jr	    getFirst
 notBS1:
     call    toupper
     call    isxdigit	; Z set iff is hex digit
     jr	    nz, getSecond
     ld	    l, a
-    call    sioA_putc	; echo digit
-    ld	    c, l	; store low digit in c
+    call    mon_putc	; echo digit
+    ld	    c, l	; store low digit in C
 getThird:
-    call    sio_getc
-    ld	    a, l
+    call    mon_getc
     cp	    ESC
-    jr	    z, abort
+    jr	    z, abort	; Z is set, return
     cp	    CR
     jr	    z, convert
     cp	    BS
     jr	    nz, getThird
     ; handle backspace
-    call    sioA_putc	; echo BS
+    ld	    l, a
+    call    mon_putc	; echo BS
     jr	    getSecond
 convert:
-    ld	    a, c
-    call    hex2bin
-    ld	    c, a
-    ld	    a, b
-    call    hex2bin
-    add	    a
-    add	    a
-    add	    a
-    add	    a
-    or	    c
+    push    hl		; save H
+    ld	    hl, bc
+    call    hex2bin2
+    ld	    a, l
+    pop	    hl		; restore H
     ld	    l, a
-    ld	    h, 0
+    or	    b		; reset Z flag by ORing in the ASCII hex digit in B
+abort:
     pop	    bc
     ret
-abort:
-    ld	    hl, -1
-    pop	    bc
-    ret	    
 #endlocal
+
+; int16_t mon_gethex16()
+; - read a four-char 16-bit hex value from port A and/or the keyboard
+; - echoes chars as entered, erases as backspaced
+; - BS erases last entered char
+; - ESC aborts entry at any point
+; - CR accepts entry
+; - returns unsigned 16-bit value entered in HL
+; - Z flag is set if user aborted entry, cleared otherwise
+#local
+mon_gethex16::
+    push    bc
+    push    de
+getFirst:
+    call    mon_getc
+    cp	    ESC
+    jp	    z, abort	; Z is set, return
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getFirst
+    ld	    l, a
+    call    mon_putc	; echo digit
+    ld	    b, l	; store digit1 in B
+getSecond:
+    call    mon_getc
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS1
+    ld	    l, a
+    call    mon_putc	; echo BS
+    jr	    getFirst
+notBS1:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getSecond
+    ld	    l, a
+    call    mon_putc	; echo digit
+    ld	    c, l	; store digit2 in C
+getThird:
+    call    mon_getc
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS2
+    ld	    l, a
+    call    mon_putc	; echo BS
+    jr	    getSecond
+notBS2:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getThird
+    ld	    l, a
+    call    mon_putc	; echo digit
+    ld	    d, l	; store digit3 in D
+getFourth:
+    call    mon_getc
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    BS
+    jr	    nz, notBS3
+    ld	    l, a
+    call    mon_putc	; echo BS
+    jr	    getThird
+notBS3:
+    call    toupper
+    call    isxdigit	; Z set iff is hex digit
+    jr	    nz, getFourth
+    ld	    l, a
+    call    mon_putc	; echo digit
+    ld	    e, l	; store digit4 in E
+getFifth:
+    call    mon_getc
+    cp	    ESC
+    jr	    z, abort	; Z is set, return
+    cp	    CR
+    jr	    z, convert
+    cp	    BS
+    jr	    nz, getFifth
+    ; handle backspace
+    ld	    l, a
+    call    mon_putc	; echo BS
+    jr	    getFourth
+convert:
+    ld	    hl, bc	; HL := digit1,digit2
+    call    hex2bin2	; L := hex2bin2(digit1,digit2)
+    ex	    de, hl	; HL := digit3,digit4 ; E := hex2bin2(digit1,digit2)
+    call    hex2bin2	; L := hex2bin2(digit3,digit4)
+    ld	    h, e	; H := hex2bin2(digit1,digit2)
+    or	    b		; reset Z flag by ORing in the ASCII hex digit in B
+abort:
+    pop	    de
+    pop	    bc
+    ret
+#endlocal
+
+; uint16_t hex2bin2(uint8_t high, uint8_t low)
+; - converts the two hex digits "high" and "low" (must be 0-9 or A-F) into an unsigned 8-bit value
+; - pass "high" in H, and "low" in L
+; - returns result in L
+hex2bin2::
+    push    hl		; preserve H
+    ld	    a, h
+    call    hex2bin
+    ld	    h, a	; convert digit in H to nybble in H
+    ld	    a, l
+    call    hex2bin
+    ld	    l, a	; convert digit in L to nybble in L
+    ; compute A = (H << 4) | L
+    ld	    a, h
+    add	    a
+    add	    a
+    add	    a
+    add	    a
+    or	    l
+    pop	    hl
+    ld	    l, a
+    ret
+
+; uint8_t mon_getc()
+; - wait synchronously until a byte is available from SIO port A or the keyboard, then return it
+; - returns byte in A
+#local
+mon_getc::
+awaitInput:
+    in	    a, (PORT_SIOACTL)
+    and	    SIORR0_RCA
+    jp	    nz, sioA_getc   ; if SIO port A has a character, return it
+    call    kbd_pollc	    ; check keyboard for character
+    jr	    z, awaitInput   ; no character available: loop
+    ld	    a, l
+    ret
+#endlocal
+
+; void mon_putc(uint8_t ch)
+; - write character "ch" to SIO port A and the LCD screen
+; - pass "ch" in L
+mon_putc::
+    call    sioA_putc
+    jp	    lcd_putc
+
+; void mon_puts(uint8_t *text)
+; - write the NUL-terminated string at "text" to SIO port A and the LCD screen
+; - pass "text" in DE
+mon_puts::
+    call    sioA_puts
+    jp	    lcd_puts
+
+; void mon_puthex8(uint8_t val)
+; - 'val' in A
+; - writes the specified 8-bit value "val" as a pair of hex digits to SIO port A & LCD screen
+; - destroys A
+mon_puthex8::
+    push    hl
+    ld	    h, a
+    rrca
+    rrca
+    rrca
+    rrca
+    call    bin2hex
+    ld	    l, a
+    call    mon_putc
+    ld	    a, h
+    call    bin2hex
+    ld	    l, a
+    call    mon_putc
+    pop	    hl
+    ret
 
 #include library "libcode"
 

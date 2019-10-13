@@ -61,19 +61,17 @@ init::
     call    kbd_init		    ; initialize keyboard driver
     call    lcd_init		    ; initialize LCD subsystem
     call    lcd_text_init	    ; initialize the text console
-    ld	    hl, hello_message	    ; print welcome banner
+    ld	    de, hello_message	    ; print welcome banner
     call    lcd_puts
-    call    lcd_crlf
-    ld	    hl, copyright_message
+    ld	    de, copyright_message
     call    lcd_puts
-    call    lcd_crlf
     call    forth_init		    ; initialize Forth environment
 loop:
     ld      de, 0xFFFF              ; yellow foreground
     ld      h, 0x00
     call    lcd_set_fgcolor
     call    forth_dump_pstack       ; stack and prompt
-    ld	    hl, prompt
+    ld	    de, prompt
     call    lcd_puts
     ld      de, 0xFFFF              ; white foreground
     ld      h, 0xFF
@@ -83,9 +81,9 @@ loop:
     call    forth_parse_line
     jr      loop
 hello_message:
-    .text   "ZED-80 Personal Computer", NUL
+    .text   "ZED-80 Personal Computer", CR, LF, NUL
 copyright_message:
-    .text   0xA9, "1976 HeadCode", NUL
+    .text   0xA9, "1976 HeadCode", CR, LF, NUL
 prompt:
     .text   "> ", NUL
 #endlocal
@@ -552,12 +550,14 @@ not_less_than:
 
 ; - prints the string whose address is on the top of the stack.
     M_forth_native "tell", 0, tell
-    ld      hl, bc
+    ld	    (Forth_orig_de), de
+    ld      de, bc
     call    lcd_puts
+    ld	    de, (Forth_orig_de)
     pop     bc
     jp      forth_next
 
-; - prints a cr/nl combo.
+; - prints a cr/lf combo.
     M_forth_native "cr", 0, cr
     call    lcd_crlf
     jp      forth_next
@@ -1157,11 +1157,13 @@ not_found_immediate:
     jp      forth_next
 
     ; Not found, display error message.
-    ld      hl, word_not_found_error_message
+    ld	    (Forth_orig_de), de
+    ld      de, word_not_found_error_message
     call    lcd_puts
-    pop     hl
+    pop     de
     call    lcd_puts
     call    lcd_crlf
+    ld	    de, (Forth_orig_de)
     jp      forth_terminate
 
 found:
