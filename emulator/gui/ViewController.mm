@@ -145,8 +145,9 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
         _zed80.writeMemory(ROM_BASE, romData->size(), *romData);
     }
 
-//    std::string ramPathname = treeDir + "/zed-80/src/zed-80/forth.bin";
-    std::string ramPathname = treeDir + "/zed-80/src/zed-80/song.bin";
+    std::string ramPathname = treeDir + "/zed-80/src/zed-80/forth.bin";
+//    std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_basic.bin";
+//    std::string ramPathname = treeDir + "/zed-80/src/zed-80/song.bin";
 //    std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_test.bin";
     auto ramData = loadFile(ramPathname);
     if (ramData == nullptr) {
