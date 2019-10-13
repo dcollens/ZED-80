@@ -28,6 +28,8 @@ class AudioDevice {
     static constexpr int N_SAMPLES_PER_BUFFER = 1024;
     static constexpr int N_QUEUE_BEFORE_START = 8;
     
+    static constexpr int MAX_UNDERFLOW_MSGS = 32;
+    
     uint32_t                        _cpuClockFrequency;
     uint32_t                        _audioClockDivisor;
     ay38910_t                       _chip;
@@ -38,6 +40,8 @@ class AudioDevice {
     std::queue<AudioQueueBufferRef> _audioBuffers;
     bool                            _audioQueueStarted;
     size_t                          _numQueuedSinceReset;   // number of buffers sent to AQ
+    
+    size_t                          _numUnderflows;
     
     void initializeAudioQueue();
 

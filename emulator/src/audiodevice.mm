@@ -23,7 +23,8 @@ void AudioDevice::audioQueueOutputCallback(void *userData, AudioQueueRef audioQu
 
 AudioDevice::AudioDevice(uint32_t cpuClockFrequency, uint32_t audioClockDivisor)
 : _cpuClockFrequency(cpuClockFrequency), _audioClockDivisor(audioClockDivisor), _clockCount(0),
-  _pins(0), _audioQueue(nullptr), _audioQueueStarted(false), _numQueuedSinceReset(0)
+  _pins(0), _audioQueue(nullptr), _audioQueueStarted(false), _numQueuedSinceReset(0),
+  _numUnderflows(0)
 {
     ay38910_desc_t desc;
     desc.type = AY38910_TYPE_8910;
@@ -77,7 +78,10 @@ void AudioDevice::initializeAudioQueue() {
 
 void AudioDevice::yieldSample(float sample) {
     if (_audioBuffers.empty()) {
-        cout << "AudioDevice: audio buffer underflow, discarding sample" << endl;
+        ++_numUnderflows;
+        if (_numUnderflows <= MAX_UNDERFLOW_MSGS) {
+            cout << "AudioDevice: audio buffer underflow, discarding sample" << endl;
+        }
         return;
     }
     

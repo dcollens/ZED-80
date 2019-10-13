@@ -216,7 +216,7 @@
 		95FE9DAB2182A99700476561 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1110;
 				ORGANIZATIONNAME = "The Head";
 				TargetAttributes = {
 					4A1B3FD82278083C00714B35 = {
@@ -305,6 +305,7 @@
 		4A1B3FEA2278083D00714B35 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = SRYH2VZYUR;
@@ -322,6 +323,7 @@
 		4A1B3FEB2278083D00714B35 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = SRYH2VZYUR;
