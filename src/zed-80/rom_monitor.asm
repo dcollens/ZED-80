@@ -193,12 +193,13 @@ nextByte:
     ret
 
 cmd_chars:
-    .byte SOH,'?','B','C','R','I','O',CR
+    .byte SOH,'?','B','F','C','R','I','O',CR
 num_cmds	equ $-cmd_chars
 cmd_procs:
     .word cmd_do_packet
     .word cmd_do_help
     .word cmd_do_basic
+    .word cmd_do_forth
     .word cmd_do_call
     .word cmd_do_reset
     .word cmd_do_input
@@ -333,6 +334,7 @@ help_msg:
     .text   CR, LF
     .text   "Basic", CR, LF
     .text   "Call <AAAA>", CR, LF
+    .text   "Forth", CR, LF
     .text   "Input <PP>", CR, LF
     .text   "Output <PP>=<NN>", CR, LF
     .text   "Reset", CR, LF
@@ -343,6 +345,21 @@ help_msg:
 #local
 cmd_do_basic::
     M_putc  'B'
+    ld	    l, BASIC_PHYS_PAGE	; map in the BASIC ROM page
+    ld	    bc, BASIC_size	; copy BASIC_size bytes
+    jr	    copyAndRun
+
+cmd_do_forth::
+    M_putc  'F'
+    ld	    l, FORTH_PHYS_PAGE	; map in the Forth ROM page
+    ld	    bc, FORTH_size	; copy FORTH_size bytes
+    jr	    copyAndRun
+    
+; void copyAndRun(uint8_t physPage, uint16_t size)
+; - copy "size" bytes from physical page "physPage" into RAM page 0, map it to address 0, and
+;   run it with a "RST 0"
+; - pass "physPage" in L, "size" in BC
+copyAndRun:
     call    ctc_tick_off
     di
 ; We begin with this memory map:
@@ -351,13 +368,12 @@ cmd_do_basic::
 ;   PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)
 ;   PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
 ; Our code is running from PG0, and our stack and data are in PG3.
-; Map the BASIC segment into PG2, and then copy it down to PG1.
-    ld	    a, MMU_ROM_BASE + 1
-    out	    (PORT_MMUPG2), a	; map frame 2 to 2nd page of ROM
+; Map the specified ROM segment into PG2, and then copy it down to PG1.
+    ld	    a, l		; A = physPage
+    out	    (PORT_MMUPG2), a	; map frame 2 to specified ROM page
     ld	    hl, 0x8000		; copy from $8000
     ld	    de, 0x4000		; copy to $4000
-    ld	    bc, BASIC_size	; copy BASIC_size bytes
-    ldir			; do the copy
+    ldir			; do the copy ("size" already in BC)
 ; Copy a trampoline up to PG3, and then jump to it.
     ld	    hl, trampoline	; copy from trampoline
     ld	    de, 0xC000		; copy to $C000
@@ -714,11 +730,12 @@ mon_puthex8::
 ; Code image for BASIC interpreter, to be copied down to RAM page 0.
 #code BASIC, 0, 0x4000
 #insert "lcd_basic_low.bin"
+BASIC_PHYS_PAGE	    equ MMU_ROM_BASE + 1
 
 ; Code image for Forth runtime, to be copied down to RAM page 0.
 #code FORTH, 0, 0x4000
-; TODO: need a build of the Forth that loads at address 0, handles RST vectors, etc.
-#insert "forth.bin"
+#insert "forth_low.bin"
+FORTH_PHYS_PAGE	    equ MMU_ROM_BASE + 2
 
 ; Remaining 16KB and 64KB segments to fill up ROM image
 #code FILLER1, 0, 0x4000

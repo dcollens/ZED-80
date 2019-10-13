@@ -39,10 +39,57 @@ M_forth_add_code macro func
     inc     hl
     endm
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; our code will load immediately above the ROM
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#if defined(LOAD_LOW)
+; Our code loads at address 0, with the full address space mapped to RAM.
+#code TEXT,0
+#else
+; Our code loads immediately above the 16K ROM page
 #code TEXT,0x4000
+#endif
+
+#if defined(LOAD_LOW)
+; When we are loaded at address 0, we need to define entry points for the RST/NMI vectors.
+
+; reset vector
+RST0::
+    di
+    jp	    init
+    defs    0x08-$
+
+RST1::
+    reti
+    defs    0x10-$
+
+RST2::
+    reti
+    defs    0x18-$
+
+RST3::
+    reti
+    defs    0x20-$
+
+RST4::
+    reti
+    defs    0x28-$
+
+RST5::
+    reti
+    defs    0x30-$
+
+RST6::
+    reti
+    defs    0x38-$
+
+; maskable interrupt handler in interrupt mode 1:
+RST7::
+    reti
+
+; non maskable interrupt:
+; e.g. call debugger and on exit resume.
+    defs    0x66-$
+NMI::
+    retn
+#endif
 
 ; Careful, don't put anything before "init", as this is the entry point to our code.
 #local
