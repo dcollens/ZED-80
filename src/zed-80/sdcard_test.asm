@@ -368,9 +368,8 @@ line:
     call    sioA_putc
     call    sioA_putc
 
-    ; TODO: translate <32 or =127 to '.'
     ld	    b, 16
-    call    sioA_write
+    call    sioA_write_safe
     call    sioA_crlf
 
     ld	    hl, de
