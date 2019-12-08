@@ -125,10 +125,12 @@ boot::	;simplest case is to just perform parameter initialization
 ;
 wboot::	;simplest case is to read the disk until all sectors loaded
 	ld	sp, 0x80	;use space below buffer for stack
+	ld	de, welcome_msg
+	call	sioA_puts
 	ld 	c, 0		;select disk 0
 	call	seldsk
 	call	home		;go to track 00
-;
+
 	ld 	b, N_BOOT_SECT	;b counts number of sectors to load
 	ld 	c, 0		;c has the current track number
 	ld 	d, 2		;d has the next sector to read

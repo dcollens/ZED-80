@@ -11,8 +11,8 @@ clean:
 	rm -f $(PRODUCTS)
 
 # Extra dependencies for ROM monitors.
-rom_for_emulator.rom: rom_monitor.asm lcd_basic_low.bin forth_low.bin
-rom_monitor.rom: lcd_basic_low.bin forth_low.bin
+rom_for_emulator.rom: rom_monitor.asm lcd_basic_low.bin forth_low.bin cbios.bin
+rom_monitor.rom: lcd_basic_low.bin forth_low.bin cbios.bin
 
 # Extra dependencies for images that load at address 0.
 lcd_basic_low.bin: lcd_basic.asm

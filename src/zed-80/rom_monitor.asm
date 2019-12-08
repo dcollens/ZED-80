@@ -193,13 +193,14 @@ nextByte:
     ret
 
 cmd_chars:
-    .byte SOH,'?','B','F','C','R','I','O',CR
+    .byte SOH,'?','B','F','M','C','R','I','O',CR
 num_cmds	equ $-cmd_chars
 cmd_procs:
     .word cmd_do_packet
     .word cmd_do_help
     .word cmd_do_basic
     .word cmd_do_forth
+    .word cmd_do_cpm
     .word cmd_do_call
     .word cmd_do_reset
     .word cmd_do_input
@@ -333,8 +334,10 @@ cmd_do_help::
 help_msg:
     .text   CR, LF
     .text   "Basic", CR, LF
-    .text   "Call <AAAA>", CR, LF
     .text   "Forth", CR, LF
+    .text   "cp/M", CR, LF
+    .text   CR, LF
+    .text   "Call <AAAA>", CR, LF
     .text   "Input <PP>", CR, LF
     .text   "Output <PP>=<NN>", CR, LF
     .text   "Reset", CR, LF
@@ -383,7 +386,7 @@ copyAndRun:
 ; The trampoline establishes the following memory map:
 ;   PG0: 0x0000-0x3FFF RAM physical page 8 (RAM page 0)  <--- changed (from ROM page 0)
 ;   PG1: 0x4000-0x7FFF RAM physical page B (RAM page 3)  <--- changed (from RAM page 0)
-;   PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)  <--- changed (from ROM page 1)
+;   PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)  <--- changed (from physPage)
 ;   PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
 ; and then issues a "RST 0".
 
@@ -396,6 +399,49 @@ trampoline:
     ld	    a, MMU_RAM_BASE + 1
     out	    (PORT_MMUPG2), a
     rst	    0x00
+trampoline_size	    equ $-trampoline
+#endlocal
+
+#local
+cmd_do_cpm::
+    M_putc  'M'
+    call    ctc_tick_off
+    di
+; We begin with this memory map:
+;   PG0: 0x0000-0x3FFF ROM physical page 0 (ROM page 0)
+;   PG1: 0x4000-0x7FFF RAM physical page 8 (RAM page 0)
+;   PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)
+;   PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
+; Our code is running from PG0, and our stack and data are initially in PG3.
+; Use PG1 for our stack so we don't clobber it during the copy to PG3.
+    ld	    sp, 0x4100
+; Map the CP/M ROM segment into PG2, and copy it up to PG3.
+    ld	    a, CPM_PHYS_PAGE
+    out	    (PORT_MMUPG2), a	; map frame 2 to CP/M ROM page
+    ld	    hl, 0x8000		; copy from $8000
+    ld	    de, CBIOS_BASE	; copy to CBIOS base address
+    ld	    bc, CPM_size	; copy CPM_size bytes
+    ldir			; do the copy
+; Copy a trampoline up to PG1, and jump to it.
+    ld	    hl, trampoline	; copy from trampoline
+    ld	    de, 0x4200		; copy to $4200
+    ld	    bc, trampoline_size	; copy trampoline_size bytes
+    ldir			; do the copy
+    jp	    0x4200		; jump to the relocated trampoline
+; The trampoline establishes the following memory map:
+;   PG0: 0x0000-0x3FFF RAM physical page B (RAM page 3)  <--- changed (from ROM page 0)
+;   PG1: 0x4000-0x7FFF RAM physical page 8 (RAM page 0)
+;   PG2: 0x8000-0xBFFF RAM physical page 9 (RAM page 1)  <--- changed (from CPM_PHYS_PAGE)
+;   PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
+; and then issues a "jp CBIOS_BASE+3".
+
+trampoline:
+    ; The trampoline gets moved to PG1 before being run, so make sure it is position-independent.
+    ld	    a, MMU_RAM_BASE + 3
+    out	    (PORT_MMUPG0), a
+    ld	    a, MMU_RAM_BASE + 1
+    out	    (PORT_MMUPG2), a
+    jp	    CBIOS_BASE+3	; the CBIOS "warm start" entry point
 trampoline_size	    equ $-trampoline
 #endlocal
 
@@ -727,19 +773,24 @@ mon_puthex8::
 
 #include library "libcode"
 
-; Code image for BASIC interpreter, to be copied down to RAM page 0.
+; Code image for BASIC interpreter, to be copied down to RAM at page frame 0.
 #code BASIC, 0, 0x4000
 #insert "lcd_basic_low.bin"
 BASIC_PHYS_PAGE	    equ MMU_ROM_BASE + 1
 
-; Code image for Forth runtime, to be copied down to RAM page 0.
+; Code image for Forth runtime, to be copied down to RAM at page frame 0.
 #code FORTH, 0, 0x4000
 #insert "forth_low.bin"
 FORTH_PHYS_PAGE	    equ MMU_ROM_BASE + 2
 
-; Remaining 16KB and 64KB segments to fill up ROM image
-#code FILLER1, 0, 0x4000
-#code FILLER2, 0, 0x10000
+; Code image for CP/M runtime, to be copied into RAM at page frame 3 (i.e. high).
+#code CPM, 0, 0x4000
+#insert "cbios.bin"
+CPM_PHYS_PAGE	    equ MMU_ROM_BASE + 3
+CBIOS_BASE	    equ	0xF600	; keep in sync with cbios.asm
+
+; Remaining 64KB segment to fill up ROM image
+#code FILLER, 0, 0x10000
 
 ; We map our RAM area high so that our data fields don't clobber low memory where we're
 ; likely to be loading programs.
