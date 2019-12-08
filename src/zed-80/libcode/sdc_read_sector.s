@@ -21,7 +21,7 @@ sdc_read_sector::
     ld	    d, l
     ld	    e, 0		    ; BCDE = AHL0
 begin:
-    ld	    hl, (cmd17_data+1)
+    ld	    hl, cmd17_data+1
     ld	    (hl), b
     inc	    hl
     ld	    (hl), c
