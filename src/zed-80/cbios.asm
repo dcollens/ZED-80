@@ -124,12 +124,16 @@ boot::	;simplest case is to just perform parameter initialization
 	ld	(CDISK), a	;select disk zero
 	jr	gocpm		;initialize and go to cp/m
 
-welcome_msg: .text "ZED-80 CBIOS v1", CR, LF, NUL
+welcome_msg: .text "ZED-80 CBIOS v1 ", __date__, CR, LF, NUL
 
-wboot::	;simplest case is to read the disk until all sectors loaded
+wboot::
 	; Set Sysreg to the value that we know the ROM monitor set it to.
 	ld	a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
 	ld	(Sysreg), a
+
+	; TODO: this is a cheap hack for the simulator
+	ld	a, SDF_PRESENT | SDF_V2 | SDF_BLOCK
+	ld	(SDC_flags), a
 
 	ld	sp, 0x80	;use space below buffer for stack
 	ld	de, welcome_msg
