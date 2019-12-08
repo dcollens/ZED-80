@@ -101,7 +101,7 @@ private:
 
     // Whether the MMU is enabled by the system register.
     bool isEnabled() const {
-        return _sysReg->isMmuEnabled();
+        return _sysReg->value().isMmuEnabled();
     }
 };
 

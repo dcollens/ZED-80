@@ -54,6 +54,7 @@ ZED80::ZED80()
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
+    _sdcardDevice = make_shared<SdcardDevice>();
     _keyboardDevice = make_shared<KeyboardDevice>();
     _sioDevice = make_shared<SioDevice>();
     _pioDevice = make_shared<PioDevice>(_keyboardDevice);
@@ -67,7 +68,7 @@ ZED80::ZED80()
     _iommu->setDevice(5, _lcdPanelDevice);
     _iommu->setDevice(6, _mmu);
     _iommu->setDevice(7, _sysRegDevice);
-    // TODO: iommu->setDevice(8, sdcardDevice);
+    _iommu->setDevice(8, _sdcardDevice);
     _iommu->setDevice(9, _keyboardDevice);
 
     cout << "Z80: " << (CPU_CLOCK_HZ / 1000000) << "MHz clock" << endl;
@@ -125,9 +126,14 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
         }
     } else if ((pins & Z80_IORQ) != 0 && (pins & (Z80_RD|Z80_WR)) != 0) {
         pins = _iommu->tickCallback(numTicks, pins);
+        
+        Sysreg_t sysreg = _sysRegDevice->value();
         // If the BC1/BDIR pins have changed since the last simulator step, run an IO cycle
         // on the audio chip.
-        _audioDevice.checkIorq(*_sysRegDevice, pioDevice);
+        _audioDevice.checkIorq(sysreg, pioDevice);
+        // If the SD card related pins in SYSREG have changed since the last simulator step, update
+        // the state of the SD card device.
+        _sdcardDevice->checkSysreg(sysreg);
     }
     
     // Finally, handle the interrupt chain.

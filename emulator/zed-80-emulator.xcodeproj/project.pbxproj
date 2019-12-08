@@ -31,6 +31,7 @@
 		95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B71228DBC02007C57C0 /* LcdPanelView.mm */; };
 		95622B76228DBF1D007C57C0 /* ra8876.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95622B75228DBF1D007C57C0 /* ra8876.cpp */; };
 		95622B79228DC02F007C57C0 /* io_lcdpanel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95622B77228DC02F007C57C0 /* io_lcdpanel.mm */; };
+		95C634A3239C7EB60096F95B /* io_sdcard.mm in Sources */ = {isa = PBXBuildFile; fileRef = 95C634A1239C7EB60096F95B /* io_sdcard.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,8 @@
 		95C4D3222190CBD700007662 /* io_joyseg.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_joyseg.mm; sourceTree = "<group>"; };
 		95C4D3232190CBD700007662 /* io_joyseg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_joyseg.h; sourceTree = "<group>"; };
 		95C4D3252190CC0100007662 /* iodevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iodevice.h; sourceTree = "<group>"; };
+		95C634A1239C7EB60096F95B /* io_sdcard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = io_sdcard.mm; sourceTree = "<group>"; };
+		95C634A2239C7EB60096F95B /* io_sdcard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io_sdcard.h; sourceTree = "<group>"; };
 		95FE9DBD2182AA4900476561 /* z80ctc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80ctc.h; sourceTree = "<group>"; };
 		95FE9DBE2182AA4900476561 /* z80pio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80pio.h; sourceTree = "<group>"; };
 		95FE9DBF2182AA4900476561 /* z80.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = z80.h; sourceTree = "<group>"; };
@@ -168,6 +171,8 @@
 				95622B77228DC02F007C57C0 /* io_lcdpanel.mm */,
 				950A23A52295CAD200A3D55B /* io_pio.h */,
 				950A23A42295CAD200A3D55B /* io_pio.mm */,
+				95C634A2239C7EB60096F95B /* io_sdcard.h */,
+				95C634A1239C7EB60096F95B /* io_sdcard.mm */,
 				9535BA5622A4221B007C40BF /* io_sio.h */,
 				9535BA5522A4221B007C40BF /* io_sio.mm */,
 				4A1B3F932277D94500714B35 /* io_sysreg.h */,
@@ -267,6 +272,7 @@
 			files = (
 				4A7A0CE4227961BD00279249 /* SevenSegmentView.mm in Sources */,
 				95622B73228DBC02007C57C0 /* LcdPanelView.mm in Sources */,
+				95C634A3239C7EB60096F95B /* io_sdcard.mm in Sources */,
 				950A23AB2296E8C800A3D55B /* audiodevice.mm in Sources */,
 				950A23A32295B74A00A3D55B /* io_ctc.mm in Sources */,
 				4A47D171228FCA5D00B2AD1B /* ZedView.mm in Sources */,

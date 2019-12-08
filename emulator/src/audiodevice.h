@@ -65,7 +65,7 @@ public:
     
     // Called when the BC1/BDIR signals in SysReg may have changed, so we may need to simulate an
     // IO request to the audio chip.
-    void checkIorq(SysRegDevice const &sysreg, PioDevice &pio);
+    void checkIorq(Sysreg_t sysreg, PioDevice &pio);
     
     void reset();
 };

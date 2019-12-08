@@ -150,6 +150,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_basic.bin";
 //    std::string ramPathname = treeDir + "/zed-80/src/zed-80/song.bin";
 //    std::string ramPathname = treeDir + "/zed-80/src/zed-80/lcd_test.bin";
+//    std::string ramPathname = treeDir + "/zed-80/src/zed-80/sdcard_test.bin";
     auto ramData = loadFile(ramPathname);
     if (ramData == nullptr) {
         NSLog(@"Can't load RAM file \"%s\"", ramPathname.c_str());

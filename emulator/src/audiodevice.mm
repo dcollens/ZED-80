@@ -131,7 +131,7 @@ void AudioDevice::tickCallback(int numTicks) {
     }
 }
 
-void AudioDevice::checkIorq(SysRegDevice const &sysreg, PioDevice &pio) {
+void AudioDevice::checkIorq(Sysreg_t sysreg, PioDevice &pio) {
     bool bc1 = sysreg.getBC1();
     bool bdir = sysreg.getBDir();
     if (bc1 != ((_pins & AY38910_BC1) != 0) || bdir != ((_pins & AY38910_BDIR) != 0)) {

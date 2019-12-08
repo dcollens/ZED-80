@@ -21,9 +21,9 @@ void SysRegDevice::describe(std::ostream &out) const {
 // Called at each step of the main CPU emulation.
 uint64_t SysRegDevice::tickCallback(int numTicks, uint64_t pins) {
     if ((pins & Z80_RD) != 0) {
-        Z80_SET_DATA(pins, _value);
+        Z80_SET_DATA(pins, _value.get());
     } else if ((pins & Z80_WR) != 0) {
-        _value = Z80_GET_DATA(pins);
+        _value.set(Z80_GET_DATA(pins));
     }
     return pins;
 }

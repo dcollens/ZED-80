@@ -16,6 +16,7 @@
 #include "z80.h"
 #include "io_joyseg.h"
 #include "io_lcdpanel.h"
+#include "io_sdcard.h"
 #include "io_keyboard.h"
 #include "io_ctc.h"
 #include "io_pio.h"
@@ -36,6 +37,7 @@ class ZED80 {
     shared_ptr<PioDevice>       _pioDevice;
     shared_ptr<CtcDevice>       _ctcDevice;
     shared_ptr<LcdPanelDevice>  _lcdPanelDevice;
+    shared_ptr<SdcardDevice>    _sdcardDevice;
     shared_ptr<KeyboardDevice>  _keyboardDevice;
     AudioDevice                 _audioDevice;
     shared_ptr<MMU>             _mmu;
