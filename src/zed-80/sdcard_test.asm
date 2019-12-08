@@ -23,20 +23,6 @@
 #include "ascii.inc"
 #include "sdcard.inc"
 
-; Mask of all SD-card-related bits in SYSREG. We ignore ICLR because it's not used.
-SYS_SDMASK	    equ SYS_SDCLK | SYS_SDCS | SYS_SDOCLK
-; Mask of SD-card clock bits in SYSREG
-SYS_SDCLOCKS	    equ SYS_SDCLK | SYS_SDOCLK
-
-; Number of cycles to poll SD card response for.
-SDC_POLL_COUNT	    equ 1000
-
-; SD card flags set in the SDC_flags variable.
-SDF_PRESENT	    equ 0x01	    ; Card present?
-SDF_WP		    equ 0x02	    ; Card write-protected?
-SDF_V2		    equ 0x04	    ; Card v2? (Otherwise v1)
-SDF_BLOCK	    equ 0x08	    ; Card uses block addresses? (Otherwise byte)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; our code will load immediately above the ROM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,17 +43,6 @@ init::
     call    sdc_init		    ; initialize SD card library
     call    sioA_crlf
     call    sdc_test		    ; test SD card functions
-    ret
-
-; void sdc_init()
-; - initialize SD card driver
-sdc_init::
-    ld	    a, (Sysreg)
-    and	    ~SYS_SDMASK
-    or	    SYS_SDCS
-    call    sysreg_write	    ; set CS high (inactive), clocks idle
-    xor	    a
-    ld	    (SDC_flags), a	    ; clear the SD card bit flags
     ret
 
 ; void sdc_test()
@@ -246,93 +221,6 @@ sdc_cmd16_data:
     .byte $50, $00,$00,$02,$00, $01	; 512-byte block, dummy CRC
 #endlocal
 
-; void sdc_cs_low()
-; - set SD card CS low (active)
-; - clock out 0xFF's until we get a 0xFF response from the card
-#local
-sdc_cs_low::
-    ld	    a, (Sysreg)
-    and	    ~SYS_SDCS
-    call    sysreg_write
-loop:
-    ld	    a, 0xFF
-    call    sdc_xchg
-    inc	    a			    ; test response byte == 0xFF?
-    jr	    nz, loop		    ; continue while response != 0xFF
-    ret
-#endlocal
-
-; void sdc_cs_high()
-; - set SD card CS high (inactive)
-; - clock out one byte of 0xFF to allow the card to observe inactive CS
-sdc_cs_high::
-    ld	    a, (Sysreg)
-    or	    SYS_SDCS
-    call    sysreg_write
-    ld	    a, 0xFF
-    jp      sdc_xchg
-
-; uint8_t sdc_poll(uint16_t maxCount)
-; - 'maxCount' in BC (0 means 65536)
-; - writes up to maxCount 0xFF bytes out to the SD card
-; - returns the first non-0xFF byte the card sends back, or else 0xFF
-; - return card response byte in A
-; - BC is decremented by the number of 0xFF's that were returned by the card
-#local
-sdc_poll::
-loop:
-    ld	    a, 0xFF		    ; write 0xFF to SD card until we get a response
-    call    sdc_xchg
-    cp	    0xFF		    ; test response byte == 0xFF?
-    ret	    nz			    ; return if response != 0xFF
-    dec	    bc			    ; --maxCount
-    ld	    a, b
-    or	    c
-    jr	    nz, loop		    ; loop if maxCount != 0
-    ld	    a, 0xFF		    ; return 0xFF
-    ret
-#endlocal
-
-; void sdc_putbytes(uint8_t *data, uint8_t length)
-; - 'data' in HL
-; - 'length' in B (0 means 256)
-; - writes 'length' bytes from 'data' to the SD card
-; - requires SDCS to be set by caller, and will not be modified
-; - B is 0 on return
-#local
-sdc_putbytes::
-    push    hl
-writeByte:
-    ld	    a, (hl)
-    call    sdc_xchg
-    inc	    hl
-    djnz    writeByte
-    pop	    hl
-    ret
-#endlocal
-
-; uint8_t sdc_getbytes(uint16_t length)
-; - 'length' in BC (0 means 65536)
-; - reads 'length' bytes into SDC_buffer
-; - requires SDCS to be set by caller, and will not be modified
-; - BC is 0 on return
-#local
-sdc_getbytes::
-    push    hl
-    ld	    hl, SDC_buffer	    ; HL = SDC_buffer
-loop:
-    ld	    a, 0xFF
-    call    sdc_xchg		    ; read next byte
-    ld	    (hl), a		    ; *buffer = byte
-    inc	    hl			    ; ++buffer
-    dec	    bc			    ; --length
-    ld	    a, c
-    or	    b
-    jr	    nz, loop		    ; loop while length != 0
-    pop	    hl
-    ret
-#endlocal
-
 ; void sdc_dummy_clocks()
 ; - send 80 clock cycles with CS inactive (high), and data=1
 ; - CS is set inactive (high) on return
@@ -348,23 +236,6 @@ writeByte:
     ld	    a, 0xFF		    ; want 8 bits of MOSI high
     call    sdc_xchg		    ; write byte to SD card
     djnz    writeByte
-    pop	    bc
-    ret
-#endlocal
-
-; uint8_t sdc_command(uint8_t data[6])
-; - 'data' pointer in HL
-; - send specified 6-byte command to SD card
-; - returns response byte in A
-#local
-sdc_command::
-    push    bc
-    call    sdc_cs_high		    ; set CS inactive
-    call    sdc_cs_low		    ; set CS active
-    ld	    b, 6		    ; 6 command bytes
-    call    sdc_putbytes	    ; write command bytes
-    ld	    bc, SDC_POLL_COUNT
-    call    sdc_poll		    ; poll for completion
     pop	    bc
     ret
 #endlocal
@@ -436,116 +307,6 @@ cmd55_data:
     .byte $77, $00,$00,$00,$00, $65
 cmd41_data:
     .byte $69, $00,$00,$00,$00, $01	; dummy CRC, also note byte 1 is modified above!
-#endlocal
-
-; uint8_t sdc_read_sector(uint32_t lba)
-; - 'lba' passed in BCDE
-; - one 512-byte sector is read into SDC_buffer
-; - returns status in A:
-;     0: success
-;     non-0: error
-#local
-sdc_read_sector::
-    push    bc
-    push    de
-    push    hl
-    ld	    a, (SDC_flags)
-    and	    SDF_BLOCK		    ; test SDC_flags & SDF_BLOCK?
-    jr	    nz, begin		    ; if SDC_flags & SDF_BLOCK != 0, begin
-    ex	    de, hl		    ; HL = DE
-    add	    hl, hl		    ; HL <<= 1, top bit shifted into C flag
-    ld	    a, c		    ; A = C
-    adc	    a			    ; A = (C << 1) + carry_in
-    ld	    b, a
-    ld	    c, h
-    ld	    d, l
-    ld	    e, 0		    ; BCDE = AHL0
-begin:
-    ld	    hl, (cmd17_data+1)
-    ld	    (hl), b
-    inc	    hl
-    ld	    (hl), c
-    inc	    hl
-    ld	    (hl), d
-    inc	    hl
-    ld	    (hl), e		    ; copy address from BCDE into command buffer
-    ld	    hl, cmd17_data
-    call    sdc_command		    ; send CMD17
-    or	    a			    ; test response == 0?
-    jr	    nz, done		    ; if response != 0, return failure
-    ld	    bc, 10000
-    call    sdc_poll		    ; poll for data token, up to 100ms
-    cp	    0xFE		    ; test token == 0xFE?
-    jr	    nz, done		    ; if token != 0xFE, return failure
-    ld	    bc, 512
-    call    sdc_getbytes	    ; read 512 bytes into SDC_buffer
-    ld	    a, 0xFF
-    call    sdc_xchg		    ; discard CRC, byte 1
-    ld	    a, 0xFF
-    call    sdc_xchg		    ; discard CRC, byte 2
-    xor	    a			    ; return 0 (success)
-done:
-    ld	    l, a		    ; save response byte in A
-    call    sdc_cs_high		    ; deselect the card when done
-    ld	    a, l		    ; restore response byte to A
-    pop	    hl
-    pop	    de
-    pop	    bc
-    ret
-
-cmd17_data:
-    .byte $51, $00,$00,$00,$00, $01	; dummy CRC, also note middle 4 bytes modified above!
-#endlocal
-
-; uint8_t sdc_xchg(uint8_t data)
-; - 'data' passed in A
-; - writes 'data' out to SD card
-; - returns byte from SD card in A
-; - On entry, requires:
-;   - SDCS has been set as desired by caller
-;   - SDCLK and SDOCLK are both 0 (i.e. clocks are idle)
-; - At exit, ensures:
-;   - SDCLK and SDOCLK are both 0 (i.e. clocks are idle)
-#local
-sdc_xchg::
-    push    bc
-    out	    (PORT_SDCARD), a	    ; load SD card output shift register with 'data'
-				    ; this places bit 7 on the serial output Q7 immediately
-;    call    sioA_puthex8
-    ld	    c, PORT_SYSREG	    ; set up C so we can write to PORT_SYSREG quickly
-    ld	    a, (Sysreg)
-    ld	    b, a
-    or	    SYS_SDOCLK		    ; A = sysreg value with CLK=0, OCLK=1
-    set	    SYS_IDX_SDCLK, b	    ; B = sysreg value with CLK=1, OCLK=0
-
-    ; Now we have a big unrolled block of output instructions, where each instruction causes a
-    ; single clock transition. We note the transitions with comments. Each instruction is 2 bytes
-    ; and 12 clocks. It takes two instructions to clock out one bit.
-    ; Bits go out MSB (bit 7) first.
-    out	    (c), b		    ; bit 7: CLK 0->1, OCLK 0->0 (SD card latches bit 7)
-    out	    (c), a		    ; bit 6: CLK 1->0, OCLK 0->1 (shift bit 6 onto Q7)
-    out	    (c), b		    ; bit 6: CLK 0->1, OCLK 1->0 (SD card latches bit 6)
-    out	    (c), a		    ; bit 5: CLK 1->0, OCLK 0->1 (etc....)
-    out	    (c), b		    ; bit 5: CLK 0->1, OCLK 1->0
-    out	    (c), a		    ; bit 4: CLK 1->0, OCLK 0->1
-    out	    (c), b		    ; bit 4: CLK 0->1, OCLK 1->0
-    out	    (c), a		    ; bit 3: CLK 1->0, OCLK 0->1
-    out	    (c), b		    ; bit 3: CLK 0->1, OCLK 1->0
-    out	    (c), a		    ; bit 2: CLK 1->0, OCLK 0->1
-    out	    (c), b		    ; bit 2: CLK 0->1, OCLK 1->0
-    out	    (c), a		    ; bit 1: CLK 1->0, OCLK 0->1
-    out	    (c), b		    ; bit 1: CLK 0->1, OCLK 1->0
-    out	    (c), a		    ; bit 0: CLK 1->0, OCLK 0->1
-    out	    (c), b		    ; bit 0: CLK 0->1, OCLK 1->0
-
-    and	    ~SYS_SDCLOCKS	    ; CLK 1->0, OCLK=0
-    out	    (c), a		    ; no need to write back to Sysreg, since nothing's changed
-    in	    a, (PORT_SDCARD)	    ; return byte read from SD card
-;    ld	    c, a
-;    call    sioA_puthex8
-;    ld	    a, c
-    pop	    bc
-    ret
 #endlocal
 
 ; void sioA_crlf()
@@ -632,7 +393,5 @@ line:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #data DATA,TEXT_end
 ; define static variables here
-SDC_flags:: defs 1	; flags describing current SD card status (SDF_xxx)
-SDC_buffer:: defs 512	; input buffer for sdc_getbytes
 
 #include library "libdata"

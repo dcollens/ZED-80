@@ -19,3 +19,9 @@ SYS_IDX_SDOCLK	    equ 4
 SYS_IDX_BDIR	    equ 5
 SYS_IDX_BC1	    equ 6
 SYS_IDX_RESERVED    equ 7
+
+; Some helpful multi-bit masks for the SD card driver:
+; Mask of all SD-card-related bits in SYSREG. We ignore ICLR because it's not used.
+SYS_SDMASK	    equ SYS_SDCLK | SYS_SDCS | SYS_SDOCLK
+; Mask of SD-card clock bits in SYSREG
+SYS_SDCLOCKS	    equ SYS_SDCLK | SYS_SDOCLK
