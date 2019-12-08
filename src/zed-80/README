@@ -63,9 +63,11 @@ CP/M disk image
 
 Install cpmtools package:
     sudo port install cpmtools
+    brew install cpmtools
 
 Create the "zed-80" disk definition for cpmtools:
-    sudo vim /opt/local/share/diskdefs
+    Port: % sudo vim /opt/local/share/diskdefs
+    Brew: % vim /usr/local/share/diskdefs
 Add the following block, e.g. at the end of the file:
     diskdef zed-80
 	seclen 128
@@ -79,5 +81,5 @@ Add the following block, e.g. at the end of the file:
     end
 
 Create a new CP/M disk image:
-    dd if=/dev/zero of=sdcard.img bs=1024 count=8192
-    mkfs.cpm -f zed-80 -b cpm22.sys sdcard.img
+    make sdcard.img
+
