@@ -10,13 +10,12 @@ sioA_write_safe::
 loop:
     ld	    a, (de)	; A = *data
     cp      a, 127
-    jp      nz, not_127
-    ld      a, '.'
-not_127:
+    jp      nc, replace
     cp      a, 32
-    jp      nc, not_ctrl
+    jp      nc, not_replace
+replace:
     ld      a, '.'
-not_ctrl:
+not_replace:
     ld	    l, a
     call    sioA_putc
     inc	    de

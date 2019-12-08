@@ -158,7 +158,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
         _zed80.writeMemory(RAM_BASE, ramData->size(), *ramData);
     }
 
-    std::string sdcardPathname = treeDir + "/sdcard.img";
+    std::string sdcardPathname = treeDir + "/src/zed-80/sdcard.img";
     auto sdcardData = loadFile(sdcardPathname);
     if (sdcardData == nullptr) {
         NSLog(@"Can't load SD card file \"%s\"", ramPathname.c_str());
