@@ -74,7 +74,8 @@ public:
             _ram[paddr - RAM_BASE] = data;
         } else {
             cout << "Warning: Write $" << to_hex(data) << " to ROM at $"
-                << to_hex(paddr) << " (virtual $" << to_hex(vaddr) << ")" << endl;
+                << to_hex(paddr) << " (virtual $" << to_hex(vaddr) << ")"
+                << (isEnabled() ? "" : ", MMU not enabled") << endl;
         }
     }
 
