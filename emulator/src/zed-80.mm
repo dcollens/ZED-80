@@ -54,7 +54,7 @@ ZED80::ZED80()
     _mmu = make_shared<MMU>(_sysRegDevice);
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
-    _sdcardDevice = make_shared<SdcardDevice>();
+    _sdcardDevice = make_shared<SdcardDevice>(_joySegDevice);
     _keyboardDevice = make_shared<KeyboardDevice>();
     _sioDevice = make_shared<SioDevice>();
     _pioDevice = make_shared<PioDevice>(_keyboardDevice);

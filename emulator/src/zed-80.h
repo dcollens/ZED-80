@@ -62,6 +62,10 @@ public:
         _mmu->writeMemory(address, length, data);
     }
     
+    void setSdcard(const vector<uint8_t> &sdcard) {
+        _sdcardDevice->setData(sdcard);
+    }
+    
     void setUiDelegate(ViewController *uiDelegate);
 
     void receivedKeyboardScanCode(uint8_t scanCode);

@@ -15,9 +15,12 @@
 
 class JoySegDevice : public IoDevice {
     ViewController *_uiDelegate;
+    
+    bool            _sdcardCardDetect;
+    bool            _sdcardWriteProtect;
 
 public:
-    JoySegDevice() : _uiDelegate(nil) {}
+    JoySegDevice() : _uiDelegate(nil), _sdcardCardDetect(false), _sdcardWriteProtect(false) {}
 
     // Print a brief message describing this device.
     virtual void describe(std::ostream &out) const override;
@@ -30,6 +33,16 @@ public:
     }
     
     void reset();
+    
+    // Set whether an SD card has been detected.
+    void setSdcardCardDetect(bool cardDetect) {
+        _sdcardCardDetect = cardDetect;
+    }
+
+    // Set whether the SD card is write protected.
+    void setSdcardWriteProtect(bool writeProtect) {
+        _sdcardWriteProtect = writeProtect;
+    }
 };
 
 #endif /* io_joyseg_h */
