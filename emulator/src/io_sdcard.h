@@ -49,9 +49,9 @@ class SdcardDevice : public IoDevice {
 
 public:
     SdcardDevice(shared_ptr<JoySegDevice> joySegDevice)
-        : _joySegDevice(joySegDevice), _srIn(0), _srOut(0),
-          _inQueueBitCount(0), _outQueueBitCount(0) {
-            
+    : _joySegDevice(joySegDevice), _srIn(0), _srOut(0),
+      _inQueueBitCount(0), _outQueueBitCount(0)
+    {
         updateSdcardState();
     }
 

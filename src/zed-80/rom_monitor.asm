@@ -142,6 +142,7 @@ init::
     call    kbd_init	    ; Initialize keyboard
     call    lcd_init	    ; Initialize screen
     call    lcd_text_init   ; Initialize text mode
+    call    sdc_init	    ; Initialize SD card
     M_puts  startup_msg	    ; print startup banner
 #if defined(EMULATOR)
     call    0x4000
@@ -405,6 +406,7 @@ trampoline_size	    equ $-trampoline
 #local
 cmd_do_cpm::
     M_putc  'M'
+    M_puts  crlf
     call    ctc_tick_off
     di
 ; We begin with this memory map:
@@ -420,7 +422,7 @@ cmd_do_cpm::
     out	    (PORT_MMUPG2), a	; map frame 2 to CP/M ROM page
     ld	    hl, 0x8000		; copy from $8000
     ld	    de, CBIOS_BASE	; copy to CBIOS base address
-    ld	    bc, CPM_size	; copy CPM_size bytes
+    ld	    bc, CBIOS_LEN	; copy CBIOS_LEN bytes
     ldir			; do the copy
 ; Copy a trampoline up to PG1, and jump to it.
     ld	    hl, trampoline	; copy from trampoline
@@ -786,8 +788,10 @@ FORTH_PHYS_PAGE	    equ MMU_ROM_BASE + 2
 ; Code image for CP/M runtime, to be copied into RAM at page frame 3 (i.e. high).
 #code CPM, 0, 0x4000
 #insert "cbios.bin"
-CPM_PHYS_PAGE	    equ MMU_ROM_BASE + 3
 CBIOS_BASE	    equ	0xF600	; keep in sync with cbios.asm
+CBIOS_LEN	    equ $-CPM
+
+CPM_PHYS_PAGE	    equ MMU_ROM_BASE + 3
 
 ; Remaining 64KB segment to fill up ROM image
 #code FILLER, 0, 0x10000

@@ -56,3 +56,28 @@ files.
 Note that this means that symbols in the shared library should be named with a consistent
 mnemonic prefix (e.g. "sio", "pio", "ctc", "joy", "rand", "math", "lcd", "kbd", etc.) to
 prevent collisions both in the assembly language symbol namespace and in the filesystem.
+
+
+CP/M disk image
+===============
+
+Install cpmtools package:
+    sudo port install cpmtools
+
+Create the "zed-80" disk definition for cpmtools:
+    sudo vim /opt/local/share/diskdefs
+Add the following block, e.g. at the end of the file:
+    diskdef zed-80
+	seclen 128
+	tracks 256
+	sectrk 256
+	blocksize 8192
+	maxdir 256
+	skew 0
+	boottrk 1
+	os 2.2
+    end
+
+Create a new CP/M disk image:
+    dd if=/dev/zero of=sdcard.img bs=1024 count=8192
+    mkfs.cpm -f zed-80 -b cpm22.sys sdcard.img

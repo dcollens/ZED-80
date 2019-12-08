@@ -4,6 +4,7 @@
 
 #include "z80.inc"
 #include "z84c20.inc"
+#include "z84c40.inc"
 #include "ascii.inc"
 #include "keyboard.inc"
 #include "lcd.inc"
@@ -22,7 +23,7 @@ IOBYTE		equ	0x0003	;intel i/o byte
 ; CBIOS is 2.5KB
 #code CBIOS, BIOS_BASE, 0xA00
 
-N_BOOT_SECT	equ	($-CCP_BASE)/CPMSECLEN	;warm start sector count
+N_BOOT_SECT	equ	($-CCP_BASE)/HSTSECLEN	;warm start sector count
 
 ; jump vector for individual subroutines
 
@@ -93,9 +94,9 @@ DSKPARMS: ;disk parameter block for all disks.
 	;   - 256 tracks per disk
 	; This results in an 8MB disk.
 	; We use 8KB allocation unit (i.e. block size).
-	;
-	; NOTE: we cheat in the read/write routines and assume sectors per track is 256 rather
-	; than consult the disk parameter block.
+	; All of these parameters must match the settings you specify in
+	;    /opt/local/share/diskdefs
+	; if you use the cpmtools package (mkfs.cpm) to create a disk image.
 	defw	256		;128-byte sectors per track
 	defb	6		;block shift factor (8KB allocation unit)
 	defb	63		;block mask (16KB allocation unit)
@@ -105,7 +106,7 @@ DSKPARMS: ;disk parameter block for all disks.
 	defb	0x80		;alloc 0
 	defb	0x00		;alloc 1
 	defw	0		;check size 0: media not removable
-	defw	0		;track offset
+	defw	1		;track offset
 	; BLS = 8KB
 	; disk size = 8MB
 	; 256 directory entries at 32 bytes each = 8192 bytes, or 1 block
@@ -122,79 +123,61 @@ boot::	;simplest case is to just perform parameter initialization
 	ld	(IOBYTE), a	;clear the iobyte
 	ld	(CDISK), a	;select disk zero
 	jr	gocpm		;initialize and go to cp/m
-;
+
+welcome_msg: .text "ZED-80 CBIOS v1", CR, LF, NUL
+
 wboot::	;simplest case is to read the disk until all sectors loaded
 	ld	sp, 0x80	;use space below buffer for stack
 	ld	de, welcome_msg
-	call	sioA_puts
+	call	lcd_puts
+
+	ld 	b, N_BOOT_SECT	;B counts number of sectors to load
+	ld	hl, CCP_BASE	;base of CP/M (initial load point)
+	ld	de, 0		;start loading at sector 0
+
+loadSector:
+	push	hl
+	ld	l, '.'
+	call	lcd_putc	;write a '.' for each sector load
+	pop	hl
+
+	push	bc		;save loop counter
+	ld	bc, 0		;clear upper 16 bits of sector number
+	call	sdc_read_sector	;read sector number BCDE to SDC_buffer
+	pop	bc		;restore loop counter
+
+	or	a		;test A==0
+	jr	nz, wboot	;reboot if nonzero
+
+	push	bc		;save loop counter
+	ld	bc, HSTSECLEN	;copy HSTSECLEN bytes
+	ex	de, hl		;DE=current load address, HL=current sector number
+	push	hl		;save current sector number
+	ld	hl, SDC_buffer	;HL=SDC_buffer
+	ldir			;copy from *HL to *DE for BC bytes
+	pop	hl		;restore current sector number
+	pop	bc		;restore loop counter
+	ex	de, hl		;HL=next load address, DE=current sector number
+	inc	de		;advance sector counter
+	djnz	loadSector
+
+gocpm:
 	ld 	c, 0		;select disk 0
 	call	seldsk
 	call	home		;go to track 00
 
-	ld 	b, N_BOOT_SECT	;b counts number of sectors to load
-	ld 	c, 0		;c has the current track number
-	ld 	d, 2		;d has the next sector to read
-;	note that we begin by reading track 0, sector 2 since sector 1
-;	contains the cold start loader, which is skipped in a warm start
-	ld	hl, CCP_BASE	;base of cp/m (initial load point)
-load1:	;load	one more sector
-	push	bc		;save sector count, current track
-	push	de		;save next sector to read
-	push	hl		;save dma address
-	ld 	c, d		;get sector address to register C
-	call	setsec		;set sector address from register C
-	pop	bc		;recall dma address to b, C
-	push	bc		;replace on stack for later recall
-	call	setdma		;set dma address from b, C
-;
-;	drive set to 0, track set, sector set, dma address set
-	call	read
-	cp	0		;any errors?
-	jr	nz, wboot	;retry the entire boot if an error occurs
-;
-;	no error, move to next sector
-	pop	hl		;recall dma address
-	ld	de, CPMSECLEN	;dma=dma+128
-	add	hl, de		;new dma address is in h, l
-	pop	de		;recall sector address
-	pop	bc		;recall number of sectors remaining, and current trk
-	dec	b		;sectors=sectors-1
-	jr	z, gocpm	;transfer to cp/m if all have been loaded
-;
-;	more	sectors remain to load, check for track change
-	inc	d
-	ld 	a, d		;sector=27?, if so, change tracks
-	cp	27
-	jr	c, load1	;carry generated if sector<27
-;
-;	end of	current track,	go to next track
-	ld 	d, 1		;begin with first sector of next track
-	inc	c		;track=track+1
-;
-;	save	register state, and change tracks
-	push	bc
-	push	de
-	push	hl
-	call	settrk		;track address set from register c
-	pop	hl
-	pop	de
-	pop	bc
-	jr	load1		;for another sector
-;
-;	end of	load operation, set parameters and go to cp/m
-gocpm:
 	ld 	a, 0xc3		;c3 is a jmp instruction
 	ld	(0), a		;for jmp to wboot
 	ld	hl, wboote	;wboot entry point
 	ld	(1), hl		;set address field for jmp at 0
-;
+
 	ld	(5), a		;for jmp to bdos
 	ld	hl, BDOS_BASE	;bdos entry point
 	ld	(6), hl		;address field of Jump at 5 to bdos
-;
+
 	ld	bc, 0x80	;default dma address is 80h
 	call	setdma
-;
+
 ;	ei			;enable the interrupt system
 	ld	a, (CDISK)	;get current disk number
 	cp	N_DISKS		;see if valid disk number
@@ -202,11 +185,6 @@ gocpm:
 	xor	a		;invalid disk, change to disk 0
 diskok:	ld 	c, a		;send to the ccp
 	jp	CCP_BASE	;go to cp/m for further processing
-;
-;
-;	simple i/o handlers (must be filled in by user)
-;	in each case, the entry point is provided, with space reserved
-;	to insert your own code
 ;
 #local
 const::	;console status, return 0ffh if character ready, 00h if not

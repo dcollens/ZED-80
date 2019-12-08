@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 PRODUCTS := rom_monitor.rom rom_only_test.rom rom_ram_test.rom rom_for_emulator.rom \
-	lcd_test.bin ram_test.bin sdcard_test.bin cbios.bin sio_basic.bin \
+	lcd_test.bin ram_test.bin sdcard_test.bin cbios.bin cpm22.sys sio_basic.bin \
 	forth.bin forth_low.bin \
 	lcd_basic.bin lcd_basic_low.bin
 
@@ -22,7 +22,10 @@ forth_low.bin: forth.asm
 song.bin: ../ym2asm/*.asm
 
 %.rom %.bin: %.asm *.inc libcode/* libdata/*
-	zasm -yu -i $<
+	zasm -yu -i $< -o $@
+
+%.sys: %.asm
+	zasm -yu -i $< -o $@
 
 %.pkt: %.bin
 	../pkt/pkt $< > $@
