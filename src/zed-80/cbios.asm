@@ -127,6 +127,10 @@ boot::	;simplest case is to just perform parameter initialization
 welcome_msg: .text "ZED-80 CBIOS v1", CR, LF, NUL
 
 wboot::	;simplest case is to read the disk until all sectors loaded
+	; Set Sysreg to the value that we know the ROM monitor set it to.
+	ld	a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
+	ld	(Sysreg), a
+
 	ld	sp, 0x80	;use space below buffer for stack
 	ld	de, welcome_msg
 	call	lcd_puts
