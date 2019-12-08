@@ -32,9 +32,15 @@ uint64_t MMU::tickCallback(int numTicks, uint64_t pins) {
         cout << "MMU: ignoring IO read from port $" << to_hex(ioAddr) << endl;
     } else if ((pins & Z80_WR) != 0) {
         uint8_t physPage = ioAddr & 0x03;
-        _map[physPage] = Z80_GET_DATA(pins) & 0x0F;
+        uint8_t previousPage = _map[physPage];
+        uint8_t newPage = Z80_GET_DATA(pins) & 0x0F;
+        _map[physPage] = newPage;
         cout << "MMU: updated physical page " << int(physPage)
-             << " to address $" << to_hex(_map[physPage]) << endl;
+             << " from address $" << to_hex(previousPage)
+             << " to address $" << to_hex(newPage) << " ("
+             << (newPage << MMU_PAGE_SHIFT >= RAM_BASE ? "RAM" : "ROM")
+             << " page " << (((newPage << MMU_PAGE_SHIFT) % RAM_BASE) >> MMU_PAGE_SHIFT)
+             << ")" << endl;
     }
 
     return pins;
