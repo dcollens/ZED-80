@@ -31,8 +31,11 @@ song.bin: ../ym2asm/*.asm
 	../pkt/pkt $< > $@
 
 sdcard.img: Makefile cpm22.sys
-	if [ -f sdcard.img ]; then rm sdcard.img; fi
+	rm -f sdcard.img
 	dd if=/dev/zero of=sdcard.img bs=1024 count=8192
 	mkfs.cpm -f zed-80 -b cpm22.sys sdcard.img
-	cpmcp -f zed-80 sdcard.img cpm/* 0:
+	for dir in cpm/*; do \
+		user=$$(basename $$dir); \
+		cpmcp -f zed-80 sdcard.img $$dir/* $$user:; \
+	done
 	cpmls -f zed-80 -l sdcard.img
