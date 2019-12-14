@@ -57,9 +57,6 @@ sdc_test::
     and	    JOY1_SDCD		    ; test Card Detect (active low)
     jr	    nz, doneCD		    ; if low, switch message to "present"
     ld	    de, msg_card_present
-    ld	    a, (SDC_flags)
-    or	    SDF_PRESENT
-    ld	    (SDC_flags), a	    ; set PRESENT flag
 doneCD:
     call    sioA_writeln	    ; print presence/absence message
 
@@ -68,9 +65,6 @@ doneCD:
     and	    JOY1_SDWP		    ; test Write Protect (active high)
     jr	    z, doneWP		    ; if high, switch message to "on"
     ld	    de, msg_wp_on
-    ld	    a, (SDC_flags)
-    or	    SDF_WP
-    ld	    (SDC_flags), a	    ; set WP flag
 doneWP:
     call    sioA_writeln	    ; print write protect status message
 
@@ -121,7 +115,7 @@ doneCmd8:
     call    sioA_crlf
     ld	    a, l
     or	    a			    ; test response == 0?
-    jr	    nz, fail		    ; if response != 0, fail
+    jp	    nz, fail		    ; if response != 0, fail
 
     ; For v2 cards, send CMD58 to determine if block vs. byte address
     ld	    a, (SDC_flags)
@@ -161,6 +155,28 @@ cardV1:
     jr	    nz, fail		    ; if response != 0, fail
 
 doneInit:
+    ; Read sector 0, and display it.
+    ld	    bc, 0
+    ld	    de, 0
+    call    sdc_read_sector	    ; read sector 0
+    or	    a			    ; test result == 0?
+    jr	    nz, fail		    ; if result != 0, fail
+    ld	    bc, 512
+    ld	    hl, SDC_buffer
+    call    sioA_hexdump	    ; dump 512 bytes in hex
+
+    ; Modify the sector we just read, and write it back.
+    ld	    de, msg_writing
+    call    sioA_writeln
+    ld	    hl, SDC_buffer
+    inc	    (hl)		    ; increment first byte of sector
+    ld	    bc, 0
+    ld	    de, 0
+    call    sdc_write_sector	    ; write sector 0
+    or	    a			    ; test result == 0?
+    jr	    nz, fail		    ; if result != 0, fail
+
+    ; Finally, read the modified sector 0, and display it.
     ld	    bc, 0
     ld	    de, 0
     call    sdc_read_sector	    ; read sector 0
@@ -210,6 +226,8 @@ msg_sdcard_v2:
     .text "SDcardV2", NUL
 msg_block_addr:
     .text "BlkAddr", NUL
+msg_writing:
+    .text "Write sector 0", NUL
 
 sdc_cmd0_data:
     .byte $40, $00,$00,$00,$00, $95

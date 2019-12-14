@@ -5,12 +5,14 @@
 #local
 sdc_command::
     push    bc
+    push    hl
     call    sdc_cs_high		    ; set CS inactive
     call    sdc_cs_low		    ; set CS active
-    ld	    b, 6		    ; 6 command bytes
-    call    sdc_putbytes	    ; write command bytes
+    ld	    bc, 6		    ; 6 command bytes
+    call    sdc_putbytes	    ; write command bytes (destroys BC, HL)
     ld	    bc, 1000		    ; poll SD card response for 1000 cycles
     call    sdc_poll		    ; poll for completion
+    pop	    hl
     pop	    bc
     ret
 #endlocal

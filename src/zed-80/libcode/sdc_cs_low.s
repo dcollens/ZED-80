@@ -6,10 +6,5 @@ sdc_cs_low::
     ld	    a, (Sysreg)
     and	    ~SYS_SDCS
     call    sysreg_write
-loop:
-    ld	    a, 0xFF
-    call    sdc_xchg
-    inc	    a			    ; test response byte == 0xFF?
-    jr	    nz, loop		    ; continue while response != 0xFF
-    ret
+    jp	    sdc_wait_ready
 #endlocal

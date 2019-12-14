@@ -9,26 +9,8 @@ sdc_read_sector::
     push    bc
     push    de
     push    hl
-    ld	    a, (SDC_flags)
-    and	    SDF_BLOCK		    ; test SDC_flags & SDF_BLOCK?
-    jr	    nz, begin		    ; if SDC_flags & SDF_BLOCK != 0, begin
-    ex	    de, hl		    ; HL = DE
-    add	    hl, hl		    ; HL <<= 1, top bit shifted into C flag
-    ld	    a, c		    ; A = C
-    adc	    a			    ; A = (C << 1) + carry_in
-    ld	    b, a
-    ld	    c, h
-    ld	    d, l
-    ld	    e, 0		    ; BCDE = AHL0
-begin:
-    ld	    hl, cmd17_data+1
-    ld	    (hl), b
-    inc	    hl
-    ld	    (hl), c
-    inc	    hl
-    ld	    (hl), d
-    inc	    hl
-    ld	    (hl), e		    ; copy address from BCDE into command buffer
+    ld	    hl, cmd17_data+1	    ; HL = buffer to write adjusted lba
+    call    sdc_lba_adjust	    ; scale lba if needed & store to buffer
     ld	    hl, cmd17_data
     call    sdc_command		    ; send CMD17
     or	    a			    ; test response == 0?
@@ -39,10 +21,11 @@ begin:
     jr	    nz, done		    ; if token != 0xFE, return failure
     ld	    bc, 512
     call    sdc_getbytes	    ; read 512 bytes into SDC_buffer
+    ld	    b, 2		    ; skip 2 CRC bytes
+xchgLoop:
     ld	    a, 0xFF
-    call    sdc_xchg		    ; discard CRC, byte 1
-    ld	    a, 0xFF
-    call    sdc_xchg		    ; discard CRC, byte 2
+    call    sdc_xchg		    ; discard CRC byte
+    djnz    xchgLoop
     xor	    a			    ; return 0 (success)
 done:
     ld	    l, a		    ; save response byte in A

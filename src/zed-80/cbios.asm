@@ -132,7 +132,7 @@ wboot::
 	ld	(Sysreg), a
 
 	; TODO: this is a cheap hack for the simulator
-	ld	a, SDF_PRESENT | SDF_V2 | SDF_BLOCK
+	ld	a, SDF_V2 | SDF_BLOCK
 	ld	(SDC_flags), a
 
 	ld	sp, 0x80	;use space below buffer for stack
@@ -362,6 +362,7 @@ write:
 ;Sector number in 'Sector'
 ;Dma address in 'Dmaad' ($0000-$FFFF)
 ;
+	; TODO: read host sector, copy in new CP/M sub-sector, write host sector
 	ld	a, 1		;fail
 	ret
 
