@@ -89,7 +89,7 @@ DPBASE::
 ;
 DSKPARMS: ;disk parameter block for all disks.
 	; see: https://original.sharpmz.org/dpb.htm
-	; Sector and track numbers must fit in 8 bits, so we use:
+	; We use:
 	;   - 256 sectors per track (128 bytes each)
 	;   - 256 tracks per disk
 	; This results in an 8MB disk.
@@ -124,7 +124,7 @@ boot::	;simplest case is to just perform parameter initialization
 	ld	(CDISK), a	;select disk zero
 	jr	gocpm		;initialize and go to cp/m
 
-welcome_msg: .text "ZED-80 CBIOS v1 ", __date__, CR, LF, NUL
+welcome_msg: .text CR, LF, "ZED-80 CBIOS v2 ", __date__, CR, LF, NUL
 
 wboot::
 	; Set Sysreg to the value that we know the ROM monitor set it to.
@@ -195,20 +195,35 @@ diskok:	ld 	c, a		;send to the ccp
 	jp	CCP_BASE	;go to cp/m for further processing
 ;
 #local
-const::	;console status, return 0ffh if character ready, 00h if not
-	call	kbd_poll	;check keyboard for a character
-	jr	z, return0	;no character available?
-	ld	a, 0xff		;char ready	
+const::	;console status, return (in A) 0xFF if character ready, 0x00 if not
+	ld	a, (Charbuff)	;check if we have a buffered char waiting
+	or	a		;test A==0?
+	jr	nz, returnFF	;return 0xFF if a character is already waiting
+	call	kbd_pollc	;check keyboard for a character
+	jr	z, return00	;return 0x00 if keyboard is idle
+	ld	a, l		;otherwise, A = input char
+	ld	(Charbuff), a	;save input char in Charbuff
+returnFF:
+	ld	a, 0xff		;return 0xFF means a character is ready
 	ret
-return0:
-	xor	a		;no char
+return00:
+	xor	a		;return 0x00 means no character ready
 	ret
 #endlocal
 ;
-conin::	;console character into register a
-	call	kbd_getc
-	ld	a, l
+#local
+conin::	;console character into register A
+	ld	a, (Charbuff)	;check if we have a buffered char waiting
+	or	a		;test A==0?
+	jr	z, tryKeyboard	;no buffered char, so try keyboard
+	ld	hl, Charbuff	;HL points to Charbuff
+	ld	(hl), 0		;clear Charbuff
+	ret			;return buffered char in A
+tryKeyboard:
+	call	kbd_getc	;block until keyboard input is ready
+	ld	a, l		;return input char in A
 	ret
+#endlocal
 ;
 conout::;console character output from register c
 	ld	l, c
@@ -224,23 +239,23 @@ seldsk::;select disk given by register c
 	ld 	a, c
 	cp	N_DISKS		;must be between 0 and N_DISKS-1
 	ret	nc		;no carry if >= N_DISKS
-	ld	(diskno), a
+	ld	(Diskno), a
 ;	disk number is in the proper range
 ;	compute proper disk parameter header address
 	;FALLING THROUGH!
-getdph:	;return current disk's (diskno) DPH address in HL
+getdph:	;return current disk's (Diskno) DPH address in HL
 	;destroys: DE
-	ld 	hl, (diskno)	;l=diskno, h=junk
-	ld	h, 0		;hl=diskno
+	ld 	hl, (Diskno)	;l=Diskno, h=junk
+	ld	h, 0		;hl=Diskno
 	add	hl, hl		;*2
 	add	hl, hl		;*4
 	add	hl, hl		;*8
 	add	hl, hl		;*16 (size of each header)
 	ld	de, DPBASE
-	add	hl, de		;hl=DPBASE+(diskno*16)
+	add	hl, de		;hl=DPBASE+(Diskno*16)
 	ret
 
-getdpb: ;return current disk's (diskno) DPB address in DE
+getdpb: ;return current disk's (Diskno) DPB address in DE
 	;destroys: HL
 	call	getdph		;hl=disk parameter header
 	ld	de, 10
@@ -250,7 +265,7 @@ getdpb: ;return current disk's (diskno) DPB address in DE
 	ld	d, (hl)		;de=*hl
 	ret
 
-getspt:	;return current disk's (diskno) SPT in DE
+getspt:	;return current disk's (Diskno) SPT in DE
 	;destroys: HL
 	call	getdpb		;de=disk parameter block
 	ex	de, hl		;hl=disk parameter block
@@ -264,22 +279,22 @@ home::	;move to the track 00 position of current drive
 	ld	bc, 0		;select track 0
 	; FALLING THROUGH!
 settrk::;set track given by register bc
-	ld	(track), bc
+	ld	(Track), bc
 	ret
 ;
 setsec::;set sector given by register bc
-	ld	(sector), bc
+	ld	(Sector), bc
 	ret
 ;
 setdma::;set dma address given by registers b and c
-	ld	(dmaad), bc
+	ld	(Dmaad), bc
 	ret
 
 getlinsec:: ;return linear (128-byte) sector number for current I/O operation in DEHL
 	call	getspt		;DE=sectors per track
-	ld	bc, (track)	;BC=track number
+	ld	bc, (Track)	;BC=track number
 	call	mul16		;DEHL=spt * track
-	ld	bc, (sector) 	;BC=sector number
+	ld	bc, (Sector) 	;BC=sector number
 	add	hl, bc		;HL += BC, carry flag set as needed
 	ret	nc
 	inc	de
@@ -308,10 +323,10 @@ read::
 ;Read one CP/M sector from disk.
 ;Return a 00h in register a if the operation completes properly,
 ;and 01h if an error occurs during the read.
-;Disk number in 'diskno'
-;Track number in 'track'
-;Sector number in 'sector'
-;Dma address in 'dmaad' ($0000-$FFFF)
+;Disk number in 'Diskno'
+;Track number in 'Track'
+;Sector number in 'Sector'
+;Dma address in 'Dmaad' ($0000-$FFFF)
 ;
 	call	getlinsec	;DEHL = linear sector number (128-byte sectors)
 	call	trancpm2hst	;DEHL = host sector number, A = subsector offset
@@ -332,7 +347,7 @@ skip1:
 	jr	z, skip2
 	inc	h		;HL += 256
 skip2:
-	ld	de, (dmaad)	;copy to dmaad
+	ld	de, (Dmaad)	;copy to Dmaad
 	ldir			;copy from *HL to *DE for BC bytes
 	xor	a		;return 0 for success
 	ret
@@ -342,10 +357,10 @@ write:
 ;Write one CP/M sector to disk.
 ;Return a 00h in register a if the operation completes properly,
 ;and 01h if an error occurs during the read or write
-;Disk number in 'diskno'
-;Track number in 'track'
-;Sector number in 'sector'
-;Dma address in 'dmaad' ($0000-$FFFF)
+;Disk number in 'Diskno'
+;Track number in 'Track'
+;Sector number in 'Sector'
+;Dma address in 'Dmaad' ($0000-$FFFF)
 ;
 	ld	a, 1		;fail
 	ret
@@ -353,15 +368,13 @@ write:
 #include library "libcode"
 
 ;
-;	the remainder of the cbios is reserved uninitialized
-;	data area, and does not need to be a part of the
-;	system memory image (the space must be available,
-;	however).
+; CBIOS data area
 ;
-track:	defs	2		;last track set via SETTRK
-sector:	defs	2		;last sector set via SETSEC
-dmaad:	defs	2		;direct memory address set via SETDMA
-diskno:	defs	1		;disk number 0-15 set via SELDSK
+Track:	defw	0		;last track set via SETTRK
+Sector:	defw	0		;last sector set via SETSEC
+Dmaad:	defw	0		;direct memory address set via SETDMA
+Diskno:	defb	0		;disk number 0-15 set via SELDSK
+Charbuff: defb	0		;character stashed by CONST
 ;
 ;	scratch ram area for bdos use
 DIRBUF:	defs	128	 	;scratch directory area
