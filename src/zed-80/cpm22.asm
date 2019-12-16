@@ -8,14 +8,10 @@
 ;*
 ;**************************************************************
 
+#include "cbios.inc"
+
 #target bin
 
-;
-;   Set memory limit here. This is the amount of contigeous
-; ram starting from 0000. CP/M will reside at the end of this space.
-;
-MEM	EQU	64		;for a 64k system
-;
 IOBYTE	EQU	3		;i/o definition byte.
 TDRIVE	EQU	4		;current drive name and user number.
 ENTRY	EQU	5		;entry point for the cp/m bdos.
@@ -42,8 +38,7 @@ DEL	EQU	7FH		;rubout
 ;
 ;   Set origin for CP/M
 ;
-CPM22_SYS_BASE	EQU	(MEM-8)*1024	;normally -7, but we need an extra 1k for ZED-80 CBIOS
-#code CPM22, CPM22_SYS_BASE, 0x1600
+#code CPM22, CPM22_SYS_BASE, CPM22_SYS_LEN
 ;
 CBASE:	JP	COMMAND		;execute command processor (ccp).
 	JP	CLEARBUF	;entry to empty input buffer before starting ccp.

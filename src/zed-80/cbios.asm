@@ -12,19 +12,18 @@
 #include "sdcard.inc"
 ; Need this for the SD card write protect & present flags.
 #include "joystick.inc"
+#include "cbios.inc"
 
 CPMSECLEN	equ	128	;CP/M has 128-byte sectors
 HSTSECLEN	equ	512	;SD card has 512-byte sectors
 
-CCP_BASE	equ	0xE000	;base of ccp
-BDOS_BASE	equ	0xE806	;bdos entry
-BIOS_BASE	equ	0xF600	;base of bios
 CDISK		equ	0x0004	;address of current disk number 0=a,... l5=p
 IOBYTE		equ	0x0003	;intel i/o byte
 
 ; CBIOS is 2.5KB
-#code CBIOS, BIOS_BASE, 0xA00
+#code CBIOS, CBIOS_BASE, CBIOS_LEN
 
+; Note this means that the cpm22.sys file has to be a multiple of 512 bytes long.
 N_BOOT_SECT	equ	($-CCP_BASE)/HSTSECLEN	;warm start sector count
 
 ; jump vector for individual subroutines
