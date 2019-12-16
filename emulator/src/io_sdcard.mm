@@ -109,7 +109,50 @@ void SdcardDevice::handleSdClkChange(Sysreg_t sysreg) {
     }
     _srIn = (_srIn << 1) | outBit;
 
-    if (_inQueueBitCount == 8 && (_inQueue & 0xFF) == 0xFF) {
+    if (_inQueueBitCount == 8 && _writeState != WRITE_STATE_NONE) {
+        // Handle state machine for writing a sector.
+        uint8_t byte = _inQueue & 0xFF;
+        _inQueueBitCount = 0;
+        if (DEBUG_LOG) {
+            cout << "SdcardDevice: Got write byte " << to_hex(byte) << " with " << _writeBytesLeft << " left, state " << _writeState << "." << endl;
+        }
+        switch (_writeState) {
+            case WRITE_STATE_NONE:
+                // Can't happen.
+                assert(false);
+                break;
+
+            case WRITE_STATE_WAITING_FOR_FE:
+                if (byte == 0xFE) {
+                    _writeState = WRITE_STATE_WAITING_FOR_DATA_BYTE;
+                }
+                break;
+                
+            case WRITE_STATE_WAITING_FOR_DATA_BYTE:
+                assert(_writeBytesLeft > 0);
+                _data[_writeAddress] = byte;
+                _writeAddress += 1;
+                _writeBytesLeft -= 1;
+                if (_writeBytesLeft == 0) {
+                    if (_sectorWriter != nullptr) {
+                        _sectorWriter->writeSector(_writeAddress - SECTOR_SIZE, &_data[_writeAddress - SECTOR_SIZE], SECTOR_SIZE);
+                    }
+                    _writeState = WRITE_STATE_WAITING_FOR_CRC1;
+                }
+                break;
+
+            case WRITE_STATE_WAITING_FOR_CRC1:
+                // Ignore CRC.
+                _writeState = WRITE_STATE_WAITING_FOR_CRC2;
+                break;
+
+            case WRITE_STATE_WAITING_FOR_CRC2:
+                // Ignore CRC.
+                sendResponseByte(0x05); // Signal success.
+                _writeState = WRITE_STATE_NONE;
+                break;
+        }
+    } else if (_inQueueBitCount == 8 && (_inQueue & 0xFF) == 0xFF) {
         // We were sent just 0xFF, it's polling.
         _inQueueBitCount = 0;
     } else if (_inQueueBitCount == 8*6) {
@@ -144,10 +187,10 @@ void SdcardDevice::handleSdClkChange(Sysreg_t sysreg) {
                     // Read sector.
                     uint32_t lba = uint32_t(_inQueue >> 8);
                     if (DEBUG_LOG) {
-                        cout << "SdcardDevice: Got CMD17 for sector " << to_hex(lba) << endl;
+                        cout << "SdcardDevice: Got CMD17 (read) for sector " << to_hex(lba) << endl;
                     }
                     sendResponseByte(0x00); // Not idle.
-                    sendResponseByte(0xFE); // ?
+                    sendResponseByte(0xFE); // Data token.
                     for (int i = 0; i < SECTOR_SIZE; i++) {
                         sendResponseByte(_data[lba*SECTOR_SIZE + i]);
                     }
@@ -155,7 +198,29 @@ void SdcardDevice::handleSdClkChange(Sysreg_t sysreg) {
                     sendResponseByte(0x00); // CRC 2
                     break;
                 }
-
+                    
+                case 24: {
+                    // Write sector.
+                    uint32_t lba = uint32_t(_inQueue >> 8);
+                    if (DEBUG_LOG) {
+                        cout << "SdcardDevice: Got CMD24 (write) for sector " << to_hex(lba) << endl;
+                    }
+                    sendResponseByte(0x00); // Successfully got command.
+                    sendResponseByte(0xFF); // Ready to receive bytes.
+                    // We'll receive:
+                    //     0xFF to poll for 0x00 status response.
+                    //     0xFF to poll for 0xFF ready.
+                    //     0xFE for data token.
+                    //     SECTOR_SIZE bytes of data.
+                    //     0xFF for CRC 1.
+                    //     0xFF for CRC 2.
+                    //     0xFF to poll for status result.
+                    _writeState = WRITE_STATE_WAITING_FOR_FE;
+                    _writeAddress = lba*SECTOR_SIZE;
+                    _writeBytesLeft = SECTOR_SIZE;
+                    break;
+                }
+                    
                 case 41:
                     if (DEBUG_LOG) {
                         cout << "SdcardDevice: Got CMD41 " << to_hex(uint32_t(_inQueue >> 8)) << endl;
@@ -184,7 +249,7 @@ void SdcardDevice::handleSdClkChange(Sysreg_t sysreg) {
                     break;
                     
                 default:
-                    cout << "SdcardDevice: Got unknown command " << to_hex(cmd) << endl;
+                    cout << "SdcardDevice: Got unknown command " << int(cmd) << endl;
                     sendResponseByte(SD_RESP_IDLE | SD_RESP_ILLEGAL_COMMAND);
                     break;
             }
@@ -217,7 +282,7 @@ void SdcardDevice::handleSdOClkChange(Sysreg_t sysreg) {
 
 void SdcardDevice::updateSdcardState() {
     _joySegDevice->setSdcardCardDetect(!_data.empty());
-    _joySegDevice->setSdcardWriteProtect(false);
+    _joySegDevice->setSdcardWriteProtect(_sectorWriter == nullptr);
 }
 
 void SdcardDevice::sendResponseByte(uint8_t b) {

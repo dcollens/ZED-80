@@ -62,8 +62,8 @@ public:
         _mmu->writeMemory(address, length, data);
     }
     
-    void setSdcard(const vector<uint8_t> &sdcard) {
-        _sdcardDevice->setData(sdcard);
+    void setSdcard(const vector<uint8_t> &sdcard, shared_ptr<SdcardDevice::SectorWriter> sectorWriter) {
+        _sdcardDevice->setData(sdcard, sectorWriter);
     }
     
     void setUiDelegate(ViewController *uiDelegate);

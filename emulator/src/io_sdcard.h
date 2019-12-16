@@ -20,6 +20,24 @@ using std::queue;
 using std::shared_ptr;
 
 class SdcardDevice : public IoDevice {
+public:
+    // Interface for writing a sector.
+    class SectorWriter {
+    public:
+        // Write the "count" bytes at "data" to the SD card at byte address "address".
+        virtual void writeSector(uint32_t address, uint8_t *data, int count) = 0;
+    };
+
+private:
+    // State machine for writing a sector.
+    enum WriteState {
+        WRITE_STATE_NONE,
+        WRITE_STATE_WAITING_FOR_FE,
+        WRITE_STATE_WAITING_FOR_DATA_BYTE,
+        WRITE_STATE_WAITING_FOR_CRC1,
+        WRITE_STATE_WAITING_FOR_CRC2,
+    };
+    
     shared_ptr<JoySegDevice> _joySegDevice;
     
     Sysreg_t    _lastSysreg;
@@ -34,6 +52,14 @@ class SdcardDevice : public IoDevice {
     queue<uint8_t> _outQueue;
     // Number of bits left in first byte of _outQueue.
     int         _outQueueBitCount;
+    // State when writing a sector.
+    WriteState  _writeState;
+    // Byte address (within _data) of next byte to write.
+    uint32_t    _writeAddress;
+    // Number of bytes left to write.
+    uint32_t    _writeBytesLeft;
+    // Delegate for writing sectors.
+    shared_ptr<SectorWriter> _sectorWriter;
     
     vector<uint8_t> _data;
     
@@ -50,7 +76,8 @@ class SdcardDevice : public IoDevice {
 public:
     SdcardDevice(shared_ptr<JoySegDevice> joySegDevice)
     : _joySegDevice(joySegDevice), _srIn(0), _srOut(0),
-      _inQueueBitCount(0), _outQueueBitCount(0)
+      _inQueueBitCount(0), _outQueueBitCount(0),
+      _writeState(WRITE_STATE_NONE), _writeAddress(0), _writeBytesLeft(0)
     {
         updateSdcardState();
     }
@@ -66,8 +93,11 @@ public:
     void checkSysreg(Sysreg_t sysreg);
     
     // Set the contents of the SD card. Pass an empty vector to mean "no card".
-    void setData(const vector<uint8_t> &data) {
+    // Pass a null sectorWriter to mean that the card is write-protected.
+    void setData(const vector<uint8_t> &data, shared_ptr<SectorWriter> sectorWriter) {
         _data = data;
+        _sectorWriter = sectorWriter;
+
         updateSdcardState();
     }
 };

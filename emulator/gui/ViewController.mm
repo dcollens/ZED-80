@@ -24,6 +24,7 @@ using std::array;
 using std::vector;
 using std::string;
 using std::ifstream;
+using std::ofstream;
 
 static constexpr NSTimeInterval EMULATION_SLICE = 0.010;    // 10ms emulation quantum
 
@@ -96,6 +97,28 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     return data;
 }
 
+// Concrete implementation of SectorWrite to write to files.
+class FileSectorWriter : public SdcardDevice::SectorWriter {
+    string          _pathname;
+    
+public:
+    FileSectorWriter(string const &pathname) : _pathname(pathname) {
+        // Nothing.
+    }
+    
+    // For SdcardDevice::SectorWriter:
+    virtual void writeSector(uint32_t address, uint8_t *data, int count) {
+        // cout << "Write " << count << " bytes at " << address << " to " << _pathname << endl;
+        ofstream file(_pathname, ofstream::out | ofstream::binary);
+        file.seekp(address);
+        file.write((char *) data, count);
+        file.close();
+        if (file.bad()) {
+            cout << "Error writing sector to " << _pathname << endl;
+        }
+    }
+};
+
 @interface ViewController () <ZedViewDelegate>
 @end
 
@@ -163,7 +186,7 @@ static unique_ptr<vector<uint8_t>> loadFile(string const &fileName) {
     if (sdcardData == nullptr) {
         NSLog(@"Can't load SD card file \"%s\"", ramPathname.c_str());
     } else {
-        _zed80.setSdcard(*sdcardData);
+        _zed80.setSdcard(*sdcardData, make_shared<FileSectorWriter>(sdcardPathname));
     }
 }
 
