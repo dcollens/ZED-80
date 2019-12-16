@@ -1,10 +1,15 @@
 ; void lcd_putc(uint8_t ch)
 ; - write the single character in "ch" to LCD
 #local
+; For debugging:
+VT100_DUMP_TO_SERIAL    equ 1
+
+; For state machine:
 VT100_STATE_NORMAL      equ 0 ; not parsing VT100 sequence
 VT100_STATE_EXP_BRACKET equ 1 ; got ESC, waiting for [
 VT100_STATE_EXP_START   equ 2 ; start of a parameter (digit) or command (letter) or semicolon
 VT100_STATE_EXP_REST    equ 3 ; rest of a parameter (digit) or command (letter) or semicolon
+
 lcd_putc::
     ld	    a, l		; A := ch
     cp	    CR			; Carriage return?
@@ -60,6 +65,9 @@ vt100_params: defs 16
 
     ; Character is in L.
 expecting_bracket:
+#if VT100_DUMP_TO_SERIAL
+    call    sioA_putc
+#endif
     ld      a, l
     cp      '['
     jr      z, is_bracket
@@ -74,6 +82,9 @@ is_bracket:
 
     ; Character is in L.
 expecting_start_of_parameter:
+#if VT100_DUMP_TO_SERIAL
+    call    sioA_putc
+#endif
     ld      a, l
     cp      ';'
     jr      nz, not_semicolon_start
@@ -98,6 +109,9 @@ not_semicolon_start:
 
     ; Character is in L.
 expecting_rest_of_parameter:
+#if VT100_DUMP_TO_SERIAL
+    call    sioA_putc
+#endif
     ld      a, l
     cp      ';'
     jr      nz, not_semicolon_rest
@@ -140,7 +154,10 @@ not_semicolon_rest:
     ; Command is in A.
 execute:
     cp      'H'
-    jr      nz, unknown_command
+    jr      z, csi_H
+    ; For WordStar also need: [7m (reverse), [m (plain), [K (clear to end of line)
+    jp      unknown_command
+csi_H:
     ; ESC [ row ; col H, with defaults of "1".
     push    hl
     push    de
@@ -175,7 +192,13 @@ col_not_zero
     jr      back_to_normal
 
 unknown_command:
-    ; TODO: Dump error somewhere, maybe serial?
+#if VT100_DUMP_TO_SERIAL
+    ; Highlight the missing item in the serial output.
+    ld      l, '<'
+    call    sioA_putc
+    call    sioA_putc
+    call    sioA_putc
+#endif
 back_to_normal:
     ld      a, VT100_STATE_NORMAL
     ld      (vt100_state), a
