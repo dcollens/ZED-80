@@ -10,6 +10,8 @@
 #include "lcd.inc"
 #include "sysreg.inc"
 #include "sdcard.inc"
+; Need this for the SD card write protect & present flags.
+#include "joystick.inc"
 
 CPMSECLEN	equ	128	;CP/M has 128-byte sectors
 HSTSECLEN	equ	512	;SD card has 512-byte sectors
@@ -240,6 +242,7 @@ seldsk::;select disk given by register c
 	cp	N_DISKS		;must be between 0 and N_DISKS-1
 	ret	nc		;no carry if >= N_DISKS
 	ld	(Diskno), a
+	; TODO: if disk is being changed, clear Last_lba
 ;	disk number is in the proper range
 ;	compute proper disk parameter header address
 	;FALLING THROUGH!
@@ -318,22 +321,44 @@ loop:
 	ret
 #endlocal
 
+; uint8_t (A) cached_read_sector(uint32_t (BCDE) host_sector)
+; - verify that Last_lba == host_sector, or if not, read host_sector into SDC_buffer
+;   and set Last_lba = host_sector
+; - return 0 in A if the operation completes successfully, and 1 if an error occurs
 #local
-read::
+cached_read_sector::
+	push	hl
+	ld	hl, (Last_lba)	;HL = low word of Last_lba
+	xor	a		;A = 0, clear carry flag
+	sbc	hl, de		;compare low words of Last_lba and host_sector
+	jr	nz, do_read	;mismatch => must read the sector
+	ld	hl, (Last_lba+2) ;HL = high word of Last_lba
+	sbc	hl, bc		;compare high words of Last_lba and host_sector
+	jr	nz, do_read	;mismatch => must read the sector
+	pop	hl
+	ret			;cached read => return 0
+do_read:
+	pop	hl
+	ld	(Last_lba), de
+	ld	(Last_lba+2), bc ;Last_lba = host_sector
+	jp	sdc_read_sector	;read sector number BCDE to SDC_buffer
+#endlocal
+
 ;Read one CP/M sector from disk.
 ;Return a 00h in register a if the operation completes properly,
-;and 01h if an error occurs during the read.
+;and nonzero if an error occurs during the read.
 ;Disk number in 'Diskno'
 ;Track number in 'Track'
 ;Sector number in 'Sector'
 ;Dma address in 'Dmaad' ($0000-$FFFF)
-;
+#local
+read::
 	call	getlinsec	;DEHL = linear sector number (128-byte sectors)
 	call	trancpm2hst	;DEHL = host sector number, A = subsector offset
 	ex	de, hl		;HLDE = host sector number
 	ld	bc, hl		;BCDE = host sector number
 	ld	l, a		;save subsector offset in L
-	call	sdc_read_sector	;read sector number BCDE to SDC_buffer
+	call	cached_read_sector ;read sector number BCDE to SDC_buffer
 	or	a		;test A==0
 	ret	nz		;return failure (i.e. nonzero) if nonzero
 	ld	a, l		;restore subsector offset to A
@@ -353,18 +378,45 @@ skip2:
 	ret
 #endlocal
 
-write:
 ;Write one CP/M sector to disk.
 ;Return a 00h in register a if the operation completes properly,
-;and 01h if an error occurs during the read or write
+;and nonzero if an error occurs during the read or write
 ;Disk number in 'Diskno'
 ;Track number in 'Track'
 ;Sector number in 'Sector'
 ;Dma address in 'Dmaad' ($0000-$FFFF)
-;
-	; TODO: read host sector, copy in new CP/M sub-sector, write host sector
-	ld	a, 1		;fail
-	ret
+#local
+write::
+	; read host sector, copy in new CP/M sub-sector, write host sector
+	call	getlinsec	;DEHL = linear sector number (128-byte sectors)
+	call	trancpm2hst	;DEHL = host sector number, A = subsector offset
+	ex	de, hl		;HLDE = host sector number
+	ld	bc, hl		;BCDE = host sector number
+	ld	l, a		;save subsector offset in L
+	call	cached_read_sector ;read sector number BCDE to SDC_buffer
+	or	a		;test A==0
+	ret	nz		;return failure (i.e. nonzero) if nonzero
+
+	push	bc
+	push	de		;save host sector number
+	ld	a, l		;restore subsector offset to A
+	ld	bc, CPMSECLEN	;BC=128
+	ld	hl, SDC_buffer	;copy to &SDC_buffer[offset*128]
+	bit	0, a		;test A & 0x01
+	jr	z, skip1
+	add	hl, bc		;HL += 128
+skip1:
+	and	0x02		;test A & 0x02
+	jr	z, skip2
+	inc	h		;HL += 256
+skip2:
+	ex	de, hl		;DE = &SDC_buffer[offset*128]
+	ld	hl, (Dmaad)	;copy from Dmaad
+	ldir			;copy from *HL to *DE for BC bytes
+	pop	de
+	pop	bc		;restore host sector number
+	jp	sdc_write_sector ;write sector number BCDE from SDC_buffer
+#endlocal
 
 #include library "libcode"
 
@@ -376,6 +428,7 @@ Sector:	defw	0		;last sector set via SETSEC
 Dmaad:	defw	0		;direct memory address set via SETDMA
 Diskno:	defb	0		;disk number 0-15 set via SELDSK
 Charbuff: defb	0		;character stashed by CONST
+Last_lba: .long $FFFFFFFF	;last LBA read/written through SDC_buffer
 ;
 ;	scratch ram area for bdos use
 DIRBUF:	defs	128	 	;scratch directory area
