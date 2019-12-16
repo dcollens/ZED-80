@@ -155,10 +155,13 @@ not_semicolon_rest:
 execute:
     cp      'H'
     jr      z, csi_H
-    ; For WordStar also need: [7m (reverse), [m (plain), [K (clear to end of line)
+    cp      'K'
+    jr      z, csi_K
+    ; For WordStar also need: [7m (reverse), [m (plain)
     jp      unknown_command
+
 csi_H:
-    ; ESC [ row ; col H, with defaults of "1".
+    ; Set cursor position: ESC [ row ; col H, with defaults of "1".
     push    hl
     push    de
     ld      a, 1
@@ -187,6 +190,27 @@ col_not_zero
     ld      e, a
     ld      d, 0
     call    lcd_set_text_xy
+    pop     de
+    pop     hl
+    jr      back_to_normal
+
+csi_K:
+    ; Clear to end of line: ESC [ K (there are parameters but WordStar doesn't use them).
+    push    hl
+    push    de
+    call    lcd_get_text_x	; HL = text_x
+    ld      de, hl              ; DE = text_x
+    call    lcd_get_text_y	; HL = text_y
+    call    lcd_dest_xy		; set destination to (text_x, text_y)
+    ld	    hl, LCD_WIDTH       ; Want LCD_WIDTH - text_x for rectangle width
+    or      a                   ; Clear carry
+    sbc     hl, de              ; HL -= DE
+    ld      de, hl              ; DE = rectangle width
+    ld	    hl, LCD_TXT_HEIGHT  ; HL = rectangle height
+    call    lcd_bte_wh		; set rectangle width and height
+    M_lcdwrite LCDREG_BTE_CTRL1, 0x02 ; memory copy with ROP = Blackness
+    M_lcdwrite LCDREG_BTE_CTRL0, 0x10 ; BTE run
+    call    lcd_wait_idle
     pop     de
     pop     hl
     jr      back_to_normal
