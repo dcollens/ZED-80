@@ -27,6 +27,7 @@
 #include "ascii.inc"
 #include "keyboard.inc"
 #include "lcd.inc"
+#include "cbios.inc"
 
 ; some macros that we have to declare before use
 M_puts	    macro str
@@ -788,9 +789,6 @@ FORTH_PHYS_PAGE	    equ MMU_ROM_BASE + 2
 ; Code image for CP/M runtime, to be copied into RAM at page frame 3 (i.e. high).
 #code CPM, 0, 0x4000
 #insert "cbios.bin"
-CBIOS_BASE	    equ	0xF600	; keep in sync with cbios.asm
-CBIOS_LEN	    equ $-CPM
-
 CPM_PHYS_PAGE	    equ MMU_ROM_BASE + 3
 
 ; Remaining 64KB segment to fill up ROM image
