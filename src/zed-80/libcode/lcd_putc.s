@@ -53,23 +53,26 @@ wait_fifo_room:
 vt100_state: defb 0
 ; Number of parameters in this command so far.
 vt100_param_count: defb 0
+; Parameter being evaluated (used) next.
+vt100_current_param: defb 0
 ; Values of the parameters. Zero means "use the default value". Spec say max of 16.
 vt100_params: defs 16
 
+    ; Character is in L.
 expecting_bracket:
     ld      a, l
     cp      '['
-    jr      nz, not_bracket
+    jr      z, is_bracket
+    jp      back_to_normal
+is_bracket:
     xor     a
     ld      (vt100_param_count), a
+    ld      (vt100_current_param), a
     ld      a, VT100_STATE_EXP_START
     ld      (vt100_state), a
     ret
-not_bracket:
-    ld      a, VT100_STATE_NORMAL
-    ld      (vt100_state), a
-    ret
 
+    ; Character is in L.
 expecting_start_of_parameter:
     ld      a, l
     cp      ';'
@@ -93,6 +96,7 @@ not_semicolon_start:
     ld      (vt100_state), a
     ret
 
+    ; Character is in L.
 expecting_rest_of_parameter:
     ld      a, l
     cp      ';'
@@ -133,7 +137,46 @@ not_semicolon_rest:
     pop     de
     ret
 
+    ; Command is in A.
 execute:
+    cp      'H'
+    jr      nz, unknown_command
+    ; ESC [ row ; col H, with defaults of "1".
+    push    hl
+    push    de
+    ld      a, 1
+    call    get_parameter
+    cp      1
+    jr      c, row_not_zero
+    dec     a
+row_not_zero
+    ; Sync with LCD_TXT_HEIGHT:
+    sla     a
+    sla     a
+    sla     a
+    sla     a
+    ld      l, a
+    ld      h, 0
+    ld      a, 1
+    call    get_parameter
+    cp      1
+    jr      c, col_not_zero
+    dec     a
+col_not_zero
+    ; Sync with LCD_TXT_WIDTH:
+    sla     a
+    sla     a
+    sla     a
+    ld      e, a
+    ld      d, 0
+    call    lcd_set_text_xy
+    pop     de
+    pop     hl
+    jr      back_to_normal
+
+unknown_command:
+    ; TODO: Dump error somewhere, maybe serial?
+back_to_normal:
     ld      a, VT100_STATE_NORMAL
     ld      (vt100_state), a
     ret
@@ -151,6 +194,35 @@ make_new_param:
     inc     a
     ld      (vt100_param_count), a
     pop     bc
+    ret
+
+; Get the next parameter. Returns the value in A.
+; If the parameter wasn't specified, then A is untouched.
+get_parameter:
+    push    hl
+    push    bc
+    push    af
+    ld      a, (vt100_param_count)
+    ld      l, a
+    ld      a, (vt100_current_param)
+    cp      l
+    jr      nc, missing_parameter
+    ld      hl, vt100_params
+    ld      b, 0
+    ld      c, a
+    add     hl, bc
+    inc     a
+    ld      (vt100_current_param), a
+    ld      a, (hl)
+    pop     bc  ; Bogus pop of AF.
+    jr      get_parameter_done
+
+missing_parameter:
+    ; Use value of A that was passed in.
+    pop     af
+get_parameter_done:
+    pop     bc
+    pop     hl
     ret
 
 #endlocal
