@@ -157,7 +157,8 @@ execute:
     jr      z, csi_H
     cp      'K'
     jr      z, csi_K
-    ; For WordStar also need: [7m (reverse), [m (plain)
+    cp      'm'
+    jr      z, csi_m
     jp      unknown_command
 
 csi_H:
@@ -211,6 +212,36 @@ csi_K:
     M_lcdwrite LCDREG_BTE_CTRL1, 0x02 ; memory copy with ROP = Blackness
     M_lcdwrite LCDREG_BTE_CTRL0, 0x10 ; BTE run
     call    lcd_wait_idle
+    pop     de
+    pop     hl
+    jr      back_to_normal
+
+csi_m:
+    ; Set text attribute. WordStar only needs "7" (reverse video) and missing (normal).
+    push    hl
+    push    de
+    ld      a, 0
+    call    get_parameter
+    cp      7
+    jr      z, csi_m_reverse
+    cp      0
+    jr      z, csi_m_reset
+    ; Ignore unknown values.
+    jr      csi_m_done
+
+csi_m_reverse:
+    ld      de, 0xFFFF              ; yellow foreground
+    ld      hl, 0x0000
+    call    lcd_set_fgcolor
+    jr      csi_m_done
+
+csi_m_reset:
+    ld      de, 0xFFFF              ; white foreground
+    ld      hl, 0xFFFF
+    call    lcd_set_fgcolor
+    ; Fallthrough.
+
+csi_m_done:
     pop     de
     pop     hl
     jr      back_to_normal

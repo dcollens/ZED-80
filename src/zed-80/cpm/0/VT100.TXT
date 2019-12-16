@@ -1,1 +1,1 @@
-[HHome[10HRow ten[;10HCol ten[10;10HTenTen[2;1H123456789[2;4H[K[15HDone
+[HHome[10HRow ten[;10HCol ten[10;10HTenTen[2;1H123456789[2;4H[K[3;1HNormal[7mReverse[mNormal[15HDone
