@@ -109,7 +109,7 @@ public:
     // For SdcardDevice::SectorWriter:
     virtual void writeSector(uint32_t address, uint8_t *data, int count) {
         // cout << "Write " << count << " bytes at " << address << " to " << _pathname << endl;
-        ofstream file(_pathname, ofstream::out | ofstream::binary);
+        ofstream file(_pathname, ofstream::out | ofstream::in | ofstream::binary);
         file.seekp(address);
         file.write((char *) data, count);
         file.close();
