@@ -54,15 +54,6 @@ wait_fifo_room:
 ; The rest of this file is the VT100 parser. Most of the information
 ; is from: https://vt100.net/emu/dec_ansi_parser
 
-; One of the VT100_STATE_... constants.
-vt100_state: defb 0
-; Number of parameters in this command so far.
-vt100_param_count: defb 0
-; Parameter being evaluated (used) next.
-vt100_current_param: defb 0
-; Values of the parameters. Zero means "use the default value". Spec say max of 16.
-vt100_params: defs 16
-
     ; Character is in L.
 expecting_bracket:
 #if VT100_DUMP_TO_SERIAL
