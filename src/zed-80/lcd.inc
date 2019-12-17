@@ -5,7 +5,7 @@ PORT_LCDDAT	equ PORT_LCDBASE + 1	; port address for RA8876 data register
 ; Panel geometry
 LCD_WIDTH	equ 1024
 LCD_HEIGHT	equ 600
-; If these changes, adjust the shifts in lcd_putc:
+; If these change, adjust the shifts in lcd_putc.s:
 LCD_TXT_WIDTH	equ 8
 LCD_TXT_HEIGHT	equ 16
 

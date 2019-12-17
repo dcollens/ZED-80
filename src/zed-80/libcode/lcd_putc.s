@@ -13,17 +13,11 @@ VT100_STATE_EXP_REST    equ 3 ; rest of a parameter (digit) or command (letter) 
 lcd_putc::
     ld	    a, l		; A := ch
     cp	    CR			; Carriage return?
-    jr	    nz, notCR
-    jp	    lcd_cr
-notCR:
+    jp	    z, lcd_cr
     cp	    LF			; Line feed?
-    jr	    nz, notLF
-    jp	    lcd_lf
-notLF:
+    jp	    z, lcd_lf
     cp	    ASC_BS		; Backspace?
-    jr	    nz, notBS
-    jp	    lcd_bs
-notBS:
+    jp	    z, lcd_bs
     cp	    ESC     		; Escape?
     jr	    nz, notESC
     ld      a, VT100_STATE_EXP_BRACKET
@@ -170,7 +164,7 @@ csi_H:
     cp      1
     jr      c, row_not_zero
     dec     a
-row_not_zero
+row_not_zero:
     ; Sync with LCD_TXT_HEIGHT:
     sla     a
     sla     a
@@ -183,7 +177,7 @@ row_not_zero
     cp      1
     jr      c, col_not_zero
     dec     a
-col_not_zero
+col_not_zero:
     ; Sync with LCD_TXT_WIDTH:
     sla     a
     sla     a
