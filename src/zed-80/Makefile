@@ -43,4 +43,5 @@ sdcard.img: Makefile cpm22.sys
 	cpmls -f zed-80 -l sdcard.img
 
 flashrom: rom_monitor.rom
+	# https://gitlab.com/DavidGriffith/minipro/
 	minipro -p SST39SF010A -w $<
