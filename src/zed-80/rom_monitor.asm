@@ -27,6 +27,7 @@
 #include "ascii.inc"
 #include "keyboard.inc"
 #include "lcd.inc"
+#include "sdcard.inc"
 #include "cbios.inc"
 
 ; some macros that we have to declare before use
@@ -167,8 +168,6 @@ ISR_ctc3::
 ; void cmd_loop()
 #local
 cmd_loop::
-    push    hl
-    push    bc
 prompt:
     M_putc  '>'
 nextByte:
@@ -188,11 +187,8 @@ nextByte:
     ld	    c, a
     add	    hl, bc
     M_deref_hl
-    call    jp_hl	; call HL
+    call    jp_hl	; call HL (assume all registers destroyed)
     jr	    prompt
-    pop	    bc
-    pop	    hl
-    ret
 
 cmd_chars:
     .byte SOH,'?','B','F','M','C','R','I','O',CR
@@ -212,9 +208,6 @@ cmd_procs:
 
 #local
 cmd_do_packet::
-    push    hl
-    push    bc
-    push    de
     call    sioA_getc	; get packet type
     cp	    'W'
     jr	    z, doWrite
@@ -230,9 +223,6 @@ success:
 putcAndDone:
     call    mon_putc
 done:
-    pop	    de
-    pop	    bc
-    pop	    hl
     ret
 
 doWrite:
@@ -315,8 +305,7 @@ doCall:
     cp	    e
     jr	    nz, failure
     M_putc  'A'
-    ; AF is scratch & we already save/restore BC, DE, HL
-    ; save/restore IX, IY too
+    ; AF, BC, DE, HL are scratch, save/restore IX, IY
     push    ix
     push    iy
     call    ctc_tick_off
@@ -408,6 +397,12 @@ trampoline_size	    equ $-trampoline
 cmd_do_cpm::
     M_putc  'M'
     M_puts  crlf
+    call    sdc_start_card	; try to start the SD card
+    cp	    SDST_OK		; test result == SDST_OK?
+    jr	    nz, sdcardFail	; fail if result != SDST_OK
+
+; TODO: propagate the SDC_flags to our CP/M image via a known address
+
     call    ctc_tick_off
     di
 ; We begin with this memory map:
@@ -438,6 +433,14 @@ cmd_do_cpm::
 ;   PG3: 0xC000-0xFFFF RAM physical page A (RAM page 2)
 ; and then issues a "jp CBIOS_BASE+3".
 
+sdcardFail:			; error status in A
+    push    af
+    M_puts  msg_fail		; print SD card failure message
+    pop	    af
+    call    mon_puthex8		; print failure code
+    M_puts  crlf
+    ret
+
 trampoline:
     ; The trampoline gets moved to PG1 before being run, so make sure it is position-independent.
     ld	    a, MMU_RAM_BASE + 3
@@ -446,19 +449,18 @@ trampoline:
     out	    (PORT_MMUPG2), a
     jp	    CBIOS_BASE+3	; the CBIOS "warm start" entry point
 trampoline_size	    equ $-trampoline
+
+msg_fail:
+    .asciz  "SD card error: "
 #endlocal
 
 #local
 cmd_do_call::
-    push    hl
-    push    de
-    push    bc
     M_puts  prompt_str
     call    mon_gethex16
     jr	    z, done
     ; call address is in HL
-    ; AF is scratch & we already save/restore BC, DE, HL
-    ; save/restore IX, IY too
+    ; AF, BC, DE, HL are scratch, save/restore IX, IY
     push    ix
     push    iy
     call    ctc_tick_off
@@ -470,9 +472,6 @@ cmd_do_call::
     M_puts cmd_ok_str
 done:
     M_puts crlf
-    pop	    bc
-    pop	    de
-    pop	    hl
     ret
 
 prompt_str:
@@ -480,7 +479,6 @@ prompt_str:
 #endlocal
 
 cmd_do_reset::
-    push    hl
     M_putc  'R'
     call    delay_1ms
     di
@@ -488,8 +486,6 @@ cmd_do_reset::
 
 #local
 cmd_do_input::
-    push    hl
-    push    bc
     M_puts  prompt_str
     call    mon_gethex8
     jr	    z, done
@@ -500,8 +496,6 @@ cmd_do_input::
     call    mon_puthex8
 done:
     M_puts  crlf
-    pop	    bc
-    pop	    hl
     ret
 
 prompt_str:
@@ -510,8 +504,6 @@ prompt_str:
 
 #local
 cmd_do_output::
-    push    hl
-    push    bc
     M_puts  prompt_str
     call    mon_gethex8
     jr	    z, done
@@ -525,8 +517,6 @@ cmd_do_output::
     M_puts  cmd_ok_str
 done:
     M_puts  crlf
-    pop	    bc
-    pop	    hl
     ret
 
 prompt_str:
@@ -534,9 +524,7 @@ prompt_str:
 #endlocal
 
 cmd_do_cr::
-    push    hl
     M_puts  crlf
-    pop	    hl
     ret
 
 cmd_equals_str::

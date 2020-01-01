@@ -12,7 +12,7 @@ sdc_read_sector::
     ld	    hl, cmd17_data+1	    ; HL = buffer to write adjusted lba
     call    sdc_lba_adjust	    ; scale lba if needed & store to buffer
     ld	    hl, cmd17_data
-    call    sdc_command		    ; send CMD17
+    call    sdc_command		    ; send CMD17 (destroys BC, HL)
     or	    a			    ; test response == 0?
     jr	    nz, done		    ; if response != 0, return failure
     ld	    bc, 10000

@@ -16,7 +16,7 @@ sdc_write_sector::
     ld	    hl, cmd24_data+1	    ; HL = buffer to write adjusted lba
     call    sdc_lba_adjust	    ; scale lba if needed & store to buffer
     ld	    hl, cmd24_data
-    call    sdc_command		    ; send CMD24
+    call    sdc_command		    ; send CMD24 (destroys BC, HL)
     or	    a			    ; test response == 0?
     jr	    nz, done		    ; if response != 0, return failure
     call    sdc_wait_ready	    ; poll until we get an 0xFF back from card
