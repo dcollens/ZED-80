@@ -21,7 +21,12 @@ CDISK		equ	0x0004	;address of current disk number 0=a,... l5=p
 IOBYTE		equ	0x0003	;intel i/o byte
 
 ; CBIOS is 2.5KB
-#code CBIOS, CBIOS_BASE, CBIOS_LEN
+; We reserve some space at the end for fixed-location data items.
+FIXED_DATA_LEN	equ	1
+#code CBIOS, CBIOS_BASE, CBIOS_LEN-FIXED_DATA_LEN
+; We put SDC_flags at the very end so that the ROM monitor can load the correct value in there
+; before starting the CBIOS.
+SDC_flags	equ	CBIOS_SDC_flags
 
 ; Note this means that the cpm22.sys file has to be a multiple of 512 bytes long.
 N_BOOT_SECT	equ	($-CCP_BASE)/HSTSECLEN	;warm start sector count
@@ -131,10 +136,6 @@ wboot::
 	; Set Sysreg to the value that we know the ROM monitor set it to.
 	ld	a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
 	ld	(Sysreg), a
-
-	; TODO: this is a cheap hack for the simulator
-	ld	a, SDF_V2 | SDF_BLOCK
-	ld	(SDC_flags), a
 
 	ld	sp, 0x80	;use space below buffer for stack
 	ld	de, welcome_msg
@@ -435,3 +436,6 @@ all00:	defs	ALVSIZE	 	;allocation vector 0
 
 ; static data used by library routines
 #include library "libdata"
+
+#code CBIOS_FIXDATA, *, FIXED_DATA_LEN
+; filled with zeroes, this is where fixed-location data items like SDC_flags reside
