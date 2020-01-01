@@ -7,6 +7,13 @@ To get zasm, go to:
         zasm-4.2.4-macos10.12.zip
     or newer if available. Unzip and copy "zasm" binary into your path.
 
+To get minipro, clone this repo:
+    https://gitlab.com/DavidGriffith/minipro/
+then do:
+    cd minipro
+    make
+To install, copy the "minipro" and "miniprohex" binaries into your path.
+
 To assemble one of these programs run:
     zasm -yu -i prog.asm
 
