@@ -19,3 +19,5 @@ Run TINST, then "S", then "6" (ANSI), no modification, 10 MHz.
 CP/M 2.2 transient commands, from http://www.uxpro.com/cpm/www.cpm.z80.de/binary.html
 These are the Z80 ones for the Xerox 1800. Try "STAT DSK:" or "STAT *.*". Note that PIP is
 there too, for copying files.
+
+Also Dan puts his experimental CP/M programs here.
