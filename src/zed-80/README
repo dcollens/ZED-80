@@ -9,6 +9,14 @@ To get zasm, go to:
 
 To get minipro, clone this repo:
     https://gitlab.com/DavidGriffith/minipro/
+then on Mac:
+    Do:
+        brew install pkg-config
+        brew install libusb
+        brew link libusb
+    or:
+        port install pkgconfig
+        port install libusb
 then do:
     cd minipro
     make
