@@ -26,6 +26,8 @@ To assemble one of these programs run:
     zasm -yu -i prog.asm
 
 To program the ROM run:
+    make flashrom
+or for another file:
     minipro -p SST39SF010A -w rom_monitor.rom
 
 On Dan's MacBook, you can connect to the serial port with:
