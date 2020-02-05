@@ -1,8 +1,35 @@
+Getting Started
+===============
+
+To get zasm, go to:
+    https://k1.spdns.de/Develop/Projects/zasm/Distributions/
+    Scroll to the bottom and download the file
+        zasm-4.2.4-macos10.12.zip
+    or newer if available. Unzip and copy "zasm" binary into your path.
+
+To get minipro, clone this repo:
+    https://gitlab.com/DavidGriffith/minipro/
+then on Mac:
+    Do:
+        brew install pkg-config
+        brew install libusb
+        brew link libusb
+    or:
+        port install pkgconfig
+        port install libusb
+then do:
+    cd minipro
+    make
+To install, copy the "minipro" and "miniprohex" binaries into your path.
+
 To assemble one of these programs run:
     zasm -yu -i prog.asm
 
 To program the ROM run:
-    minipro -p SST39SF010A -w prog.rom
+    minipro -p SST39SF010A -w rom_monitor.rom
 
 On Dan's MacBook, you can connect to the serial port with:
     minicom usbserial
+
+On Lawrence's MacBook, you can connect to the serial port with:
+    minicom --baudrate 38400 --device /dev/cu.usbserial-AK068DDT
