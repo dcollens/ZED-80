@@ -111,10 +111,10 @@ IVT::
 ; TODO: ISRs for PIO & SIO
 
 startup_msg::
-    .text   CR, LF, "Z80MON v2 ", __date__
+    .text   ASC_CR, ASC_LF, "Z80MON v2 ", __date__
     ; Falling through...
 crlf::
-    .text   CR, LF, NUL
+    .text   ASC_CR, ASC_LF, ASC_NUL
 
 ; void init()
 init::
@@ -251,7 +251,7 @@ nextByte:
     ret
 
 cmd_chars:
-    .byte SOH,'B','W','C','R','I','O',CR
+    .byte ASC_SOH,'B','W','C','R','I','O',ASC_CR
 num_cmds	equ $-cmd_chars
 cmd_procs:
     .word cmd_do_packet
@@ -341,7 +341,7 @@ writeDataDone:
     ld	    e, l
     call    sio_getc	    ; expecting an EOT
     ld	    a, l
-    cp	    EOT
+    cp	    ASC_EOT
     jr	    nz, failure
     ; validate checksum
     ld	    a, d
@@ -364,7 +364,7 @@ doCall:
     ld	    e, l
     call    sio_getc	    ; expecting an EOT
     ld	    a, l
-    cp	    EOT
+    cp	    ASC_EOT
     jr	    nz, failure
     ; calculate checksum
     ld	    a, 'C'
@@ -494,7 +494,7 @@ cmd_do_cr::
 cmd_equals_str::
     .asciz  "=$"
 cmd_ok_str::
-    .text   CR, LF, "OK", NUL
+    .text   ASC_CR, ASC_LF, "OK", ASC_NUL
 
 ; Library routines
 ; ----------------
@@ -635,7 +635,7 @@ sio_gethex8::
 getFirst:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
     call    toupper
     call    isxdigit	; Z set iff is hex digit
@@ -645,9 +645,9 @@ getFirst:
 getSecond:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, notBS1
     call    sio_putc	; echo BS
     jr	    getFirst
@@ -660,11 +660,11 @@ notBS1:
 getThird:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    CR
+    cp	    ASC_CR
     jr	    z, convert
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, getThird
     ; handle backspace
     call    sio_putc	; echo BS
@@ -697,7 +697,7 @@ sio_gethex16::
 getFirst:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jp	    z, abort	; Z is set, return
     call    toupper
     call    isxdigit	; Z set iff is hex digit
@@ -707,9 +707,9 @@ getFirst:
 getSecond:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, notBS1
     call    sio_putc	; echo BS
     jr	    getFirst
@@ -722,9 +722,9 @@ notBS1:
 getThird:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, notBS2
     call    sio_putc	; echo BS
     jr	    getSecond
@@ -737,9 +737,9 @@ notBS2:
 getFourth:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, notBS3
     call    sio_putc	; echo BS
     jr	    getThird
@@ -752,11 +752,11 @@ notBS3:
 getFifth:
     call    sio_getc
     ld	    a, l
-    cp	    ESC
+    cp	    ASC_ESC
     jr	    z, abort	; Z is set, return
-    cp	    CR
+    cp	    ASC_CR
     jr	    z, convert
-    cp	    BS
+    cp	    ASC_BS
     jr	    nz, getFifth
     ; handle backspace
     call    sio_putc	; echo BS

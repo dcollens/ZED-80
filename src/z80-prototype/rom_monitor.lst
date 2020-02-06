@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_monitor.asm"
-                        ; date: 2019-10-01 13:08:24
+                        ; date: 2020-02-05 20:35:37
                         ; --------------------------------------
 
 
@@ -285,17 +285,17 @@
                             out	    (PORT_SIOBCTL), a
                             endm
                         #include "ascii.inc"
-0000:                   NUL	equ 0x00
-0001:                   SOH	equ 0x01
-0004:                   EOT	equ 0x04
-0006:                   ACK	equ 0x06
-0007:                   BEL	equ 0x07
-0008:                   BS	equ 0x08
-0009:                   HT	equ 0x09
-000A:                   LF	equ 0x0A
-000D:                   CR	equ 0x0D
-0015:                   NAK	equ 0x15
-001B:                   ESC	equ 0x1B
+0000:                   ASC_NUL	equ 0x00
+0001:                   ASC_SOH	equ 0x01
+0004:                   ASC_EOT	equ 0x04
+0006:                   ASC_ACK	equ 0x06
+0007:                   ASC_BEL	equ 0x07
+0008:                   ASC_BS	equ 0x08
+0009:                   ASC_HT	equ 0x09
+000A:                   ASC_LF	equ 0x0A
+000D:                   ASC_CR	equ 0x0D
+0015:                   ASC_NAK	equ 0x15
+001B:                   ASC_ESC	equ 0x1B
                         
                         ; some macros that we have to declare before use
                         M_sio_puts  macro str
@@ -392,15 +392,15 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
                         ; TODO: ISRs for PIO & SIO
                         
 0088:                   startup_msg::
-0088: 0D0A5A38              .text   CR, LF, "Z80MON v2 ", __date__
+0088: 0D0A5A38              .text   ASC_CR, ASC_LF, "Z80MON v2 ", __date__
 008C: 304D4F4E          
 0090: 20763220          
-0094: 32303139          
-0098: 2D31302D          
-009C: 3031              
+0094: 32303230          
+0098: 2D30322D          
+009C: 3035              
                             ; Falling through...
 009E:                   crlf::
-009E: 0D0A00                .text   CR, LF, NUL
+009E: 0D0A00                .text   ASC_CR, ASC_LF, ASC_NUL
                         
                         ; void init()
 00A1:                   init::
@@ -563,7 +563,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 015A: C9       [204]        ret
                         
 015B:                   cmd_chars:
-015B: 01425743              .byte SOH,'B','W','C','R','I','O',CR
+015B: 01425743              .byte ASC_SOH,'B','W','C','R','I','O',ASC_CR
 015F: 52494F0D          
 0008:                   num_cmds	equ $-cmd_chars
 0163:                   cmd_procs:
@@ -654,7 +654,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 01C1: 5D       [21]         ld	    e, l
 01C2: CD0003   [38]         call    sio_getc	    ; expecting an EOT
 01C5: 7D       [42]         ld	    a, l
-01C6: FE04     [49]         cp	    EOT
+01C6: FE04     [49]         cp	    ASC_EOT
 01C8: 20B8     [56|61]      jr	    nz, failure
                             ; validate checksum
 01CA: 7A       [60]         ld	    a, d
@@ -677,7 +677,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 01DB: 5D       [63]         ld	    e, l
 01DC: CD0003   [80]         call    sio_getc	    ; expecting an EOT
 01DF: 7D       [84]         ld	    a, l
-01E0: FE04     [91]         cp	    EOT
+01E0: FE04     [91]         cp	    ASC_EOT
 01E2: 209E     [98|103]     jr	    nz, failure
                             ; calculate checksum
 01E4: 3E43     [105]        ld	    a, 'C'
@@ -846,7 +846,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 02A7:                   cmd_equals_str::
 02A7: 3D2400                .asciz  "=$"
 02AA:                   cmd_ok_str::
-02AA: 0D0A4F4B              .text   CR, LF, "OK", NUL
+02AA: 0D0A4F4B              .text   ASC_CR, ASC_LF, "OK", ASC_NUL
 02AE: 00                
                         
                         ; Library routines
@@ -988,7 +988,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 030B:                   getFirst:
 030B: CD0003   [17]         call    sio_getc
 030E: 7D       [21]         ld	    a, l
-030F: FE1B     [28]         cp	    ESC
+030F: FE1B     [28]         cp	    ASC_ESC
 0311: 2848     [35|40]      jr	    z, abort	; Z is set, return
 0313: CDB202   [52]         call    toupper
 0316: CDBD02   [69]         call    isxdigit	; Z set iff is hex digit
@@ -998,9 +998,9 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 031F:                   getSecond:
 031F: CD0003   [17]         call    sio_getc
 0322: 7D       [21]         ld	    a, l
-0323: FE1B     [28]         cp	    ESC
+0323: FE1B     [28]         cp	    ASC_ESC
 0325: 2834     [35|40]      jr	    z, abort	; Z is set, return
-0327: FE08     [42]         cp	    BS
+0327: FE08     [42]         cp	    ASC_BS
 0329: 2005     [49|54]      jr	    nz, notBS1
 032B: CDEE03   [66]         call    sio_putc	; echo BS
 032E: 18DB     [78]         jr	    getFirst
@@ -1013,11 +1013,11 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 033C:                   getThird:
 033C: CD0003   [17]         call    sio_getc
 033F: 7D       [21]         ld	    a, l
-0340: FE1B     [28]         cp	    ESC
+0340: FE1B     [28]         cp	    ASC_ESC
 0342: 2817     [35|40]      jr	    z, abort	; Z is set, return
-0344: FE0D     [42]         cp	    CR
+0344: FE0D     [42]         cp	    ASC_CR
 0346: 2809     [49|54]      jr	    z, convert
-0348: FE08     [56]         cp	    BS
+0348: FE08     [56]         cp	    ASC_BS
 034A: 20F0     [63|68]      jr	    nz, getThird
                             ; handle backspace
 034C: CDEE03   [80]         call    sio_putc	; echo BS
@@ -1050,7 +1050,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 035F:                   getFirst:
 035F: CD0003   [17]         call    sio_getc
 0362: 7D       [21]         ld	    a, l
-0363: FE1B     [28]         cp	    ESC
+0363: FE1B     [28]         cp	    ASC_ESC
 0365: CAEB03   [38|38]      jp	    z, abort	; Z is set, return
 0368: CDB202   [55]         call    toupper
 036B: CDBD02   [72]         call    isxdigit	; Z set iff is hex digit
@@ -1060,9 +1060,9 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0374:                   getSecond:
 0374: CD0003   [17]         call    sio_getc
 0377: 7D       [21]         ld	    a, l
-0378: FE1B     [28]         cp	    ESC
+0378: FE1B     [28]         cp	    ASC_ESC
 037A: 286F     [35|40]      jr	    z, abort	; Z is set, return
-037C: FE08     [42]         cp	    BS
+037C: FE08     [42]         cp	    ASC_BS
 037E: 2005     [49|54]      jr	    nz, notBS1
 0380: CDEE03   [66]         call    sio_putc	; echo BS
 0383: 18DA     [78]         jr	    getFirst
@@ -1075,9 +1075,9 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0391:                   getThird:
 0391: CD0003   [17]         call    sio_getc
 0394: 7D       [21]         ld	    a, l
-0395: FE1B     [28]         cp	    ESC
+0395: FE1B     [28]         cp	    ASC_ESC
 0397: 2852     [35|40]      jr	    z, abort	; Z is set, return
-0399: FE08     [42]         cp	    BS
+0399: FE08     [42]         cp	    ASC_BS
 039B: 2005     [49|54]      jr	    nz, notBS2
 039D: CDEE03   [66]         call    sio_putc	; echo BS
 03A0: 18D2     [78]         jr	    getSecond
@@ -1090,9 +1090,9 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 03AE:                   getFourth:
 03AE: CD0003   [17]         call    sio_getc
 03B1: 7D       [21]         ld	    a, l
-03B2: FE1B     [28]         cp	    ESC
+03B2: FE1B     [28]         cp	    ASC_ESC
 03B4: 2835     [35|40]      jr	    z, abort	; Z is set, return
-03B6: FE08     [42]         cp	    BS
+03B6: FE08     [42]         cp	    ASC_BS
 03B8: 2005     [49|54]      jr	    nz, notBS3
 03BA: CDEE03   [66]         call    sio_putc	; echo BS
 03BD: 18D2     [78]         jr	    getThird
@@ -1105,11 +1105,11 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 03CB:                   getFifth:
 03CB: CD0003   [17]         call    sio_getc
 03CE: 7D       [21]         ld	    a, l
-03CF: FE1B     [28]         cp	    ESC
+03CF: FE1B     [28]         cp	    ASC_ESC
 03D1: 2818     [35|40]      jr	    z, abort	; Z is set, return
-03D3: FE0D     [42]         cp	    CR
+03D3: FE0D     [42]         cp	    ASC_CR
 03D5: 2809     [49|54]      jr	    z, convert
-03D7: FE08     [56]         cp	    BS
+03D7: FE08     [56]         cp	    ASC_BS
 03D9: 20F0     [63|68]      jr	    nz, getFifth
                             ; handle backspace
 03DB: CDEE03   [80]         call    sio_putc	; echo BS
@@ -1355,5 +1355,5 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0157 sec.
+total time: 0.0099 sec.
 no errors

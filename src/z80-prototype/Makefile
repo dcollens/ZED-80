@@ -1,9 +1,11 @@
 .PHONY: all clean
 
-all: rom_monitor.rom
+PRODUCTS := rom_monitor.rom rom_monitor_basic.rom
+
+all: $(PRODUCTS)
 
 clean:
-	rm -f rom_monitor.rom
+	rm -f $(PRODUCTS)
 
 %.rom %.bin: %.asm
 	zasm -yu -i $<
