@@ -21,3 +21,7 @@ These are the Z80 ones for the Xerox 1800. Try "STAT DSK:" or "STAT *.*". Note t
 there too, for copying files.
 
 Also Dan puts his experimental CP/M programs here.
+
+4:
+
+An APL interpreter.
