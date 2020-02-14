@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_monitor_basic.asm"
-                        ; date: 2020-02-05 20:35:37
+                        ; date: 2020-02-14 14:40:30
                         ; --------------------------------------
 
 
@@ -364,7 +364,7 @@ FC00:                   #data RAM, 0xFC00, 0x400
 003D: 49432076          
 0041: 31203230          
 0045: 32302D30          
-0049: 322D3035          
+0049: 322D3134          
                             ; Falling through...
 004D:                   crlf::
 004D: 0D0A00                .text   ASC_CR, ASC_LF, ASC_NUL
@@ -5460,5 +5460,5 @@ FC00:                   #data RAM, 0xFC00, 0x400
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0373 sec.
+total time: 0.0312 sec.
 no errors

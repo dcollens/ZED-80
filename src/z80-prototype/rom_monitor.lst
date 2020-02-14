@@ -1,6 +1,6 @@
                         ; --------------------------------------
                         ; zasm: assemble "rom_monitor.asm"
-                        ; date: 2020-02-05 20:35:37
+                        ; date: 2020-02-14 14:40:30
                         ; --------------------------------------
 
 
@@ -397,7 +397,7 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0090: 20763220          
 0094: 32303230          
 0098: 2D30322D          
-009C: 3035              
+009C: 3134              
                             ; Falling through...
 009E:                   crlf::
 009E: 0D0A00                .text   ASC_CR, ASC_LF, ASC_NUL
@@ -1355,5 +1355,5 @@ FC01: 00                Seg1_data:: defs 1	; current value of second 7-segment d
 0000:                   #code FILLER2, 0, 0x10000
 
 
-total time: 0.0099 sec.
+total time: 0.0112 sec.
 no errors
