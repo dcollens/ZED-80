@@ -22,9 +22,7 @@ void PioDevice::pioOutputCallback(int portId, uint8_t data, void *userData) {
     static_cast<PioDevice *>(userData)->outputCallback(portId, data);
 }
 
-PioDevice::PioDevice(shared_ptr<KeyboardDevice> keyboardDevice)
-    : _keyboardDevice(keyboardDevice)
-{
+PioDevice::PioDevice() {
     z80pio_desc_t pioDesc;
     pioDesc.in_cb = pioInputCallback;
     pioDesc.out_cb = pioOutputCallback;
@@ -58,24 +56,17 @@ uint64_t PioDevice::tickCallback(int numTicks, uint64_t pins) {
 
 uint8_t PioDevice::inputCallback(int portId) {
     // Emulation of PIO device is requesting current values of the PIO port pins.
-    uint8_t value = _portInputs.at(portId);
-
-    if (portId == Z80PIO_PORT_A) {
-        // Add keyboard start bit.
-        if (_keyboardDevice->isScanCodeAvailable()) {
-            value |= 0x20;
-        }
-    }
-
-    return value;
+    return _portInputs.at(portId);
 }
 
 void PioDevice::outputCallback(int portId, uint8_t data) {
     // Emulation of PIO device is updating us about the output state of the PIO port pins.
-    if (portId == Z80PIO_PORT_A) {
-        _keyboardDevice->setShiftRegisterClear((data & 0x08) == 0);
-    }
     _portOutputs.at(portId) = data;
+}
+
+void PioDevice::setPortInputs(int portId, uint8_t data) {
+    _portInputs.at(portId) = data;
+    z80pio_write_port(&_z80pio, portId, data);
 }
 
 void PioDevice::reset() {

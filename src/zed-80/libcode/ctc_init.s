@@ -1,7 +1,7 @@
 ; void ctc_init()
 ctc_init::
     ; load CTC Interrupt Vector Register
-    ld	    a, lo(IVT)	    ; CTC interrupt vectors are the first 4 in the IVT
+    ld	    a, lo(IVT_CTC)  ; all 4 CTC interrupt vectors are consecutive in the IVT
     out	    (PORT_CTCIVEC), a
     ; channel 0 is the baud rate generator for serial 0
     ld	    a, CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR

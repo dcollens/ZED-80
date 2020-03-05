@@ -55,11 +55,11 @@ ZED80::ZED80()
     _iommu = make_unique<IOMMU>();
     _joySegDevice = make_shared<JoySegDevice>();
     _sdcardDevice = make_shared<SdcardDevice>(_joySegDevice);
-    _keyboardDevice = make_shared<KeyboardDevice>();
     _sioDevice = make_shared<SioDevice>();
-    _pioDevice = make_shared<PioDevice>(_keyboardDevice);
+    _pioDevice = make_shared<PioDevice>();
     _ctcDevice = make_shared<CtcDevice>();
     _lcdPanelDevice = make_shared<LcdPanelDevice>();
+    _keyboardDevice = make_shared<KeyboardDevice>(_pioDevice);
     _iommu->setDevice(0, _joySegDevice);
     _iommu->setDevice(1, _joySegDevice);
     _iommu->setDevice(2, _sioDevice);
@@ -126,7 +126,11 @@ uint64_t ZED80::tickCallback(int numTicks, uint64_t pins) {
         }
     } else if ((pins & Z80_IORQ) != 0 && (pins & (Z80_RD|Z80_WR)) != 0) {
         pins = _iommu->tickCallback(numTicks, pins);
-        
+
+        // Propagate any change in the PIO port A output register to the keyboard device.
+        uint8_t pioPortA = _pioDevice->getPortOutputs(Z80PIO_PORT_A);
+        _keyboardDevice->setShiftRegisterClear((pioPortA & 0x08) == 0);
+
         Sysreg_t sysreg = _sysRegDevice->value();
         // If the BC1/BDIR pins have changed since the last simulator step, run an IO cycle
         // on the audio chip.

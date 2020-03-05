@@ -30,16 +30,28 @@ uint64_t KeyboardDevice::tickCallback(int numTicks, uint64_t pins) {
 
 void KeyboardDevice::receivedScanCode(uint8_t scanCode) {
     _scanCodeQueue.push(scanCode);
+    // Turn on SRSTRT
+    setShiftRegisterStart(true);
+}
+
+void KeyboardDevice::setShiftRegisterStart(bool start) {
+    _pioDevice->setPortInputs(Z80PIO_PORT_A, start ? 0x20 : 0x00);
 }
 
 void KeyboardDevice::setShiftRegisterClear(bool clear) {
     if (clear && !_shiftRegisterClear && !_scanCodeQueue.empty()) {
         _scanCodeQueue.pop();
+        // Turn off SRSTRT
+        setShiftRegisterStart(false);
+        // If we have a waiting scan byte, we need to drive SRSTRT back high again.
+        if (isScanCodeAvailable()) {
+            setShiftRegisterStart(true);
+        }
     }
 
     _shiftRegisterClear = clear;
 }
 
 void KeyboardDevice::reset() {
-    // Nothing.
+    _shiftRegisterClear = false;
 }

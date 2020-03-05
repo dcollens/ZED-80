@@ -12,13 +12,22 @@
 #include <queue>
 
 #include "iodevice.h"
+#include "io_pio.h"
+
+using std::shared_ptr;
 
 class KeyboardDevice : public IoDevice {
-    std::queue<uint8_t> _scanCodeQueue;
-    bool                _shiftRegisterClear;
+    shared_ptr<PioDevice>   _pioDevice;
+    std::queue<uint8_t>     _scanCodeQueue;
+    bool                    _shiftRegisterClear;
 
+    // Set the shift register's start bit (active high).
+    void setShiftRegisterStart(bool start);
+    
 public:
-    KeyboardDevice() : _shiftRegisterClear(false) {}
+    KeyboardDevice(shared_ptr<PioDevice> pioDevice)
+    : _pioDevice(pioDevice), _shiftRegisterClear(false)
+    {}
 
     // Print a brief message describing this device.
     virtual void describe(std::ostream &out) const override;

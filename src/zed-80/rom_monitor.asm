@@ -96,11 +96,15 @@ ISR_nop::
     ei
     reti
 
-    defs    0x80-$
-; Interrupt Vector Table
+; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
+;
+; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
+; in the CPU's I register and is global to all interrupt sources. We use 16-byte alignment to
+; ensure there is no crossing.
+    .align  16
 IVT::
-; Table starts at 0x0080
 ; CTC has first 4 slots, so CTC Interrupt Vector register should be 0x80
+IVT_CTC::
     .word   ISR_nop	    ; CTC channel 0
     .word   ISR_nop	    ; CTC channel 1
     .word   ISR_nop	    ; CTC channel 2

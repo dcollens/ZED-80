@@ -159,8 +159,8 @@ public:
         treeDir = "/Users/dcollens/Documents/zed-80";
     }
 
-//    std::string romPathname = treeDir + "/src/zed-80/rom_for_emulator.rom";
-    std::string romPathname = treeDir + "/src/zed-80/rom_monitor.rom";
+    std::string romPathname = treeDir + "/src/zed-80/rom_for_emulator.rom";
+//    std::string romPathname = treeDir + "/src/zed-80/rom_monitor.rom";
 //    std::string romPathname = treeDir + "/src/zed-80/rom_ram_test.rom";
     auto romData = loadFile(romPathname);
     if (romData == nullptr) {
@@ -173,7 +173,8 @@ public:
 //    std::string ramPathname = treeDir + "/src/zed-80/lcd_basic.bin";
 //    std::string ramPathname = treeDir + "/src/zed-80/song.bin";
 //    std::string ramPathname = treeDir + "/src/zed-80/lcd_test.bin";
-    std::string ramPathname = treeDir + "/src/zed-80/sdcard_test.bin";
+//    std::string ramPathname = treeDir + "/src/zed-80/sdcard_test.bin";
+    std::string ramPathname = treeDir + "/src/zed-80/kbd_test.bin";
     auto ramData = loadFile(ramPathname);
     if (ramData == nullptr) {
         NSLog(@"Can't load RAM file \"%s\"", ramPathname.c_str());
