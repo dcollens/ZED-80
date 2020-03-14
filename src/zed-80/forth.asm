@@ -24,6 +24,7 @@
 #include "z84c30.inc"
 #include "z84c40.inc"
 #include "keyboard.inc"
+#include "interrupt.inc"
 #include "ascii.inc"
 #include "sound.inc"
 
@@ -47,53 +48,11 @@ M_forth_add_code macro func
 #code TEXT,0x4000
 #endif
 
-#if defined(LOAD_LOW)
-; When we are loaded at address 0, we need to define entry points for the RST/NMI vectors.
-
-; reset vector
-RST0::
-    di
-    jp	    init
-    defs    0x08-$
-
-RST1::
-    reti
-    defs    0x10-$
-
-RST2::
-    reti
-    defs    0x18-$
-
-RST3::
-    reti
-    defs    0x20-$
-
-RST4::
-    reti
-    defs    0x28-$
-
-RST5::
-    reti
-    defs    0x30-$
-
-RST6::
-    reti
-    defs    0x38-$
-
-; maskable interrupt handler in interrupt mode 1:
-RST7::
-    reti
-
-; non maskable interrupt:
-; e.g. call debugger and on exit resume.
-    defs    0x66-$
-NMI::
-    retn
-#endif
-
 ; Careful, don't put anything before "init", as this is the entry point to our code.
+; When we are loaded at address 0, this is where "RST 0" sends us.
 #local
 init::
+    di
     ; zero the DATA segment
     ld	    hl, DATA
     ld	    bc, DATA_size
@@ -105,9 +64,10 @@ init::
 
     call    seg_init		    ; clear 7-segment display
     call    rand_init		    ; seed RNG
-    call    kbdp_init		    ; initialize keyboard driver
+    call    kbdi_init		    ; initialize keyboard driver
     call    lcd_init		    ; initialize LCD subsystem
     call    lcd_text_init	    ; initialize the text console
+    M_intr_init			    ; set up interrupts
     ld	    de, hello_message	    ; print welcome banner
     call    lcd_puts
     ld	    de, copyright_message
@@ -1074,7 +1034,7 @@ silence:
 ; - blocks and reads a character from the keyboard.
     M_forth_native "key", 0, key
     push    bc
-    call    kbdp_getc
+    call    kbdi_getc
     ld      c, l
     ld      b, 0
     jp      forth_next
@@ -1386,7 +1346,7 @@ lcd_gets::
     ld	    b, 0		    ; B = byte_count
 
 loop:
-    call    kbdp_getc		    ; get next cooked character
+    call    kbdi_getc		    ; get next cooked character
     ld      a, l		    ; A = input_char
     cp      KEY_ENTER		    ; test input_char == KEY_ENTER?
     jr      z, done		    ; if equal, return
@@ -1473,6 +1433,23 @@ lcd_puthex16::
 ;
 ;    ret
 ;#endlocal
+
+; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
+;
+; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
+; in the CPU's I register and is global to all interrupt sources. We use 16-byte alignment to
+; ensure there is no crossing.
+    .align  16
+IVT::
+; CTC's IVT has 4 slots, and we put it first since it needs to be 8-byte aligned.
+IVT_CTC::
+    .word   ISR_nop	    ; CTC channel 0
+    .word   ISR_nop	    ; CTC channel 1
+    .word   ISR_nop	    ; CTC channel 2
+    .word   ISR_nop	    ; CTC channel 3
+; PIO has separate IV registers for ports A and B, and we only use A
+IVT_PIOA::
+    .word   ISR_pioA	    ; PIO port A
 
 #include library "libcode"
 

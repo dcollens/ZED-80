@@ -45,11 +45,7 @@ init::
     call    kbdi_init		; initialize the keyboard driver for interrupt-driven mode
     call    lcd_init		; initialize LCD subsystem
     call    lcd_text_init	; initialize the text console
-    ; set up interrupts
-    ld	    a, hi(IVT)
-    ld	    i, a		; I gets high byte of IVT address
-    im	    2			; select interrupt mode 2
-    ei
+    M_intr_init			; set up interrupts
     ; run the test program
     call    kbd_test
     jr	    $			; loop forever

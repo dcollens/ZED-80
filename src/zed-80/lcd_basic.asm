@@ -27,7 +27,9 @@
 #include "z84c40.inc"
 #include "lcd.inc"
 #include "keyboard.inc"
+#include "interrupt.inc"
 #include "ascii.inc"
+#include "7segdisp.inc"
 
 #if defined(LOAD_LOW)
 ; Our code loads at address 0, with the full address space mapped to RAM.
@@ -146,53 +148,11 @@ MO      .EQU    24H             ; Missing operand
 HX      .EQU    26H             ; HEX error
 BN      .EQU    28H             ; BIN error
 
-#if defined(LOAD_LOW)
-; When we are loaded at address 0, we need to define entry points for the RST/NMI vectors.
-
-; reset vector
-RST0::
-    di
-    jp	    COLD
-    defs    0x08-$
-
-RST1::
-    reti
-    defs    0x10-$
-
-RST2::
-    reti
-    defs    0x18-$
-
-RST3::
-    reti
-    defs    0x20-$
-
-RST4::
-    reti
-    defs    0x28-$
-
-RST5::
-    reti
-    defs    0x30-$
-
-RST6::
-    reti
-    defs    0x38-$
-
-; maskable interrupt handler in interrupt mode 1:
-RST7::
-    reti
-
-; non maskable interrupt:
-; e.g. call debugger and on exit resume.
-    defs    0x66-$
-NMI::
-    retn
-#endif
+; If we load low, then this address 0 where a "RST 0" goes, otherwise we start above the ROM
+; monitor.
 
 COLD:		                ; Jump for cold start
 	DI			; disable interrupts so the timer tick doesn't mess with RAM
-        LD      IX,0            ; Flag cold start
         JP      CSTART          ; Jump to initialise
 
         .WORD   DEINT           ; Get integer -32768 to 32767
@@ -205,9 +165,10 @@ CSTART:
 	XOR	A		; Clear break flag
         LD      (BRKFLG),A
 
-INIT:   call	kbdp_init	; Initialize keyboard
+INIT:   call	kbdi_init	; Initialize keyboard
 	call	lcd_init	; Initialize screen
 	call	lcd_text_init	; Initialize text mode
+	M_intr_init		; set up interrupts
 	LD      DE,INITAB       ; Initialise workspace
         LD      B,INITBE-INITAB+3; Bytes to copy
         LD      HL,WRKSPC       ; Into workspace RAM
@@ -1294,7 +1255,7 @@ UPDATA: LD      (NXTDAT),HL     ; Update DATA pointer
         RET
 
 TSTBRK: push	hl
-	call	kbdp_pollc	; Get key into L, if available
+	call	kbdi_pollc	; Get key into L, if available
 	ld	a,l		; Move key into A
 	pop	hl
         RET     Z               ; No key, go back
@@ -4142,7 +4103,7 @@ ATNTAB: .BYTE   9                       ; Table used by ATN
 
 GETINP:			        ; Input a character into A
 	push    hl
-	call    kbdp_getc
+	call    kbdi_getc
 	ld	a, l
 	pop	hl
 	ret
@@ -4375,6 +4336,23 @@ done:
 
 MONITR: 
         RST	0		; Restart (Normally Monitor Start)
+
+; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
+;
+; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
+; in the CPU's I register and is global to all interrupt sources. We use 16-byte alignment to
+; ensure there is no crossing.
+    .align  16
+IVT::
+; CTC's IVT has 4 slots, and we put it first since it needs to be 8-byte aligned.
+IVT_CTC::
+    .word   ISR_nop	    ; CTC channel 0
+    .word   ISR_nop	    ; CTC channel 1
+    .word   ISR_nop	    ; CTC channel 2
+    .word   ISR_nop	    ; CTC channel 3
+; PIO has separate IV registers for ports A and B, and we only use A
+IVT_PIOA::
+    .word   ISR_pioA	    ; PIO port A
 
 #include library "libcode"
 #include library "libdata"

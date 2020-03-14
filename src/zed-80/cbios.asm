@@ -6,12 +6,15 @@
 #include "z84c20.inc"
 #include "z84c40.inc"
 #include "ascii.inc"
+#include "interrupt.inc"
 #include "keyboard.inc"
 #include "lcd.inc"
 #include "sysreg.inc"
 #include "sdcard.inc"
 ; Need this for the SD card write protect & present flags.
 #include "joystick.inc"
+; Need this for debugging (e.g. flashing lights from ISRs)
+#include "7segdisp.inc"
 #include "cbios.inc"
 
 CPMSECLEN	equ	128	;CP/M has 128-byte sectors
@@ -138,8 +141,11 @@ wboot::
 	ld	(Sysreg), a
 
 	ld	sp, 0x80	;use space below buffer for stack
+	call	kbdi_init	;initialize keyboard driver
+	M_intr_init		;set up interrupts
+
 	ld	de, welcome_msg
-	call	lcd_puts
+	call	lcd_puts	;print welcome message
 
 	ld 	b, N_BOOT_SECT	;B counts number of sectors to load
 	ld	hl, CCP_BASE	;base of CP/M (initial load point)
@@ -188,7 +194,6 @@ gocpm:
 	ld	bc, 0x80	;default dma address is 80h
 	call	setdma
 
-;	ei			;enable the interrupt system
 	ld	a, (CDISK)	;get current disk number
 	cp	N_DISKS		;see if valid disk number
 	jr	c, diskok	;disk valid, go to ccp
@@ -201,7 +206,7 @@ const::	;console status, return (in A) 0xFF if character ready, 0x00 if not
 	ld	a, (Charbuff)	;check if we have a buffered char waiting
 	or	a		;test A==0?
 	jr	nz, returnFF	;return 0xFF if a character is already waiting
-	call	kbdp_pollc	;check keyboard for a character
+	call	kbdi_pollc	;check keyboard for a character
 	jr	z, return00	;return 0x00 if keyboard is idle
 	ld	a, l		;otherwise, A = input char
 	ld	(Charbuff), a	;save input char in Charbuff
@@ -222,7 +227,7 @@ conin::	;console character into register A
 	ld	(hl), 0		;clear Charbuff
 	ret			;return buffered char in A
 tryKeyboard:
-	call	kbdp_getc	;block until keyboard input is ready
+	call	kbdi_getc	;block until keyboard input is ready
 	ld	a, l		;return input char in A
 	ret
 #endlocal
@@ -417,6 +422,23 @@ skip2:
 	pop	bc		;restore host sector number
 	jp	sdc_write_sector ;write sector number BCDE from SDC_buffer
 #endlocal
+
+; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
+;
+; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
+; in the CPU's I register and is global to all interrupt sources. We use 16-byte alignment to
+; ensure there is no crossing.
+    .align  16
+IVT::
+; CTC's IVT has 4 slots, and we put it first since it needs to be 8-byte aligned.
+IVT_CTC::
+    .word   ISR_nop	    ; CTC channel 0
+    .word   ISR_nop	    ; CTC channel 1
+    .word   ISR_nop	    ; CTC channel 2
+    .word   ISR_nop	    ; CTC channel 3
+; PIO has separate IV registers for ports A and B, and we only use A
+IVT_PIOA::
+    .word   ISR_pioA	    ; PIO port A
 
 #include library "libcode"
 

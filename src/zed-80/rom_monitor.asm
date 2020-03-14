@@ -134,11 +134,7 @@ init::
     M_pio_reset
     M_sio_reset
     M_ctc_reset
-    ; set up interrupts
-    ld	    a, hi(IVT)
-    ld	    i, a	    ; I gets high byte of IVT address
-    im	    2		    ; select interrupt mode 2
-    ei
+    M_intr_init		    ; set up interrupts
     call    seg_init	    ; clear 7-segment display
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
