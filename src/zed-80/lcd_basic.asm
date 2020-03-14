@@ -205,7 +205,7 @@ CSTART:
 	XOR	A		; Clear break flag
         LD      (BRKFLG),A
 
-INIT:   call	kbd_init	; Initialize keyboard
+INIT:   call	kbdp_init	; Initialize keyboard
 	call	lcd_init	; Initialize screen
 	call	lcd_text_init	; Initialize text mode
 	LD      DE,INITAB       ; Initialise workspace
@@ -1294,7 +1294,7 @@ UPDATA: LD      (NXTDAT),HL     ; Update DATA pointer
         RET
 
 TSTBRK: push	hl
-	call	kbd_pollc	; Get key into L, if available
+	call	kbdp_pollc	; Get key into L, if available
 	ld	a,l		; Move key into A
 	pop	hl
         RET     Z               ; No key, go back
@@ -4142,7 +4142,7 @@ ATNTAB: .BYTE   9                       ; Table used by ATN
 
 GETINP:			        ; Input a character into A
 	push    hl
-	call    kbd_getc
+	call    kbdp_getc
 	ld	a, l
 	pop	hl
 	ret

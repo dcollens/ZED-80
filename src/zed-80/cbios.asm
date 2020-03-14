@@ -201,7 +201,7 @@ const::	;console status, return (in A) 0xFF if character ready, 0x00 if not
 	ld	a, (Charbuff)	;check if we have a buffered char waiting
 	or	a		;test A==0?
 	jr	nz, returnFF	;return 0xFF if a character is already waiting
-	call	kbd_pollc	;check keyboard for a character
+	call	kbdp_pollc	;check keyboard for a character
 	jr	z, return00	;return 0x00 if keyboard is idle
 	ld	a, l		;otherwise, A = input char
 	ld	(Charbuff), a	;save input char in Charbuff
@@ -222,7 +222,7 @@ conin::	;console character into register A
 	ld	(hl), 0		;clear Charbuff
 	ret			;return buffered char in A
 tryKeyboard:
-	call	kbd_getc	;block until keyboard input is ready
+	call	kbdp_getc	;block until keyboard input is ready
 	ld	a, l		;return input char in A
 	ret
 #endlocal

@@ -1,3 +1,18 @@
+; The keyboard driver works in either interrupt-driven (preferred) or polling mode.
+; Subroutines are named according to the following convention:
+;   kbd_*	generic routines usable from either style of driver
+;   kbdi_*	routines specific to the interrupt-driven keyboard driver
+;   kbdp_*	routines specific to the polling keyboard driver
+;
+; Note that the polling mode driver requires that the keyboard get/poll routines be called very
+; often, or else scan code bytes will be lost/damaged resulting in a framing error.
+;
+; A limitation of the current code is that if there is a framing error (most commonly due to
+; insufficiently frequent calls to the keyboard routines in polling mode, but also possible in
+; interrupt-driven mode), the driver can get stuck waiting for a complete/correct scan code. This
+; can be worked around by typing a variety of keys until the driver syncs up again. A better
+; solution would involve incorporating timeouts into the scan code parser.
+
 PORT_KBD	equ 0x90	    ; port address for keyboard byte input
 
 ; Single-byte key codes. These overlap with ASCII wherever possible, so that it is practical to
@@ -92,3 +107,7 @@ KMOD_MAX	equ 6	    ; 6 is the last modifier key
 KMOD_SHIFT_MSK	equ (1 << KMOD_LSHFT_BIT) | (1 << KMOD_RSHFT_BIT)
 KMOD_CTRL_MSK	equ (1 << KMOD_LCTRL_BIT) | (1 << KMOD_RCTRL_BIT)
 KMOD_ALT_MSK	equ (1 << KMOD_LALT_BIT) | (1 << KMOD_RALT_BIT)
+
+; Size of keyboard input buffer.
+KBD_BUFFER_LEN	equ 16	    ; Must be a power of two (for efficient modular arithmetic)
+KBD_BUFFER_MASK	equ KBD_BUFFER_LEN - 1

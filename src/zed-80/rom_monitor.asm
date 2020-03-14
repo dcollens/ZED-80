@@ -27,6 +27,7 @@
 #include "ascii.inc"
 #include "keyboard.inc"
 #include "lcd.inc"
+#include "interrupt.inc"
 #include "sdcard.inc"
 #include "cbios.inc"
 
@@ -91,11 +92,6 @@ RST7::
 NMI::
     retn
 
-; Empty ISR for interrupts we want to ignore
-ISR_nop::
-    ei
-    reti
-
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
 ;
 ; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
@@ -109,7 +105,9 @@ IVT_CTC::
     .word   ISR_nop	    ; CTC channel 1
     .word   ISR_nop	    ; CTC channel 2
     .word   ISR_ctc3	    ; CTC channel 3
-; TODO: ISRs for PIO & SIO
+; PIO has separate IV registers for ports A and B, and we only use A
+IVT_PIOA::
+    .word   ISR_pioA	    ; PIO port A
 
 startup_msg::
     .text   CR, LF, "ZED-80 monitor v2 ", __date__
@@ -145,7 +143,7 @@ init::
     ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
     call    sio_init
-    call    kbd_init	    ; Initialize keyboard
+    call    kbdi_init	    ; Initialize keyboard for interrupt-driven mode
     call    lcd_init	    ; Initialize screen
     call    lcd_text_init   ; Initialize text mode
     call    sdc_init	    ; Initialize SD card
@@ -729,7 +727,7 @@ awaitInput:
     in	    a, (PORT_SIOACTL)
     and	    SIORR0_RCA
     jp	    nz, sioA_getc   ; if SIO port A has a character, return it
-    call    kbd_pollc	    ; check keyboard for character
+    call    kbdi_pollc	    ; check keyboard for character
     jr	    z, awaitInput   ; no character available: loop
     ld	    a, l
     ret

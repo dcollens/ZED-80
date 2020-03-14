@@ -1,40 +1,41 @@
-; uint8_t kbd_get_keycode()
-; - reads one or more bytes from the PS/2 keyboard port, parses them and returns a KEY_xxx code
-;   indicating which key was pressed/released
-; - polls until a valid key event is received
-; - returned keycode is in A
+; uint8_t kbd_scanbyte_to_keycode(uint8_t input_byte)
+; - processes input_byte from the PS/2 keyboard, updating parser state and returning any
+;   resulting KEY_xxx keycode
+; - no keycode available: sets Z flag, returns KEY_NONE in L
+; - if a keycode is available, clears Z flag and returns keycode in L
 #local
-kbd_get_keycode::
+kbd_scanbyte_to_keycode::
     push    bc
     push    de
     push    hl
-start:
-    ld	    c, KBD_SCNST_IDL	; C = scan_state (initially idle, i.e. 0)
-nextByte:
-    call    kbd_get_byte	; L = next scan code byte
-    ld	    a, l		; test for key-up byte
-    cp	    0xF0		; test A == 0xF0?
+    ld	    a, (Kbd_scan_state)
+    ld	    c, a		; C = Kbd_scan_state
+    ld	    a, l		; A = input_byte
+    cp	    0xF0		; test A == 0xF0? (keyup byte)
     jr	    nz, notKeyUp
     set	    KBD_SCNST_RLSBIT, c	; scan_state |= KBD_SCANST_RLS
-    jr	    nextByte
-notKeyUp:			; input_byte in A&L was not 0xF0
+    xor	    a			; return KEY_NONE
+    jr	    return
+notKeyUp:			; input_byte in A was not 0xF0
     cp	    0xE0		; test A == 0xE0?
     jr	    nz, notExtCode
     set	    KBD_SCNST_EXTBIT, c	; scan_state |= KBD_SCANST_EXT
-    jr	    nextByte
-notExtCode:			; input_byte in A&L was not 0xE0, nor 0xF0
+    xor	    a			; return KEY_NONE
+    jr	    return
+notExtCode:			; input_byte in A was not 0xE0, nor 0xF0
     bit	    KBD_SCNST_EXTBIT, c	; test (scan_state & KBD_SCANST_EXT) == 0?
     jr	    nz, parseExt	; parse next byte as extended scan code if flag set
-    ; parse input_byte in A&L using Kbd_scan_tbl
+    ; parse input_byte in A using Kbd_scan_tbl
     cp	    Kbd_scan_tbl_sz	; test input_byte < Kbd_scan_tbl_sz?
-    jr	    nc, start		; input_byte out of range: ignore this byte sequence and start over
+    jr	    nc, idleAndReturn0	; input_byte out of range: ignore this byte sequence
     ld	    h, 0		; HL = input_byte
+    ld	    l, a
     ld	    de, Kbd_scan_tbl
     add	    hl, de		; HL = &Kbd_scan_tbl[input_byte]
 found:
     ld	    a, (hl)		; A = keycode = Kbd_scan_tbl[input_byte]
     or	    a			; test keycode == KEY_NONE?
-    jr	    z, start		; KEY_NONE: ignore this byte sequence and start over
+    jr	    z, idleAndReturn	; KEY_NONE: ignore this byte sequence
     cp	    KMOD_MAX+1		; test keycode <= KMOD_MAX?
     jr	    nc, notModifier	; keycode > KMOD_MAX, so it's not a modifier key
     ld	    d, a		; D = keycode
@@ -56,15 +57,25 @@ modifierDone:
     ld	    a, d		; A = keycode
 notModifier:
     bit	    KBD_SCNST_RLSBIT, c	; test (scan_state & KBD_SCANST_RLS) == 0?
-    jr	    z, return		; bit clear, return keycode
+    jr	    z, idleAndReturn	; bit clear, return keycode
     or	    KEY_RELEASED	; keycode |= KEY_RELEASED
-return:				; return keycode
-    pop	    hl
+    jr	    idleAndReturn	; return keycode
+
+idleAndReturn0:
+    xor	    a			; return KEY_NONE
+idleAndReturn:			; at this point A has a keycode ready to return, or KEY_NONE
+    ld	    c, KBD_SCNST_IDL	; reset scan_state to idle
+return:
+    pop	    hl			; restore HL (just H, really)
+    ld	    l, a		; L = keycode (from A)
+    or	    a			; set Z flag if no keycode (KEY_NONE), otherwise clear Z flag
+    ld	    a, c		; A = scan_state
+    ld	    (Kbd_scan_state), a	; Kbd_scan_state = A
     pop	    de
     pop	    bc
     ret
 
-parseExt:			; input_byte in A&L is to be parsed via Kbd_ext_tbl
+parseExt:			; input_byte in A is to be parsed via Kbd_ext_tbl
     ld	    b, Kbd_ext_tbl_sz	; loop Kbd_ext_tbl_sz iterations
     ld	    hl, Kbd_ext_tbl	; HL = Kbd_ext_tbl
 extLoop:
@@ -73,8 +84,7 @@ extLoop:
     jr	    z, found		; if equal, continue search
     inc	    hl
     djnz    extLoop
-    jr	    start		; not found, discard byte sequence and start over
-
+    jr	    idleAndReturn0	; not found, discard byte sequence
 
 ; The data structure for scan code mappings is as follows:
 ; We use a table of 132 bytes, each corresponding to the first (or next) byte of a scan code.
@@ -143,5 +153,4 @@ Kbd_ext_tbl_sz	    equ ($-Kbd_ext_tbl) / 2
 ; Pause ($E1,$14,$77,$E1,$F0,$14,$F0,$77) will be treated as a KEY_NONE ($E1) followed by
 ; Left Control down ($14), NumberLock down ($77), KEY_NONE ($E1), Left Control up ($F0,$14),
 ; and NumberLock up ($F0, $77). These will all be ignored.
-
 #endlocal

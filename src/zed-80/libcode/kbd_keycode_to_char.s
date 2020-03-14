@@ -1,21 +1,18 @@
-; uint8_t kbd_pollc()
-; - reads the next ISO8859-1 input character from the keyboard (i.e. "cooked" mode), if any
-; - filters out all key-release and modifier keycodes
+; uint8_t kbd_keycode_to_char(uint8_t keycode)
+; - pass "keycode" in A
+; - processes the specified keycode, applying any modifier flags as appropriate
+; - returns the resulting input character, if any
+; - ignores/consumes all key-release and modifier keycodes
 ; - applies CTRL & SHIFT modifiers to input key
 ; - ignores ALT modifier (for now)
-; - no character available: sets Z flag
+; - no character available: sets Z flag, destroys L
 ; - if a character is available, clears Z flag and returns character in L
 #local
-kbd_pollc::
-loop:
-    call    kbd_poll		; check if there's another input byte ready
-    ret	    z			; if no input byte waiting, return
-
-    call    kbd_get_keycode	; read the next keycode into A
+kbd_keycode_to_char::
     bit	    KEY_RELEASED_BIT, a	; test (keycode & KEY_RELEASED_BIT) == 0?
-    jr	    nz, loop		; if bit is set, ignore the release keycode
+    jr	    nz, noChar		; if bit is set, ignore the release keycode
     cp	    KMOD_MAX+1		; test keycode <= KMOD_MAX?
-    jr	    c, loop		; ignore modifier keys
+    jr	    c, noChar		; ignore modifier keys
     ld	    l, a		; L = keycode
     ld	    a, (Kbd_modifiers)	; A = modifiers
     and	    KMOD_CTRL_MSK	; test (A & KMOD_CTRL_MSK) != 0
@@ -24,6 +21,10 @@ loop:
     and	    KMOD_SHIFT_MSK	; test (A & KMOD_SHIFT_MSK) != 0
     jr	    nz, doShift
     or	    l			; clear Z flag (assumes keycode != 0)
+    ret
+
+noChar:
+    xor	    a			; set Z flag
     ret
 
 doShift:			; Handle SHIFT modifier.
@@ -63,4 +64,3 @@ Key_shift_tbl:
     .byte "~ABCDEFGHIJKLMNO" ; $60-6F
     .byte "PQRSTUVWXYZ{|}~", $7F ; $70-7F
 #endlocal
-

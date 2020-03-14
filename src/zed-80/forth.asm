@@ -105,7 +105,7 @@ init::
 
     call    seg_init		    ; clear 7-segment display
     call    rand_init		    ; seed RNG
-    call    kbd_init		    ; initialize keyboard driver
+    call    kbdp_init		    ; initialize keyboard driver
     call    lcd_init		    ; initialize LCD subsystem
     call    lcd_text_init	    ; initialize the text console
     ld	    de, hello_message	    ; print welcome banner
@@ -1074,7 +1074,7 @@ silence:
 ; - blocks and reads a character from the keyboard.
     M_forth_native "key", 0, key
     push    bc
-    call    kbd_getc
+    call    kbdp_getc
     ld      c, l
     ld      b, 0
     jp      forth_next
@@ -1386,7 +1386,7 @@ lcd_gets::
     ld	    b, 0		    ; B = byte_count
 
 loop:
-    call    kbd_getc		    ; get next cooked character
+    call    kbdp_getc		    ; get next cooked character
     ld      a, l		    ; A = input_char
     cp      KEY_ENTER		    ; test input_char == KEY_ENTER?
     jr      z, done		    ; if equal, return

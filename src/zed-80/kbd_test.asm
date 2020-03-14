@@ -24,6 +24,8 @@
 #include "z84c30.inc"
 #include "z84c40.inc"
 #include "ascii.inc"
+#include "lcd.inc"
+#include "interrupt.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; our code will load immediately above the ROM
@@ -39,31 +41,30 @@ init::
     ld	    bc, DATA_size
     call    bzero
     call    seg_init
-    call    ctc_init	    ; this sets the CTC IVEC register to lo(IVT_CTC)
-    call    pio_init	    ; this sets the PIO port A IV to lo(IVT_PIOA)
+    call    ctc_init		; this sets the CTC IVEC register to lo(IVT_CTC)
+    call    kbdi_init		; initialize the keyboard driver for interrupt-driven mode
+    call    lcd_init		; initialize LCD subsystem
+    call    lcd_text_init	; initialize the text console
     ; set up interrupts
     ld	    a, hi(IVT)
-    ld	    i, a	    ; I gets high byte of IVT address
-    im	    2		    ; select interrupt mode 2
+    ld	    i, a		; I gets high byte of IVT address
+    im	    2			; select interrupt mode 2
     ei
     ; run the test program
     call    kbd_test
-    jr	    $		    ; loop forever
+    jr	    $			; loop forever
 
 ; void kbd_test()
 #local
 kbd_test::
     push    hl
-    ld	    l, 0
-    call    seg_writehex
+loop:
+    call    kbdi_getc		; get keyboard character into L
+    call    lcd_putc		; write character to LCD
+    jr	    loop
     pop	    hl
     ret
 #endlocal
-
-; Empty ISR for interrupts we want to ignore
-ISR_nop::
-    ei
-    reti
 
 ; CTC channel 3 ISR
 ; - do not modify IX or IY, or call any routine that does, as they aren't saved/restored!
@@ -86,34 +87,6 @@ ISR_ctc3::
     ei
     reti
 
-; PIO port A ISR
-; - do not modify IX or IY, or call any routine that does, as they aren't saved/restored!
-ISR_pioA::
-    ; switch to interrupt stack
-    ld	    (Interrupted_SP), sp
-    ld	    sp, INTERRUPT_STACK_TOP
-    ; save registers
-    ex	    af, af'
-    exx
-    ; actual ISR body
-    ld	    l, SEG_DP
-    call    seg0_toggle
-    in	    a, (PORT_KBD)
-    cpl
-    ld	    l, a
-    call    pio_srclr
-    call    seg_writehex
-    ; restore registers
-    exx
-    ex	    af, af'
-    ; restore user stack
-    ld	    sp, (Interrupted_SP)
-    ; re-enable interrupts and return
-    ei
-    reti
-
-#include library "libcode"
-
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
 ;
 ; Note, it also must not cross a 256-byte boundary, since the upper byte of the IVT is stored
@@ -131,18 +104,14 @@ IVT_CTC::
 IVT_PIOA::
     .word   ISR_pioA	    ; PIO port A
 
+#include library "libcode"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; data segment immediately follows code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #data DATA,TEXT_end
 ; define static variables here
 #include library "libdata"
-
-ISR_STACK_SIZE	    equ 32  ; size of stack for interrupt handlers
-
-Interrupted_SP:: defs 2	    ; saved user SP during interrupt handling
-Interrupt_stack:: defs ISR_STACK_SIZE ; stack area for interrupt handlers
-INTERRUPT_STACK_TOP equ $
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; user stack segment immediately follows data

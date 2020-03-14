@@ -159,8 +159,8 @@ public:
         treeDir = "/Users/dcollens/Documents/zed-80";
     }
 
-    std::string romPathname = treeDir + "/src/zed-80/rom_for_emulator.rom";
-//    std::string romPathname = treeDir + "/src/zed-80/rom_monitor.rom";
+//    std::string romPathname = treeDir + "/src/zed-80/rom_for_emulator.rom";
+    std::string romPathname = treeDir + "/src/zed-80/rom_monitor.rom";
 //    std::string romPathname = treeDir + "/src/zed-80/rom_ram_test.rom";
     auto romData = loadFile(romPathname);
     if (romData == nullptr) {
