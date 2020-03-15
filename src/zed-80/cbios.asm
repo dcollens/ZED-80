@@ -136,11 +136,20 @@ boot::	;simplest case is to just perform parameter initialization
 welcome_msg: .text CR, LF, "ZED-80 CBIOS v2 ", __date__, CR, LF, NUL
 
 wboot::
+	ld	sp, 0x80	;use space below buffer for stack
+
+	ld	hl, DATA
+	ld	bc, DATA_size
+	call    bzero		;zero the DATA segment
+
 	; Set Sysreg to the value that we know the ROM monitor set it to.
 	ld	a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
 	ld	(Sysreg), a
 
-	ld	sp, 0x80	;use space below buffer for stack
+	ld	hl, 0xFFFF
+	ld	(Last_lba), hl
+	ld	(Last_lba+2), hl ;clear Last_lba
+
 	call	kbdi_init	;initialize keyboard driver
 	M_intr_init		;set up interrupts
 
@@ -203,14 +212,8 @@ diskok:	ld 	c, a		;send to the ccp
 ;
 #local
 const::	;console status, return (in A) 0xFF if character ready, 0x00 if not
-	ld	a, (Charbuff)	;check if we have a buffered char waiting
-	or	a		;test A==0?
-	jr	nz, returnFF	;return 0xFF if a character is already waiting
-	call	kbdi_pollc	;check keyboard for a character
+	call	kbdi_chkinp	;check if the keyboard driver has a char waiting
 	jr	z, return00	;return 0x00 if keyboard is idle
-	ld	a, l		;otherwise, A = input char
-	ld	(Charbuff), a	;save input char in Charbuff
-returnFF:
 	ld	a, 0xff		;return 0xFF means a character is ready
 	ret
 return00:
@@ -220,13 +223,6 @@ return00:
 ;
 #local
 conin::	;console character into register A
-	ld	a, (Charbuff)	;check if we have a buffered char waiting
-	or	a		;test A==0?
-	jr	z, tryKeyboard	;no buffered char, so try keyboard
-	ld	hl, Charbuff	;HL points to Charbuff
-	ld	(hl), 0		;clear Charbuff
-	ret			;return buffered char in A
-tryKeyboard:
 	call	kbdi_getc	;block until keyboard input is ready
 	ld	a, l		;return input char in A
 	ret
@@ -449,15 +445,18 @@ Track:	defw	0		;last track set via SETTRK
 Sector:	defw	0		;last sector set via SETSEC
 Dmaad:	defw	0		;direct memory address set via SETDMA
 Diskno:	defb	0		;disk number 0-15 set via SELDSK
-Charbuff: defb	0		;character stashed by CONST
 Last_lba: .long $FFFFFFFF	;last LBA read/written through SDC_buffer
-;
+
+; Everything from here for DATA_size bytes gets zeroed at startup
+DATA	    equ $
 ;	scratch ram area for bdos use
 DIRBUF:	defs	128	 	;scratch directory area
 all00:	defs	ALVSIZE	 	;allocation vector 0
 
 ; static data used by library routines
 #include library "libdata"
+
+DATA_size   equ $ - DATA	;size of DATA area to zero at startup
 
 #code CBIOS_FIXDATA, *, FIXED_DATA_LEN
 ; filled with zeroes, this is where fixed-location data items like SDC_flags reside

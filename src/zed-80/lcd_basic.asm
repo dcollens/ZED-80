@@ -33,10 +33,10 @@
 
 #if defined(LOAD_LOW)
 ; Our code loads at address 0, with the full address space mapped to RAM.
-#code TEXT,0
+#code _TEXT,0
 #else
 ; Our code loads immediately above the 16K ROM page
-#code TEXT,0x4000
+#code _TEXT,0x4000
 #endif
 
 ; GENERAL EQUATES
@@ -58,7 +58,7 @@ DEL     .EQU    7FH             ; Delete
 ; BASIC WORK SPACE LOCATIONS
 
 ; Since the BASIC code itself sits in RAM we have to lay out our data segment after that point.
-AFTER_CODE .EQU TEXT_end
+AFTER_CODE .EQU _DATA_end
 WRKSPC  .EQU    AFTER_CODE+45H	    ; BASIC Work space
 USR     .EQU    WRKSPC+3H           ; "USR (x)" jump
 OUTSUB  .EQU    WRKSPC+6H           ; "OUT p,n"
@@ -153,6 +153,9 @@ BN      .EQU    28H             ; BIN error
 
 COLD:		                ; Jump for cold start
 	DI			; disable interrupts so the timer tick doesn't mess with RAM
+	LD	HL, _DATA
+	LD	BC, _DATA_size
+	CALL    bzero		; zero the DATA segment
         JP      CSTART          ; Jump to initialise
 
         .WORD   DEINT           ; Get integer -32768 to 32767
@@ -165,9 +168,9 @@ CSTART:
 	XOR	A		; Clear break flag
         LD      (BRKFLG),A
 
-INIT:   call	kbdi_init	; Initialize keyboard
-	call	lcd_init	; Initialize screen
-	call	lcd_text_init	; Initialize text mode
+INIT:   CALL	kbdi_init	; Initialize keyboard
+	CALL	lcd_init	; Initialize screen
+	CALL	lcd_text_init	; Initialize text mode
 	M_intr_init		; set up interrupts
 	LD      DE,INITAB       ; Initialise workspace
         LD      B,INITBE-INITAB+3; Bytes to copy
@@ -4355,6 +4358,12 @@ IVT_PIOA::
     .word   ISR_pioA	    ; PIO port A
 
 #include library "libcode"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; data segment immediately follows code
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#data _DATA,_TEXT_end
+; define static variables here
 #include library "libdata"
 
 .end

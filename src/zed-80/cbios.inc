@@ -6,7 +6,7 @@
 ;
 MEM_SIZE    equ	64*1024		; a 64k system
 
-CBIOS_LEN   equ	0x0C00		; length of CBIOS, 3KB now
+CBIOS_LEN   equ	0x0D00		; length of CBIOS, 3.25KB now
 CBIOS_BASE  equ	MEM_SIZE-CBIOS_LEN ; base address of CBIOS
 
 ; Fixed-location data items so ROM monitor can stuff values in at boot time.

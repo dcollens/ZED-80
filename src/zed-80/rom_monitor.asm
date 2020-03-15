@@ -110,7 +110,7 @@ IVT_PIOA::
     .word   ISR_pioA	    ; PIO port A
 
 startup_msg::
-    .text   CR, LF, "ZED-80 monitor v2 ", __date__
+    .text   CR, LF, "ZED-80 monitor v3 ", __date__
     ; Falling through...
 crlf::
     .text   CR, LF, NUL
@@ -128,17 +128,22 @@ init::
     out	    (PORT_MMUPG3), a	; map frame 3 to 3rd page of RAM
     ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
     out	    (PORT_SYSREG), a	; enable MMU
-    ld	    (Sysreg), a
-    ld	    sp, RAM_end-1	; set up a stack
+    ld	    sp, USER_STACK_TOP	; first pushed value will reside below SP
+    push    af			; save SYSREG value on the stack
+    ld	    hl, DATA
+    ld	    bc, DATA_size
+    call    bzero		; zero the DATA segment
+    pop	    af			; restore SYSREG value to A
+    ld	    (Sysreg), a		; write SYSREG into newly-cleared data segment
+
     ; reset peripherals
     M_pio_reset
     M_sio_reset
     M_ctc_reset
     M_intr_init		    ; set up interrupts
     call    seg_init	    ; clear 7-segment display
-    ; initialize peripherals
     call    ctc_init	    ; need to set up CTC to get SIO working (need baud rate gen)
-    call    sio_init
+    call    sio_init	    ; Initialize serial ports
     call    kbdi_init	    ; Initialize keyboard for interrupt-driven mode
     call    lcd_init	    ; Initialize screen
     call    lcd_text_init   ; Initialize text mode
@@ -784,8 +789,20 @@ CPM_PHYS_PAGE	    equ MMU_ROM_BASE + 3
 ; Remaining 64KB segment to fill up ROM image
 #code FILLER, 0, 0x10000
 
-; We map our RAM area high so that our data fields don't clobber low memory where we're
+; We map our DATA segment high so that our data fields don't clobber low memory where we're
 ; likely to be loading programs.
-#data RAM, 0xFC00, 0x400
+#data DATA, 0xFC00
 ; define static variables here
 #include library "libdata"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; user stack segment immediately follows data
+; - we don't put the user stack in the data segment because we don't want it to be zeroed out
+;   at startup
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#data STACK,DATA_end
+
+USER_STACK_SIZE	    equ 128 ; size of stack for user code
+
+User_stack:: defs USER_STACK_SIZE ; stack for main user code
+USER_STACK_TOP	    equ $
