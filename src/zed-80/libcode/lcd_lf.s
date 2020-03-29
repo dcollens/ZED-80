@@ -7,7 +7,7 @@ lcd_lf::
     push    hl
     call    lcd_get_text_y	; HL = text_y
     ld	    de, LCD_HEIGHT - 2 * LCD_TXT_HEIGHT
-    ex	    de, hl		; DE = text_y, HL = LCD_HEIGHT - 2*LCD_TXT_HEIGHT
+    ex	    de, hl		; DE = text_y, HL = LCD_HEIGHT - 2 * LCD_TXT_HEIGHT
     or	    a			; clear carry flag
     sbc	    hl, de		; test LCD_HEIGHT - 2 * LCD_TXT_HEIGHT < text_y
     jr	    nc, noScroll	; if text_y <= LCD_HEIGHT - 2 * LCD_TXT_HEIGHT, no need to scroll

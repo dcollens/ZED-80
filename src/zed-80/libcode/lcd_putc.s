@@ -33,7 +33,7 @@ notESC:
     cp      VT100_STATE_EXP_REST
     jr      z, expecting_rest_of_parameter
 
-    ; Normal write.
+    ; Normal write; character is in L.
     M_out   (PORT_LCDCMD), LCDREG_MRWDP
 wait_fifo_room:
     ; wait until memory FIFO is non-full
@@ -43,7 +43,27 @@ wait_fifo_room:
     ; write output character
     ld	    a, l
     out	    (PORT_LCDDAT), a	; send byte to LCD panel
-    jp	    lcd_wait_idle
+    call    lcd_wait_idle
+    ; check if text has wrapped, and text_y is now too big, and scroll up if so
+    push    hl
+    push    de
+    call    lcd_get_text_y	; HL = text_y
+    push    hl			; save text_y
+    ld	    de, LCD_HEIGHT - 2 * LCD_TXT_HEIGHT
+    ex	    de, hl		; DE = text_y, HL = LCD_HEIGHT - 2 * LCD_TXT_HEIGHT
+    or	    a			; clear carry flag
+    sbc	    hl, de		; test LCD_HEIGHT - 2 * LCD_TXT_HEIGHT < text_y
+    pop	    hl			; HL = text_y
+    jr	    nc, scrollDone	; if text_y <= LCD_HEIGHT - 2 * LCD_TXT_HEIGHT, no need to scroll
+    ld	    de, LCD_TXT_HEIGHT
+    or	    a			; clear carry flag
+    sbc	    hl, de		; HL = text_y - LCD_TXT_HEIGHT
+    call    lcd_set_text_y	; move text_y up one row
+    call    lcd_lf		; scroll text area up
+scrollDone:
+    pop	    de
+    pop	    hl
+    ret
 
 ; The rest of this file is the VT100 parser. Most of the information
 ; is from: https://vt100.net/emu/dec_ansi_parser
@@ -185,13 +205,13 @@ csi_K:
     push    hl
     push    de
     call    lcd_get_text_x	; HL = text_x
-    ld      de, hl              ; DE = text_x
+    ex      de, hl              ; DE = text_x
     call    lcd_get_text_y	; HL = text_y
     call    lcd_dest_xy		; set destination to (text_x, text_y)
     ld	    hl, LCD_WIDTH       ; Want LCD_WIDTH - text_x for rectangle width
     or      a                   ; Clear carry
     sbc     hl, de              ; HL -= DE
-    ld      de, hl              ; DE = rectangle width
+    ex      de, hl              ; DE = rectangle width
     ld	    hl, LCD_TXT_HEIGHT  ; HL = rectangle height
     call    lcd_bte_wh		; set rectangle width and height
     M_lcdwrite LCDREG_BTE_CTRL1, 0x02 ; memory copy with ROP = Blackness
