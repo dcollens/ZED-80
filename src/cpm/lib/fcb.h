@@ -22,6 +22,16 @@ typedef struct FCB {
 /* FCB in system parameters area below TPA */
 #define CPM_DEFAULT_FCB	    ((FCB *)0x005C)
 
+#define CPM_BLOCK_SIZE	    128
+
+/* IO buffer in system parameters area below TPA */
+#define CPM_DEFAULT_IOBUF   ((uint8_t *)0x0080)
+
+/* These are FCB utility functions */
+extern void fcb_zero(FCB *fcb);
+extern void fcb_set_filename(FCB *fcb, char const *filename);
+
+/* These are the real CP/M system calls */
 extern uint8_t fcb_open(FCB *fcb);
 extern uint8_t fcb_close(FCB *fcb);
 extern uint8_t fcb_delete(FCB *fcb);
@@ -33,3 +43,4 @@ extern uint8_t fcb_read_rand(FCB *fcb);
 extern uint8_t fcb_write_rand(FCB *fcb);
 extern void fcb_file_size(FCB *fcb);
 extern void fcb_set_random_record(FCB *fcb);
+extern void fcb_set_dma_address(void *iobuf);

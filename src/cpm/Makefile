@@ -17,7 +17,7 @@ clean:
 	srec_cat -disable_sequence_warnings $< -intel -offset -0x100 -output $@ -binary
 
 %.ihx: %.rel $(CRT0) $(ZED80LIB) Makefile
-	sdldz80 -mjwx -i $@ -b _CODE=0x100 \
+	sdldz80 -n -mjwx -i $@ -b _CODE=0x100 \
 	    -k /opt/local/share/sdcc/lib/z80 -k $(LIBDIR) \
 	    -l z80 -l $(ZED80LIBNAME) \
 	    $(CRT0) $< -e
