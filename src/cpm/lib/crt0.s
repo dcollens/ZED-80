@@ -29,13 +29,14 @@
 
 	;; Initialise global variables
 	call	gsinit
+	;; Parse the CP/M command line
+	call	___cmdline_init
+	ld	hl, (___Argv)
+	push	hl
+	ld	hl, (___Argc)
+	push	hl
 	call	_main
 	jp	_exit
-
-;__clock::
-;	ld	a,#2
-;	rst	0x08
-;	ret
 
 _exit::
 	rst	0x00

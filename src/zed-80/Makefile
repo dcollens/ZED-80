@@ -44,3 +44,8 @@ sdcard.img: Makefile cpm22.sys
 
 flashrom: rom_monitor.rom
 	minipro -p SST39SF010A -w $<
+
+updatesdcard: ../cpm/*.com
+	cp ../cpm/*.com cpm/3
+	rm -f sdcard.img
+	make sdcard.img

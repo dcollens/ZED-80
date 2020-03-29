@@ -1,9 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-extern void foo(int);
-
-int putchar(int ch) __naked {
+static int cpm_putchar(int ch) __naked {
     ch;	    // unreferenced, passed on stack
     __asm
 	ld	hl, #2
@@ -16,4 +14,11 @@ int putchar(int ch) __naked {
 	ld	h, #0
 	ret
     __endasm;
+}
+
+int putchar (int ch) {
+    if (ch == '\n') {
+	cpm_putchar('\r');
+    }
+    return cpm_putchar(ch);
 }
