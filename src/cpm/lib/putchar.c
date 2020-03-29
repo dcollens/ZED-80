@@ -16,7 +16,7 @@ static int cpm_putchar(int ch) __naked {
     __endasm;
 }
 
-int putchar (int ch) {
+int putchar(int ch) {
     if (ch == '\n') {
 	cpm_putchar('\r');
     }

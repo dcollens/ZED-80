@@ -3,7 +3,7 @@
 CRT0 := crt0.rel
 
 ZED80LIB := zed80.lib
-ZED80LIB_SRC := putchar.c getchar.c cmdline.c strdup.c
+ZED80LIB_SRC := putchar.c getchar.c cmdline.c strdup.c fcb.c
 ZED80LIB_OBJS := $(ZED80LIB_SRC:%.c=%.rel)
 
 PRODUCTS := $(CRT0) $(ZED80LIB)

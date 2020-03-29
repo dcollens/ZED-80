@@ -6,7 +6,7 @@ CRT0 := $(LIBDIR)/crt0.rel
 ZED80LIBNAME := zed80.lib
 ZED80LIB := $(LIBDIR)/$(ZED80LIBNAME)
 
-PRODUCTS := hello.com echo.com
+PRODUCTS := hello.com echo.com cat.com
 
 all: $(PRODUCTS)
 
