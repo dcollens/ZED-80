@@ -1,3 +1,6 @@
+#ifndef _FCB_H_INCLUDED
+#define _FCB_H_INCLUDED
+
 #include <stdint.h>
 
 /*
@@ -44,3 +47,5 @@ extern uint8_t fcb_write_rand(FCB *fcb);
 extern void fcb_file_size(FCB *fcb);
 extern void fcb_set_random_record(FCB *fcb);
 extern void fcb_set_dma_address(void *iobuf);
+
+#endif
