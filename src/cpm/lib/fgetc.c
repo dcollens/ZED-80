@@ -5,7 +5,7 @@
 int fgetc(FILE *stream) {
     if (stream->eof || !stream->read) return EOF;
 
-    if (stream->bufpos == NO_BUFPOS) {
+    if (stream->bufpos >= CPM_BLOCK_SIZE) {
 	// Need to fill the buffer.
 	if (__frefill(stream) != 0) return EOF;
     }
@@ -19,7 +19,6 @@ int fgetc(FILE *stream) {
 
 	if (++stream->bufpos >= CPM_BLOCK_SIZE) {
 	    ++stream->cur_block;
-	    stream->bufpos = NO_BUFPOS;
 	}
 	return ch;
     }

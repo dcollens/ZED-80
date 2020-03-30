@@ -5,8 +5,8 @@
 
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 
-size_t fread(void * restrict ptr, size_t size, size_t nitems, FILE * restrict stream) {
-    size_t need = size * nitems;
+size_t fread(void * restrict ptr, size_t size, FILE * restrict stream) {
+    size_t need = size;
 
     if (!stream->read) return 0;
 
@@ -15,7 +15,7 @@ size_t fread(void * restrict ptr, size_t size, size_t nitems, FILE * restrict st
 	uint8_t avail;
 	uint8_t chunklen;
 
-	if (stream->bufpos == NO_BUFPOS) {
+	if (stream->bufpos >= CPM_BLOCK_SIZE) {
 	    if (__frefill(stream) != 0) break;
 	}
 	avail = CPM_BLOCK_SIZE - stream->bufpos;
@@ -33,12 +33,11 @@ size_t fread(void * restrict ptr, size_t size, size_t nitems, FILE * restrict st
 	memcpy(ptr, src, chunklen);
 
 	stream->bufpos += chunklen;
+	if (stream->bufpos >= CPM_BLOCK_SIZE) {
+	    ++stream->cur_block;
+	}
 	ptr = (uint8_t *)ptr + chunklen;
 	need -= chunklen;
     }
-
-    if (need == 0) return nitems;
-
-    // We had a short read.
-    return nitems - (need + size - 1) / size;
+    return size - need;
 }
