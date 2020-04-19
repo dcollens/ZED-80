@@ -11,6 +11,7 @@ CBIOS_BASE  equ	MEM_SIZE-CBIOS_LEN ; base address of CBIOS
 
 ; Fixed-location data items so ROM monitor can stuff values in at boot time.
 CBIOS_SDC_flags equ CBIOS_BASE+CBIOS_LEN-1
+CBIOS_Sysreg	equ CBIOS_BASE+CBIOS_LEN-2
 
 CPM22_SYS_LEN equ 0x1600	; length of CPM22.SYS, 5.5KB now
 CPM22_SYS_BASE equ CBIOS_BASE-CPM22_SYS_LEN ; base address of CPM22.SYS

@@ -13,10 +13,12 @@
 #define SYSREG_BC1	    0x40		// Audio chip BC1 line (bus control 1)
 #define SYSREG_RESERVED	    0x80		// Reserved for future use
 
-// This global variable holds the value most recently written to SYSREG via sysreg_write().
-extern uint8_t Sysreg;
+// This value at this address is the one most recently written to SYSREG via sysreg_write().
+// See cbios.asm and cbios.lst
+#define CBIOS_SYSREG_ADDR   0xFFFE
+#define CBIOS_Sysreg	    (*(uint8_t *)CBIOS_SYSREG_ADDR)
 
-// Write the specified bits to the system control register (SYSREG) and also to the Sysreg global.
+// Write 'bits' to the system control register (SYSREG) and also to the CBIOS_Sysreg global.
 extern void sysreg_write(uint8_t bits) __z88dk_fastcall;
 
 #endif

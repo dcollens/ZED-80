@@ -14,7 +14,7 @@ void snd_put(uint8_t buscycle, uint8_t value) {
     __endasm;
 
     // Assert the requested sound chip bus signals.
-    sysreg_write(Sysreg | buscycle);
+    sysreg_write(CBIOS_Sysreg | buscycle);
     // Clear the sound chip bus signals.
-    sysreg_write(Sysreg & ~(SYSREG_BDIR | SYSREG_BC1));
+    sysreg_write(CBIOS_Sysreg & ~(SYSREG_BDIR | SYSREG_BC1));
 }

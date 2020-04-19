@@ -110,7 +110,7 @@ IVT_PIOA::
     .word   ISR_pioA	    ; PIO port A
 
 startup_msg::
-    .text   CR, LF, "ZED-80 monitor v3 ", __date__
+    .text   CR, LF, "ZED-80 monitor v4 ", __date__
     ; Falling through...
 crlf::
     .text   CR, LF, NUL
@@ -414,8 +414,10 @@ cmd_do_cpm::
 ; Our code is running from PG0, and our stack and data are initially in PG3.
 ; Use PG1 for our stack so we don't clobber it during the copy to PG3.
     ld	    sp, 0x4100
-; Save the current value of SDC_flags before we overwrite it with the CBIOS image
+; Save the current value of SDC_flags and Sysreg before we overwrite them with the CBIOS image
     ld	    a, (SDC_flags)
+    push    af
+    ld	    a, (Sysreg)
     push    af
 ; Map the CP/M ROM segment into PG2, and copy it up to PG3.
     ld	    a, CPM_PHYS_PAGE
@@ -424,7 +426,9 @@ cmd_do_cpm::
     ld	    de, CBIOS_BASE	; copy to CBIOS base address
     ld	    bc, CBIOS_LEN	; copy CBIOS_LEN bytes
     ldir			; do the copy
-; Store the saved SDC_flags value in the CBIOS data segment so it's ready for use
+; Store the saved SDC_flags and Sysreg values in the CBIOS data segment so they're ready for use
+    pop	    af
+    ld	    (CBIOS_Sysreg), a
     pop	    af
     ld	    (CBIOS_SDC_flags), a
 ; Copy a trampoline up to PG1, and jump to it.

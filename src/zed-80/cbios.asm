@@ -23,13 +23,17 @@ HSTSECLEN	equ	512	;SD card has 512-byte sectors
 CDISK		equ	0x0004	;address of current disk number 0=a,... l5=p
 IOBYTE		equ	0x0003	;intel i/o byte
 
-; CBIOS is 2.5KB
+; CBIOS is 3.25KB
 ; We reserve some space at the end for fixed-location data items.
-FIXED_DATA_LEN	equ	1
+FIXED_DATA_LEN	equ	2
 #code CBIOS, CBIOS_BASE, CBIOS_LEN-FIXED_DATA_LEN
-; We put SDC_flags at the very end so that the ROM monitor can load the correct value in there
+
+; We put SDC_flags and Sysreg at top of RAM so that the ROM monitor can load the correct values
 ; before starting the CBIOS.
 SDC_flags	equ	CBIOS_SDC_flags
+; Sysreg is also at a designated address so that it can be shared between CBIOS and any CP/M
+; applications that may need to access it.
+Sysreg		equ	CBIOS_Sysreg
 
 ; Note this means that the cpm22.sys file has to be a multiple of 512 bytes long.
 N_BOOT_SECT	equ	($-CCP_BASE)/HSTSECLEN	;warm start sector count
@@ -133,7 +137,7 @@ boot::	;simplest case is to just perform parameter initialization
 	ld	(CDISK), a	;select disk zero
 	jr	gocpm		;initialize and go to cp/m
 
-welcome_msg: .text CR, LF, "ZED-80 CBIOS v2 ", __date__, CR, LF, NUL
+welcome_msg: .text CR, LF, "ZED-80 CBIOS v3 ", __date__, CR, LF, NUL
 
 wboot::
 	ld	sp, 0x80	;use space below buffer for stack
@@ -141,10 +145,6 @@ wboot::
 	ld	hl, DATA
 	ld	bc, DATA_size
 	call    bzero		;zero the DATA segment
-
-	; Set Sysreg to the value that we know the ROM monitor set it to.
-	ld	a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
-	ld	(Sysreg), a
 
 	ld	hl, 0xFFFF
 	ld	(Last_lba), hl
@@ -459,4 +459,4 @@ all00:	defs	ALVSIZE	 	;allocation vector 0
 DATA_size   equ $ - DATA	;size of DATA area to zero at startup
 
 #code CBIOS_FIXDATA, *, FIXED_DATA_LEN
-; filled with zeroes, this is where fixed-location data items like SDC_flags reside
+; filled with zeroes, this is where fixed-location data items like SDC_flags and Sysreg reside
