@@ -11,6 +11,7 @@ PRODUCTS := hello.com echo.com cat.com ymplay.com
 all: $(PRODUCTS)
 
 clean:
+	make -C lib clean
 	rm -f $(PRODUCTS) *.rel *.lst *.sym *.map *.noi *.ihx
 
 %.com: %.ihx Makefile
@@ -28,5 +29,5 @@ clean:
 %.rel: %.s Makefile
 	sdasz80 -l -o -s -g $<
 
-$(CRT0) $(ZED80LIB): Makefile
+$(CRT0) $(ZED80LIB): Makefile $(LIBDIR)/Makefile
 	make -C lib

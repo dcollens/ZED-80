@@ -7,6 +7,7 @@
 #include "strdup.h"
 #define _FILE_IMPL
 #include "file.h"
+#include "sound.h"
 
 // Keep this small enough to fit in uint8_t
 #define BUFSZ	    128
@@ -111,6 +112,7 @@ void main(int argc, char *argv[]) {
     char *authorname;
     char *comment;
     uint32_t frameNum;
+    uint8_t frameData[16];
 
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
@@ -152,9 +154,10 @@ void main(int argc, char *argv[]) {
     comment = read_ztstr(fp);
     printf("Comment         : \"%s\"\n", comment);
 
+    snd_init();
+
     for (frameNum = 0; frameNum < header.frames; ++frameNum) {
 	int rc;
-	uint8_t frameData[16];
 
 	rc = fread(frameData, sizeof(frameData), fp);
 	if (rc != sizeof(frameData)) {
@@ -162,8 +165,13 @@ void main(int argc, char *argv[]) {
 	    goto done;
 	}
 	//printf("%lu\r", frameNum);
-	// TODO: Play audio frames (port audio driver to C or SDAS asm)
+	// TODO: Synchronize frame data writes to header.framehz via CTC ISR
+	snd_write16(frameData);
     }
+
+    // Stop any final sound.
+    memset(frameData, 0, sizeof(frameData));
+    snd_write16(frameData);
 
     if (!check_end(fp)) {
 	puts("Warning: YM end marker not reached");
