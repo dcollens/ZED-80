@@ -1,5 +1,3 @@
-#include "sysreg.inc"
-
 ; Bus control states
 SNDBUS_IDLE	    equ 0
 SNDBUS_READ	    equ SYS_BC1

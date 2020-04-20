@@ -19,6 +19,12 @@
 #define CBIOS_Sysreg	    (*(uint8_t *)CBIOS_SYSREG_ADDR)
 
 // Write 'bits' to the system control register (SYSREG) and also to the CBIOS_Sysreg global.
+// NOTE: Call this with interrupts disabled.
 extern void sysreg_write(uint8_t bits) __z88dk_fastcall;
+
+// Sets SYSREG := (SYSREG & (and >> 8)) | (or & 0xFF)
+// Updates both the SYSREG register, and the CBIOS_Sysreg global
+// NOTE: Call this with interrupts disabled.
+extern void sysreg_update(uint16_t and_or) __z88dk_fastcall;
 
 #endif

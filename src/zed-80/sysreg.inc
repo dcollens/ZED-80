@@ -25,3 +25,16 @@ SYS_IDX_RESERVED    equ 7
 SYS_SDMASK	    equ SYS_SDCLK | SYS_SDCS | SYS_SDOCLK
 ; Mask of SD-card clock bits in SYSREG
 SYS_SDCLOCKS	    equ SYS_SDCLK | SYS_SDOCLK
+
+; void sysreg_atomic_update(uint8_t and, uint8_t or)
+; - DISABLES INTERRUPTS on entry, ENABLES INTERRUPTS on exit
+; - sets SYSREG := (SYSREG & and) | or
+; - updates both the SYSREG register, and the Sysreg global
+; - pass 'and' in H; pass 'or' in L
+; - NOTE: don't call from an ISR with interrupts disabled, as it will re-enable them!
+; - see sysreg_update() for a version that assumes interrupts are already disabled
+M_sysreg_atomic_update	macro
+    di
+    call    sysreg_update
+    ei
+    endm

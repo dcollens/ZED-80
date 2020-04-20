@@ -26,6 +26,7 @@
 #include "keyboard.inc"
 #include "interrupt.inc"
 #include "ascii.inc"
+#include "sysreg.inc"
 #include "sound.inc"
 
 FORTH_RSTACK_SIZE   equ   256
@@ -60,9 +61,10 @@ init::
 
     ; Set Sysreg to the value that we know the ROM monitor set it to.
     ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
-    ld	    (Sysreg), a
+    call    sysreg_write
 
     call    seg_init		    ; clear 7-segment display
+    call    snd_init		    ; set up sound for output
     call    rand_init		    ; seed RNG
     call    kbdi_init		    ; initialize keyboard driver
     call    lcd_init		    ; initialize LCD subsystem

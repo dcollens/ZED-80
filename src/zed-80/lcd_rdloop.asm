@@ -41,7 +41,7 @@ init::
 
     ; Set Sysreg to the value that we know the ROM monitor set it to.
     ld	    a, SYS_MMUEN | SYS_SDCS | SYS_SDICLR
-    ld	    (Sysreg), a
+    call    sysreg_write
 
     call    seg_init		    ; clear 7-segment display
 loop:

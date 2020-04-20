@@ -13,6 +13,7 @@ sdc_xchg::
     out	    (PORT_SDCARD), a	    ; load SD card output shift register with 'data'
 				    ; this places bit 7 on the serial output Q7 immediately
     ld	    c, PORT_SYSREG	    ; set up C so we can write to PORT_SYSREG quickly
+    di				    ; disable interrupts for atomic access to SYSREG (and Sysreg)
     ld	    a, (Sysreg)
     ld	    b, a
     or	    SYS_SDOCLK		    ; A = sysreg value with CLK=0, OCLK=1
@@ -40,6 +41,7 @@ sdc_xchg::
 
     and	    ~SYS_SDCLOCKS	    ; CLK 1->0, OCLK=0
     out	    (c), a		    ; no need to write back to Sysreg, since nothing's changed
+    ei				    ; re-enable interrupts
     in	    a, (PORT_SDCARD)	    ; return byte read from SD card
     pop	    bc
     ret

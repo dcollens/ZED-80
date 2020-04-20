@@ -4,10 +4,10 @@
 #local
 sdc_dummy_clocks::
     push    bc
-    ld	    a, (Sysreg)
-    and	    ~SYS_SDMASK
-    or	    SYS_SDCS
-    call    sysreg_write	    ; set CS high (inactive), clocks idle
+    push    hl
+    ld	    hl, ~SYS_SDMASK << 8 | SYS_SDCS ; clear SYS_SDMASK bits, set SYS_SDCS bit
+    M_sysreg_atomic_update	    ; set CS high (inactive), clocks idle
+    pop	    hl
     ld	    b, 10		    ; 10 bytes = 80 bits
 writeByte:
     ld	    a, 0xFF		    ; want 8 bits of MOSI high

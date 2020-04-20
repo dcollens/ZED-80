@@ -19,7 +19,8 @@ extern void snd_init(void);
 // Assumes audio chip bus control bits are both 0 (i.e. SNDBUS_IDLE) upon entry
 // Write 'value' to the audio chip using 'buscycle' (either SNDBUS_ADDR to set address register,
 // or SNDBUS_WRITE to write to the currently-addressed register)
-extern void snd_put(uint8_t buscycle, uint8_t value);
+#define snd_put(buscycle, value)    _snd_put(((uint16_t)(value) << 8) | (uint16_t)(buscycle & 0xFF))
+extern void _snd_put(uint16_t value_buscycle) __z88dk_fastcall;
 
 // Write 'value' to sound chip register 'regnum' 
 extern void snd_write(uint8_t regnum, uint8_t value);

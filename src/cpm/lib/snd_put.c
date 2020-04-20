@@ -2,19 +2,16 @@
 #include "sysreg.h"
 #include "ioports.h"
 
-void snd_put(uint8_t buscycle, uint8_t value) {
-    value;  // unreferenced, passed on stack
+void _snd_put(uint16_t value_buscycle) __z88dk_fastcall {
+    value_buscycle;  // unreferenced, H = value, L = buscycle
 
-    // First, set up 'value' on the PIO port B output bus.
     __asm
-	ld	hl, #3
-	add	hl, sp
-	ld	a, (hl)
+	// First, set up 'value' on the PIO port B output bus.
+	ld	a, h
 	out	(PORT_PIOBDAT), a
+	ld	h, #~(SYSREG_BDIR | SYSREG_BC1)	; clear sound bus control bits
+	call	_sysreg_update			; set requested bus bits
+	ld	l, #0
+	call	_sysreg_update			; clear all sound bus bits
     __endasm;
-
-    // Assert the requested sound chip bus signals.
-    sysreg_write(CBIOS_Sysreg | buscycle);
-    // Clear the sound chip bus signals.
-    sysreg_write(CBIOS_Sysreg & ~(SYSREG_BDIR | SYSREG_BC1));
 }
