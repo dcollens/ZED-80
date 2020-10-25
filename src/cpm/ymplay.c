@@ -174,6 +174,7 @@ void main(int argc, char *argv[]) {
     char *authorname;
     char *comment;
     uint32_t frameNum;
+    uint32_t missedFrames = 0;
     uint8_t frameData[16];
     uint8_t lastFrameCounter;
 
@@ -221,7 +222,7 @@ void main(int argc, char *argv[]) {
 
     ctc_init();
 
-    lastFrameCounter = 0;
+    lastFrameCounter = Frame_counter;
     for (frameNum = 0; frameNum < header.frames; ++frameNum) {
 	int rc;
 
@@ -234,6 +235,9 @@ void main(int argc, char *argv[]) {
 
 	// Synchronize frame data writes to header.framehz via CTC ISR
 	while (lastFrameCounter == Frame_counter);
+	if (Frame_counter != (uint8_t)(lastFrameCounter + 1)) {
+	    ++missedFrames;
+	}
 	lastFrameCounter = Frame_counter;
 	
 	// Write audio data to sound chip.
@@ -249,6 +253,8 @@ void main(int argc, char *argv[]) {
     if (!check_end(fp)) {
 	puts("Warning: YM end marker not reached");
     }
+
+    printf("%lu missed frames\n", missedFrames);
 
 done:
     fclose(fp);
