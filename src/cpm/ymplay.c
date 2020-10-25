@@ -8,6 +8,8 @@
 #define _FILE_IMPL
 #include "file.h"
 #include "sound.h"
+#include "ioports.h"
+#include "ctc.h"
 
 // Keep this small enough to fit in uint8_t
 #define BUFSZ	    128
@@ -104,6 +106,66 @@ static bool check_end(FILE *fp) {
     return memcmp(buf, "End!", sizeof(buf)) == 0;
 }
 
+static volatile uint8_t Frame_counter = 0;
+
+static void ctc_snd_isr(void) __naked {
+    __asm
+	// save registers
+	ex	af, af'	    ; ' <-- hack to balance quotes
+	exx
+	// actual ISR body
+	ld	hl, #_Frame_counter
+	inc	(hl)
+	// restore registers
+	exx
+	ex	af, af'	    ; ' <-- hack to balance quotes
+	// re-enable interrupts and return
+	ei
+	reti
+    __endasm;
+}
+
+static void jp_hl(void) __naked {
+    __asm
+	jp	(hl)
+    __endasm;
+}
+
+static void ctc_init(void) {
+    __asm
+	// First, reset and disable interrupts for CTC channel 3.
+	ld	a, #(CTC_CONTROL | CTC_RESET | CTC_INTDIS)
+	out	(PORT_CTC3), a
+
+	// Next, set CTC vector 3 to point to our ISR.
+	ld	hl, (#0x0001)	    ; address of CBIOS WBOOT entry point
+	ld	de, #0x30	    ; offset to CBIOS SETCTCISR entry point
+	add	hl, de		    ; HL := address of CBIOS SETCTCISR entry point
+	ld	c, #3		    ; CTC vector 3
+	ld	de, #_ctc_snd_isr   ; our ISR
+	call	_jp_hl		    ; call *HL
+
+	// CTC channel 2 is used as a timer to divide down the system clock for channel 3
+	ld	a, #(CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_AUTO | CTC_RISING | CTC_SCALE16 | CTC_MODETMR)
+	out	(PORT_CTC2), a
+	ld	a, #250		    ; 10MHz prescale by 16, divide by 250 is 2.5kHz
+	out	(PORT_CTC2), a
+	// CTC channel 3 is used as a counter on the 2.5kHz signal from channel 2
+	ld	a, #(CTC_CONTROL | CTC_RESET | CTC_TIMENXT | CTC_RISING | CTC_MODECTR | CTC_INTENA)
+	out	(PORT_CTC3), a
+	ld	a, #50		    ; 2.5kHz divided by 50 is 50Hz
+	out	(PORT_CTC3), a
+    __endasm;
+}
+
+static void ctc_fini(void) {
+    __asm
+	// Reset and disable interrupts for CTC channel 3.
+	ld	a, #(CTC_CONTROL | CTC_RESET | CTC_INTDIS)
+	out	(PORT_CTC3), a
+    __endasm;
+}
+
 void main(int argc, char *argv[]) {
     char const *filename;
     FILE *fp;
@@ -113,6 +175,7 @@ void main(int argc, char *argv[]) {
     char *comment;
     uint32_t frameNum;
     uint8_t frameData[16];
+    uint8_t lastFrameCounter;
 
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
@@ -156,6 +219,9 @@ void main(int argc, char *argv[]) {
 
     snd_init();
 
+    ctc_init();
+
+    lastFrameCounter = 0;
     for (frameNum = 0; frameNum < header.frames; ++frameNum) {
 	int rc;
 
@@ -165,9 +231,16 @@ void main(int argc, char *argv[]) {
 	    goto done;
 	}
 	//printf("%lu\r", frameNum);
-	// TODO: Synchronize frame data writes to header.framehz via CTC ISR
+
+	// Synchronize frame data writes to header.framehz via CTC ISR
+	while (lastFrameCounter == Frame_counter);
+	lastFrameCounter = Frame_counter;
+	
+	// Write audio data to sound chip.
 	snd_write16(frameData);
     }
+
+    ctc_fini();
 
     // Stop any final sound.
     memset(frameData, 0, sizeof(frameData));

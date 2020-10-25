@@ -4,6 +4,7 @@
 
 #include "z80.inc"
 #include "z84c20.inc"
+#include "z84c30.inc"
 #include "z84c40.inc"
 #include "ascii.inc"
 #include "interrupt.inc"
@@ -46,11 +47,11 @@ wboote:	jp	wboot	;warm start
 	jp	conin	;console character in
 	jp	conout	;console character out
 
-	ret		;list character from register c
+	ret		;list character from register C
 	nop
 	nop
 
-	ret		;punch character from register c
+	ret		;punch character from register C
 	nop
 	nop
 
@@ -70,9 +71,12 @@ wboote:	jp	wboot	;warm start
 	ret
 	nop
 
-	;translate the sector given by bc using the translate table given by de
+	;translate the sector given by BC using the translate table given by DE
 	ld	hl, bc		;no translation
-	ret			;with value in hl
+	ret			;with value in HL
+
+; Jump table entries below this point are non-standard ZED-80 extensions
+	jp	setctcisr   ;set CTC ISR number (0..3) in register C to address in DE
 
 ;	fixed data tables for one fixed drive
 ;	no sector translations
@@ -151,6 +155,8 @@ wboot::
 	ld	(Last_lba+2), hl ;clear Last_lba
 
 	call	kbdi_init	;initialize keyboard driver
+	ld	a, lo(IVT_CTC)  ;all 4 CTC interrupt vectors are consecutive in the IVT
+	out	(PORT_CTCIVEC), a ;load CTC Interrupt Vector Register
 	M_intr_init		;set up interrupts
 
 	ld	de, welcome_msg
@@ -418,6 +424,20 @@ skip2:
 	pop	bc		;restore host sector number
 	jp	sdc_write_sector ;write sector number BCDE from SDC_buffer
 #endlocal
+
+;set CTC ISR slot (0..3) in register C to address in DE
+setctcisr::
+	ld	a, lo(IVT_CTC)
+	add	c
+	add	c		;IVT_CTC is 8-byte aligned, so this can't overflow
+	ld	h, hi(IVT_CTC)
+	ld	l, a
+	di
+	ld	(hl), e
+	inc	hl
+	ld	(hl), d
+	ei
+	ret
 
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
 ;
