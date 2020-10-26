@@ -77,6 +77,7 @@ wboote:	jp	wboot	;warm start
 
 ; Jump table entries below this point are non-standard ZED-80 extensions
 	jp	setctcisr   ;set CTC ISR number (0..3) in register C to address in DE
+	jp	sndwrite    ;write B bytes from HL to sound chip starting at register number D (ints must be disabled)
 
 ;	fixed data tables for one fixed drive
 ;	no sector translations
@@ -427,16 +428,26 @@ skip2:
 
 ;set CTC ISR slot (0..3) in register C to address in DE
 setctcisr::
-	ld	a, lo(IVT_CTC)
+	ld	a, lo(IVT_CTC)	;calculate low byte of ISR slot address
 	add	c
 	add	c		;IVT_CTC is 8-byte aligned, so this can't overflow
 	ld	h, hi(IVT_CTC)
-	ld	l, a
-	di
+	ld	l, a		;HL := ISR slot address
+	di			;disable interrupts
 	ld	(hl), e
 	inc	hl
-	ld	(hl), d
-	ei
+	ld	(hl), d		;write ISR from DE into ISR slot
+	ei			;enable interrupts
+	ret
+
+;write B bytes from HL to sound chip starting at register number D (ints must be disabled)
+sndwrite::
+	ld	a, (hl)		;A = *data
+	ld	e, a
+	call    snd_write	;snd_write(regnum, *data)
+	inc	d		;++regnum
+	inc	hl		;++data
+	djnz    sndwrite	;loop while --B > 0
 	ret
 
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0

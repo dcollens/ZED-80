@@ -1,4 +1,5 @@
 ; void snd_write(uint8_t addr, uint8_t data)
+; - NOTE: caller is responsible for disabling interrupts to protect SYSREG manipulations
 ; - write 'data' to 'addr' on the sound chip
 ; - 'addr' in D, 'data' in E
 snd_write::

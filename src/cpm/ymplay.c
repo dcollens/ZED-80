@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "strdup.h"
 #define _FILE_IMPL
 #include "file.h"
 #include "sound.h"

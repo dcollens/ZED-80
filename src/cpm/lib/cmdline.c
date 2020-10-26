@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "cmdline.h"
-#include "strdup.h"
 
 #define CPM_CMDLINE	    ((void *)0x0080)
 #define CPM_MAXCMDLINELEN   127
