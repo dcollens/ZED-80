@@ -11,6 +11,7 @@
 #include "keyboard.inc"
 #include "lcd.inc"
 #include "sysreg.inc"
+#include "sound.inc"
 #include "sdcard.inc"
 ; Need this for the SD card write protect & present flags.
 #include "joystick.inc"
@@ -77,7 +78,7 @@ wboote:	jp	wboot	;warm start
 
 ; Jump table entries below this point are non-standard ZED-80 extensions
 	jp	setctcisr   ;set CTC ISR number (0..3) in register C to address in DE
-	jp	sndwrite    ;write B bytes from HL to sound chip starting at register number D (ints must be disabled)
+	jp	sndwrite    ;write B bytes from HL to sound chip starting at register number C (ints must be disabled)
 
 ;	fixed data tables for one fixed drive
 ;	no sector translations
@@ -155,6 +156,7 @@ wboot::
 	ld	(Last_lba), hl
 	ld	(Last_lba+2), hl ;clear Last_lba
 
+	call	snd_init	;initialize sound driver
 	call	kbdi_init	;initialize keyboard driver
 	ld	a, lo(IVT_CTC)  ;all 4 CTC interrupt vectors are consecutive in the IVT
 	out	(PORT_CTCIVEC), a ;load CTC Interrupt Vector Register
@@ -440,15 +442,19 @@ setctcisr::
 	ei			;enable interrupts
 	ret
 
-;write B bytes from HL to sound chip starting at register number D (ints must be disabled)
+;write B bytes from HL to sound chip starting at register number C (ints must be disabled)
+#local
 sndwrite::
+	ld	d, c		;D := regnum
+loop:
 	ld	a, (hl)		;A = *data
 	ld	e, a
 	call    snd_write	;snd_write(regnum, *data)
 	inc	d		;++regnum
 	inc	hl		;++data
-	djnz    sndwrite	;loop while --B > 0
+	djnz    loop		;loop while --B > 0
 	ret
+#endlocal
 
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
 ;

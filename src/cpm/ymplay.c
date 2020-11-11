@@ -6,7 +6,6 @@
 
 #define _FILE_IMPL
 #include "file.h"
-#include "sound.h"
 #include "ioports.h"
 #include "ctc.h"
 
@@ -130,6 +129,13 @@ static void jp_hl(void) __naked {
     __endasm;
 }
 
+static void jp_de(void) __naked {
+    __asm
+	push	de
+	ret
+    __endasm;
+}
+
 static void ctc_init(void) {
     __asm
 	// First, reset and disable interrupts for CTC channel 3.
@@ -162,6 +168,23 @@ static void ctc_fini(void) {
 	// Reset and disable interrupts for CTC channel 3.
 	ld	a, #(CTC_CONTROL | CTC_RESET | CTC_INTDIS)
 	out	(PORT_CTC3), a
+    __endasm;
+}
+
+static void snd_write14(uint8_t const *data) __z88dk_fastcall {
+    data;   // unreferenced, passed in HL
+
+    __asm
+	ex	de, hl		    ; DE := data
+	ld	hl, (#0x0001)	    ; address of CBIOS WBOOT entry point
+	ld	bc, #0x33	    ; offset to CBIOS SNDWRITE entry point
+	add	hl, bc		    ; HL := address of CBIOS SNDWRITE entry point
+	ld	b, #14		    ; write 14 bytes
+	ld	c, #0		    ; starting at register 0
+	ex	de, hl		    ; HL := data, DE := address of SNDWRITE entry point
+	di			    ; disable interrupts
+	call	_jp_de		    ; call *DE
+	ei			    ; enable interrupts
     __endasm;
 }
 
@@ -217,8 +240,6 @@ void main(int argc, char *argv[]) {
     comment = read_ztstr(fp);
     printf("Comment         : \"%s\"\n", comment);
 
-    snd_init();
-
     ctc_init();
 
     lastFrameCounter = Frame_counter;
@@ -236,18 +257,22 @@ void main(int argc, char *argv[]) {
 	while (lastFrameCounter == Frame_counter);
 	if (Frame_counter != (uint8_t)(lastFrameCounter + 1)) {
 	    ++missedFrames;
+	    putchar('X');
 	}
 	lastFrameCounter = Frame_counter;
 	
 	// Write audio data to sound chip.
-	snd_write16(frameData);
+	snd_write14(frameData);
+    }
+    if (missedFrames > 0) {
+	putchar('\n');
     }
 
     ctc_fini();
 
     // Stop any final sound.
     memset(frameData, 0, sizeof(frameData));
-    snd_write16(frameData);
+    snd_write14(frameData);
 
     if (!check_end(fp)) {
 	puts("Warning: YM end marker not reached");
