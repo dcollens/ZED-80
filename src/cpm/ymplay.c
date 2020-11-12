@@ -12,6 +12,9 @@
 // Keep this small enough to fit in uint8_t
 #define BUFSZ	    128
 
+#define Z80_DI	    __asm__("di")
+#define Z80_EI	    __asm__("ei")
+
 typedef struct YM_Header {
     char id[4];
     char check[8];
@@ -44,9 +47,7 @@ static void swap16(uint16_t *num) {
 }
 
 static bool read_header(FILE *fp, YM_Header *header) {
-    int rc;
-
-    rc = fread(header, sizeof(*header), fp);
+    int rc = fread(header, sizeof(*header), fp);
     if (rc != sizeof(*header)) {
 	puts("Error: short read");
 	return false;
@@ -85,13 +86,11 @@ static char *read_ztstr(FILE *fp) {
 	return NULL;
     }
 
-    {
-	char *result = strdup(buffer);
-	if (result == NULL) {
-	    puts("read_ztstr: no memory");
-	}
-	return result;
+    char *result = strdup(buffer);
+    if (result == NULL) {
+	puts("read_ztstr: no memory");
     }
+    return result;
 }
 
 static bool check_end(FILE *fp) {
@@ -104,6 +103,7 @@ static bool check_end(FILE *fp) {
     return memcmp(buf, "End!", sizeof(buf)) == 0;
 }
 
+#ifdef ISR_FRAME_CTR
 static volatile uint8_t Frame_counter = 0;
 
 static void ctc_snd_isr(void) __naked {
@@ -122,6 +122,139 @@ static void ctc_snd_isr(void) __naked {
 	reti
     __endasm;
 }
+
+static void snd_write14(uint8_t const *data) __z88dk_fastcall {
+    data;   // unreferenced, passed in HL
+
+    __asm
+	ex	de, hl		    ; DE := data
+	ld	hl, (#0x0001)	    ; address of CBIOS WBOOT entry point
+	ld	bc, #0x33	    ; offset to CBIOS SNDWRITE entry point
+	add	hl, bc		    ; HL := address of CBIOS SNDWRITE entry point
+	ld	b, #14		    ; write 14 bytes
+	ld	c, #0		    ; starting at register 0
+	ex	de, hl		    ; HL := data, DE := address of SNDWRITE entry point
+	di			    ; disable interrupts
+	call	_jp_de		    ; call *DE
+	ei			    ; enable interrupts
+    __endasm;
+}
+
+static void snd_fini(void) {}
+#else
+// Size of audio frame ring buffer. The code relies on this value
+// so it can just do 8-bit arithmetic and automatically get results mod 256.
+#define SND_BUFFER_LEN	    256
+#define SND_BUFFER_MASK	    (SND_BUFFER_LEN - 1)
+
+/*
+ * This is a ring-buffer shared between the CTC interrupt handler and the main file
+ * reading loop.
+ *   Snd_frame_head is the index of the oldest waiting audio byte
+ *   Snd_frame_tail is the index of the newest waiting audio byte
+ * Thus sound frames are consumed from the head, and enqueued at the tail.
+ * The frame buffer is empty when head == tail
+ * The frame buffer is full when head == (tail + 1) & SND_BUFFER_MASK
+ * After removing the oldest waiting byte, set head = (head + 1) & SND_BUFFER_MASK
+ * After adding the newest waiting byte, set tail = (tail + 1) & SND_BUFFER_MASK
+ */
+static volatile uint8_t Snd_frame_head = 0;
+static volatile uint8_t Snd_frame_tail = 0;
+static volatile uint8_t Snd_frame_buffer[SND_BUFFER_LEN];
+
+static volatile uint8_t Snd_running = false;
+
+static volatile uint16_t Snd_underflows = 0;
+
+static volatile void *Interrupted_SP;
+#define ISR_STACK_SIZE 32
+static uint8_t Interrupt_stack[ISR_STACK_SIZE];
+
+static void ctc_snd_isr(void) __naked {
+    // Do not modify IX or IY, or call any routine that does, as they aren't saved/restored!
+    __asm
+	// switch to interrupt stack
+	ld      (_Interrupted_SP), sp
+	ld	sp, #(_Interrupt_stack + ISR_STACK_SIZE)
+	// save registers
+	ex	af, af'			; ' <-- hack to balance quotes
+	exx
+	// actual ISR body
+	ld	a, (_Snd_running)	; are we active?
+	or	a			; test A == 0?
+	jr	z, 001$			; leave if A == 0
+	ld	a, (_Snd_frame_head)	; A = head
+	ld	c, a			; C = head
+	ld	a, (_Snd_frame_tail)	; A = tail
+	cp	c			; test head == tail?
+	jr	z, 002$			; underflow if head == tail
+	ld	hl, #_Snd_frame_buffer	; HL = Snd_frame_buffer
+	ld	b, #0			; BC = head
+	add	hl, bc			; HL = &Snd_frame_buffer[Snd_frame_head]
+
+	ex	de, hl			; DE := data
+	ld	hl, (#0x0001)		; address of CBIOS WBOOT entry point
+	ld	bc, #0x33		; offset to CBIOS SNDWRITE entry point
+	add	hl, bc			; HL := address of CBIOS SNDWRITE entry point
+	ld	b, #14			; write 14 bytes
+	ld	c, #0			; starting at register 0
+	ex	de, hl			; HL := data, DE := address of SNDWRITE entry point
+	call	_jp_de			; call *DE
+
+	ld	hl, #_Snd_frame_head	; HL = &Snd_frame_head
+	ld	a, (hl)			; A = head
+	add	a, #16			; A = (head + 16) % 256
+	ld	(hl), a			; Snd_frame_head = (head + 16) % 256
+
+    001$:	; done
+	// restore registers
+	exx
+	ex	af, af'			; ' <-- hack to balance quotes
+	// restore user stack
+	ld	sp, (_Interrupted_SP)
+	// re-enable interrupts and return
+	ei
+	reti
+
+    002$:	; underflow
+	ld	hl, (_Snd_underflows)	; ++Snd_underflows
+	inc	hl
+	ld	(_Snd_underflows), hl
+	jr	001$
+    __endasm;
+}
+
+static void snd_write14(uint8_t const *data) {
+    for (bool done = false; !done;) {
+	Z80_DI;
+	uint8_t tail = Snd_frame_tail;
+	uint8_t newTail = tail + 16;
+	if (Snd_frame_head == newTail) {
+	    // Ring buffer is full, so start playback.
+	    Snd_running = true;
+	} else {
+	    // Ring buffer has room, so enqueue the next frame.
+	    memcpy(&Snd_frame_buffer[tail], data, 14);
+	    Snd_frame_tail = newTail; 
+	    done = true;
+	}
+	Z80_EI;
+    }
+}
+
+static void snd_fini(void) {
+    // Wait for ring buffer to drain.
+    for (bool done = false; !done;) {
+	Z80_DI;
+	if (Snd_frame_head == Snd_frame_tail) {
+	    // Ring buffer is empty.
+	    done = true;
+	}
+	Z80_EI;
+    }
+    Snd_running = false;
+}
+#endif
 
 static void jp_hl(void) __naked {
     __asm
@@ -171,47 +304,20 @@ static void ctc_fini(void) {
     __endasm;
 }
 
-static void snd_write14(uint8_t const *data) __z88dk_fastcall {
-    data;   // unreferenced, passed in HL
-
-    __asm
-	ex	de, hl		    ; DE := data
-	ld	hl, (#0x0001)	    ; address of CBIOS WBOOT entry point
-	ld	bc, #0x33	    ; offset to CBIOS SNDWRITE entry point
-	add	hl, bc		    ; HL := address of CBIOS SNDWRITE entry point
-	ld	b, #14		    ; write 14 bytes
-	ld	c, #0		    ; starting at register 0
-	ex	de, hl		    ; HL := data, DE := address of SNDWRITE entry point
-	di			    ; disable interrupts
-	call	_jp_de		    ; call *DE
-	ei			    ; enable interrupts
-    __endasm;
-}
-
 void main(int argc, char *argv[]) {
-    char const *filename;
-    FILE *fp;
-    YM_Header header;
-    char *songname;
-    char *authorname;
-    char *comment;
-    uint32_t frameNum;
-    uint32_t missedFrames = 0;
-    uint8_t frameData[16];
-    uint8_t lastFrameCounter;
-
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
 	return;
     }
 
-    filename = argv[1];
-    fp = fopen(filename, "rb");
+    char const *filename = argv[1];
+    FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
 	printf("Error: can't open %s\n", filename);
 	return;
     }
     
+    YM_Header header;
     if (!read_header(fp, &header)) {
 	goto done;
     }
@@ -231,28 +337,31 @@ void main(int argc, char *argv[]) {
     printf("Loop Frame      : %lu\n", header.loopframe);
     printf("Future bytes    : %u\n", header.future);
 
-    songname = read_ztstr(fp);
+    char *songname = read_ztstr(fp);
     printf("Song Name       : \"%s\"\n", songname);
 
-    authorname = read_ztstr(fp);
+    char *authorname = read_ztstr(fp);
     printf("Author Name     : \"%s\"\n", authorname);
 
-    comment = read_ztstr(fp);
+    char *comment = read_ztstr(fp);
     printf("Comment         : \"%s\"\n", comment);
 
     ctc_init();
 
-    lastFrameCounter = Frame_counter;
-    for (frameNum = 0; frameNum < header.frames; ++frameNum) {
-	int rc;
-
-	rc = fread(frameData, sizeof(frameData), fp);
+#ifdef ISR_FRAME_CTR
+    uint32_t missedFrames = 0;
+    uint8_t lastFrameCounter = Frame_counter;
+#endif
+    uint8_t frameData[16];
+    for (uint32_t frameNum = 0; frameNum < header.frames; ++frameNum) {
+	int rc = fread(frameData, sizeof(frameData), fp);
 	if (rc != sizeof(frameData)) {
 	    puts("Error: early EOF on frame data");
 	    goto done;
 	}
 	//printf("%lu\r", frameNum);
 
+#ifdef ISR_FRAME_CTR
 	// Synchronize frame data writes to header.framehz via CTC ISR
 	while (lastFrameCounter == Frame_counter);
 	if (Frame_counter != (uint8_t)(lastFrameCounter + 1)) {
@@ -260,25 +369,33 @@ void main(int argc, char *argv[]) {
 	    putchar('X');
 	}
 	lastFrameCounter = Frame_counter;
-	
+#endif
 	// Write audio data to sound chip.
 	snd_write14(frameData);
     }
+#ifdef ISR_FRAME_CTR
     if (missedFrames > 0) {
 	putchar('\n');
     }
-
-    ctc_fini();
+#endif
 
     // Stop any final sound.
     memset(frameData, 0, sizeof(frameData));
     snd_write14(frameData);
 
+    snd_fini();
+
+    ctc_fini();
+
     if (!check_end(fp)) {
 	puts("Warning: YM end marker not reached");
     }
 
+#ifdef ISR_FRAME_CTR
     printf("%lu missed frames\n", missedFrames);
+#else
+    printf("%u underflows\n", Snd_underflows);
+#endif
 
 done:
     fclose(fp);

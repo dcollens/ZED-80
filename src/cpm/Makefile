@@ -24,7 +24,7 @@ clean:
 	    $(CRT0) $< -e
 
 %.rel: %.c Makefile
-	sdcc -I $(LIBDIR) --Werror -mz80 --opt-code-size --allow-unsafe-read -c $<
+	sdcc --std-c99 -I $(LIBDIR) --Werror -mz80 --opt-code-size --allow-unsafe-read -c $<
 
 %.rel: %.s Makefile
 	sdasz80 -l -o -s -g $<

@@ -20,7 +20,7 @@ clean:
 	rm -f $(PRODUCTS) *.rel *.lst *.sym *.map *.noi *.ihx
 
 %.rel: %.c Makefile
-	sdcc --Werror -mz80 --opt-code-size --allow-unsafe-read -c $<
+	sdcc --std-c99 --Werror -mz80 --opt-code-size --allow-unsafe-read -c $<
 
 %.rel: %.s Makefile
 	sdasz80 -l -o -s -g $<
