@@ -1,0 +1,20 @@
+Getting Started
+===============
+
+You need sdcc v4.0.0 or newer to build the CP/M C library and .COM programs in this directory.
+To get sdcc from MacPorts:
+    sudo port install sdcc
+It is also available from Homebrew.
+
+To build the latest library and .COM programs:
+    make
+
+To clean the build products:
+    make clean
+
+After you've build these products, you will want to include them in an updated SD card image:
+    cd ../zed-80
+    make updatesdcard
+
+Then you can use them from the emulator, or write the SD card image to a physical card and boot
+it on the real ZED-80 hardware.
