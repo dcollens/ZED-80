@@ -103,45 +103,6 @@ static bool check_end(FILE *fp) {
     return memcmp(buf, "End!", sizeof(buf)) == 0;
 }
 
-#ifdef ISR_FRAME_CTR
-static volatile uint8_t Frame_counter = 0;
-
-static void ctc_snd_isr(void) __naked {
-    __asm
-	// save registers
-	ex	af, af'	    ; ' <-- hack to balance quotes
-	exx
-	// actual ISR body
-	ld	hl, #_Frame_counter
-	inc	(hl)
-	// restore registers
-	exx
-	ex	af, af'	    ; ' <-- hack to balance quotes
-	// re-enable interrupts and return
-	ei
-	reti
-    __endasm;
-}
-
-static void snd_write14(uint8_t const *data) __z88dk_fastcall {
-    data;   // unreferenced, passed in HL
-
-    __asm
-	ex	de, hl		    ; DE := data
-	ld	hl, (#0x0001)	    ; address of CBIOS WBOOT entry point
-	ld	bc, #0x33	    ; offset to CBIOS SNDWRITE entry point
-	add	hl, bc		    ; HL := address of CBIOS SNDWRITE entry point
-	ld	b, #14		    ; write 14 bytes
-	ld	c, #0		    ; starting at register 0
-	ex	de, hl		    ; HL := data, DE := address of SNDWRITE entry point
-	di			    ; disable interrupts
-	call	_jp_de		    ; call *DE
-	ei			    ; enable interrupts
-    __endasm;
-}
-
-static void snd_fini(void) {}
-#else
 // Size of audio frame ring buffer. The code relies on this value
 // so it can just do 8-bit arithmetic and automatically get results mod 256.
 #define SND_BUFFER_LEN	    256
@@ -168,7 +129,7 @@ static volatile uint16_t Snd_underflows = 0;
 
 static volatile void *Interrupted_SP;
 #define ISR_STACK_SIZE 32
-static uint8_t Interrupt_stack[ISR_STACK_SIZE];
+static volatile uint8_t Interrupt_stack[ISR_STACK_SIZE];
 
 static void ctc_snd_isr(void) __naked {
     // Do not modify IX or IY, or call any routine that does, as they aren't saved/restored!
@@ -254,7 +215,6 @@ static void snd_fini(void) {
     }
     Snd_running = false;
 }
-#endif
 
 static void jp_hl(void) __naked {
     __asm
@@ -348,10 +308,6 @@ void main(int argc, char *argv[]) {
 
     ctc_init();
 
-#ifdef ISR_FRAME_CTR
-    uint32_t missedFrames = 0;
-    uint8_t lastFrameCounter = Frame_counter;
-#endif
     uint8_t frameData[16];
     for (uint32_t frameNum = 0; frameNum < header.frames; ++frameNum) {
 	int rc = fread(frameData, sizeof(frameData), fp);
@@ -361,23 +317,9 @@ void main(int argc, char *argv[]) {
 	}
 	//printf("%lu\r", frameNum);
 
-#ifdef ISR_FRAME_CTR
-	// Synchronize frame data writes to header.framehz via CTC ISR
-	while (lastFrameCounter == Frame_counter);
-	if (Frame_counter != (uint8_t)(lastFrameCounter + 1)) {
-	    ++missedFrames;
-	    putchar('X');
-	}
-	lastFrameCounter = Frame_counter;
-#endif
 	// Write audio data to sound chip.
 	snd_write14(frameData);
     }
-#ifdef ISR_FRAME_CTR
-    if (missedFrames > 0) {
-	putchar('\n');
-    }
-#endif
 
     // Stop any final sound.
     memset(frameData, 0, sizeof(frameData));
@@ -391,11 +333,7 @@ void main(int argc, char *argv[]) {
 	puts("Warning: YM end marker not reached");
     }
 
-#ifdef ISR_FRAME_CTR
-    printf("%lu missed frames\n", missedFrames);
-#else
     printf("%u underflows\n", Snd_underflows);
-#endif
 
 done:
     fclose(fp);
