@@ -15,6 +15,9 @@
 #define Z80_DI	    __asm__("di")
 #define Z80_EI	    __asm__("ei")
 
+// For now, we only do 50Hz (hardcoded in the CTC config)
+#define FRAME_HZ    50
+
 typedef struct YM_Header {
     char id[4];
     char check[8];
@@ -308,6 +311,13 @@ void main(int argc, char *argv[]) {
 
     ctc_init();
 
+    const uint16_t onePercentFrames = header.frames / 100;
+    uint16_t percentFrames = 0;
+    uint8_t percent = 0;
+
+    uint8_t numFrames = 0;
+    uint8_t numSeconds = 0;
+    uint8_t numMinutes = 0;
     uint8_t frameData[16];
     for (uint32_t frameNum = 0; frameNum < header.frames; ++frameNum) {
 	int rc = fread(frameData, sizeof(frameData), fp);
@@ -319,6 +329,23 @@ void main(int argc, char *argv[]) {
 
 	// Write audio data to sound chip.
 	snd_write14(frameData);
+
+	++percentFrames;
+	if (percentFrames == onePercentFrames) {
+	    percentFrames = 0;
+	    ++percent;
+	}
+
+	++numFrames;
+	if (numFrames == FRAME_HZ) {
+	    numFrames = 0;
+	    ++numSeconds;
+	    if (numSeconds == 60) {
+		numSeconds = 0;
+		++numMinutes;
+	    }
+	    printf("%u:%02u (%u%%)\r", numMinutes, numSeconds, percent);
+	}
     }
 
     // Stop any final sound.
