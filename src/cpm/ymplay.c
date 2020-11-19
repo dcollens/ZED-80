@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define _FILE_IMPL
 #include "file.h"
 #include "ioports.h"
 #include "ctc.h"
+#include "conio.h"
 
 // Keep this small enough to fit in uint8_t
 #define BUFSZ	    128
@@ -269,16 +269,6 @@ static void ctc_fini(void) {
     __endasm;
 }
 
-// Returns 0xFF if a character is waiting, and 0x00 otherwise.
-static uint8_t con_status(void) __naked {
-    __asm
-	ld	c, #11
-	jp	0x0005
-	ld	l, a
-	ret
-    __endasm;
-}
-
 void main(int argc, char *argv[]) {
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
@@ -337,7 +327,6 @@ void main(int argc, char *argv[]) {
 	    puts("Error: early EOF on frame data");
 	    goto done;
 	}
-	//printf("%lu\r", frameNum);
 
 	// Write audio data to sound chip.
 	snd_write14(frameData);
@@ -361,15 +350,19 @@ void main(int argc, char *argv[]) {
 	}
 
 	// Check for keyboard input.
-	if (con_status()) {
-	    uint8_t ch = getchar();
-	    switch (ch) {
-		case CH_ESC:
-		    goto done_playback;
+	uint8_t ch = conio_direct_pollchar();
+	switch (ch) {
+	    case '\0':
+		// No input character available.
+		break;
+	    case CH_ESC:
+	    case 'q':
+	    case 'Q':
+		goto done_playback;
+	    default:
 		// TODO: space to play/pause, arrow keys to skip backward/forward
-		default:
-		    break;
-	    }
+		printf("Input: $%02x\n", ch);
+		break;
 	}
     }
 done_playback:
