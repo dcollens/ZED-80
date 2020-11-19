@@ -136,21 +136,27 @@ DSKPARMS: ;disk parameter block for all disks.
 ALVSIZE equ	256
 ;	end of fixed tables
 
+welcome_msg:	.text CR, LF, "ZED-80 CBIOS v3 ", __date__, CR, LF
+null_msg:	.text NUL
+
 ;	individual subroutines to perform each function
 boot::	;simplest case is to just perform parameter initialization
 	xor	a		;zero in the accum
 	ld	(IOBYTE), a	;clear the iobyte
 	ld	(CDISK), a	;select disk zero
-	jr	gocpm		;initialize and go to cp/m
-
-welcome_msg: .text CR, LF, "ZED-80 CBIOS v3 ", __date__, CR, LF, NUL
+	ld	de, welcome_msg ;welcome message on cold boot
+	jr	bootCommon
 
 wboot::
+	ld	de, null_msg	;no message on warm boot
+bootCommon:
 	ld	sp, 0x80	;use space below buffer for stack
 
 	ld	hl, DATA
 	ld	bc, DATA_size
 	call    bzero		;zero the DATA segment
+
+	call	lcd_puts	;print welcome message
 
 	ld	hl, 0xFFFF
 	ld	(Last_lba), hl
@@ -161,9 +167,6 @@ wboot::
 	ld	a, lo(IVT_CTC)  ;all 4 CTC interrupt vectors are consecutive in the IVT
 	out	(PORT_CTCIVEC), a ;load CTC Interrupt Vector Register
 	M_intr_init		;set up interrupts
-
-	ld	de, welcome_msg
-	call	lcd_puts	;print welcome message
 
 	ld 	b, N_BOOT_SECT	;B counts number of sectors to load
 	ld	hl, CCP_BASE	;base of CP/M (initial load point)
@@ -195,7 +198,6 @@ loadSector:
 	inc	de		;advance sector counter
 	djnz	loadSector
 
-gocpm:
 	ld 	c, 0		;select disk 0
 	call	seldsk
 	call	home		;go to track 00
@@ -213,11 +215,12 @@ gocpm:
 	call	setdma
 
 	ld	a, (CDISK)	;get current disk number
+	ld	c, a		;save it in C
+	and	0xF		;clear out user # (high nibble)
 	cp	N_DISKS		;see if valid disk number
 	jr	c, diskok	;disk valid, go to ccp
-	xor	a		;invalid disk, change to disk 0
-diskok:	ld 	c, a		;send to the ccp
-	jp	CCP_BASE	;go to cp/m for further processing
+	ld	c, 0		;invalid disk, change to disk 0, user 0
+diskok:	jp	CCP_BASE	;(user,disk) in C, jump to cp/m for further processing
 ;
 #local
 const::	;console status, return (in A) 0xFF if character ready, 0x00 if not

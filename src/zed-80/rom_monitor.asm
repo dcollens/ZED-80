@@ -458,7 +458,7 @@ trampoline:
     out	    (PORT_MMUPG0), a
     ld	    a, MMU_RAM_BASE + 1
     out	    (PORT_MMUPG2), a
-    jp	    CBIOS_BASE+3	; the CBIOS "warm start" entry point
+    jp	    CBIOS_BASE		; the CBIOS "cold boot" entry point
 trampoline_size	    equ $-trampoline
 
 msg_fail:
