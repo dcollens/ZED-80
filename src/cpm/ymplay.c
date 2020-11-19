@@ -229,6 +229,12 @@ static void snd_stop(void) {
     __endasm;
 }
 
+static void snd_flush(void) {
+    Z80_DI;
+    Snd_frame_head = Snd_frame_tail = 0;
+    Z80_EI;
+}
+
 static void snd_drain(void) {
     // Wait for ring buffer to drain.
     while (Snd_running) {
@@ -295,7 +301,54 @@ typedef enum Player_state {
     PST_PAUSED,
 } Player_state;
 
+typedef struct Frame_counters {
+    uint16_t onePercentFrames;
+    uint16_t percentFrameCtr;
+    uint8_t percent;
+
+    uint8_t secondFrameCtr;
+    uint8_t numSeconds;
+    uint8_t numMinutes;
+    bool needOutput;
+
+    uint32_t nextFrame;
+} Frame_counters;
+
 static YM_Header Current_header;
+static Frame_counters Frame_state;
+
+static void frame_zero(void) {
+    Frame_state.percentFrameCtr = 0;
+    Frame_state.percent = 0;
+
+    Frame_state.secondFrameCtr = 0;
+    Frame_state.numSeconds = 0;
+    Frame_state.numMinutes = 0;
+    Frame_state.needOutput = true;
+    
+    Frame_state.nextFrame = 0;
+}
+
+static void frame_incr(void) {
+    ++Frame_state.nextFrame;
+    ++Frame_state.percentFrameCtr;
+    ++Frame_state.secondFrameCtr;
+
+    if (Frame_state.percentFrameCtr == Frame_state.onePercentFrames) {
+	Frame_state.percentFrameCtr = 0;
+	++Frame_state.percent;
+    }
+
+    if (Frame_state.secondFrameCtr == FRAME_HZ) {
+	Frame_state.secondFrameCtr = 0;
+	++Frame_state.numSeconds;
+	if (Frame_state.numSeconds == 60) {
+	    Frame_state.numSeconds = 0;
+	    ++Frame_state.numMinutes;
+	}
+	Frame_state.needOutput = true;
+    }
+}
 
 void main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -338,29 +391,24 @@ void main(int argc, char *argv[]) {
     char *comment = read_ztstr(fp);
     printf("Comment         : \"%s\"\n", comment);
 
+    const long audioFrameOffset = ftell(fp);
+
     ctc_init();
 
-    const uint16_t onePercentFrames = Current_header.frames / 100;
-    uint16_t percentFrames = 0;
-    uint8_t percent = 0;
+    Frame_state.onePercentFrames = Current_header.frames / 100;
+    frame_zero();
 
-    uint8_t numFrames = 0;
-    uint8_t numSeconds = 0;
-    uint8_t numMinutes = 0;
-    uint8_t frameData[16];
     Player_state state = PST_FILL_BUFFER;
-    uint32_t nextFrame = 0;
-    for (; nextFrame < Current_header.frames;) {
+    for (; Frame_state.nextFrame < Current_header.frames;) {
 	if (state != PST_PAUSED) {
+	    static uint8_t frameData[16];
 	    int rc = fread(frameData, sizeof(frameData), fp);
 	    if (rc != sizeof(frameData)) {
 		puts("Error: early EOF on frame data");
 		goto done;
 	    }
 	    // Increment all the frame counters.
-	    ++nextFrame;
-	    ++percentFrames;
-	    ++numFrames;
+	    frame_incr();
 
 	    // Write audio data to sound chip.
 	    for (;;) {
@@ -374,20 +422,11 @@ void main(int argc, char *argv[]) {
 	    }
 	}
 
-	// Count frames and update progress display.
-	if (percentFrames == onePercentFrames) {
-	    percentFrames = 0;
-	    ++percent;
-	}
-
-	if (numFrames == FRAME_HZ) {
-	    numFrames = 0;
-	    ++numSeconds;
-	    if (numSeconds == 60) {
-		numSeconds = 0;
-		++numMinutes;
-	    }
-	    printf("%u:%02u (%u%%)\r", numMinutes, numSeconds, percent);
+	// Update progress display.
+	if (Frame_state.needOutput) {
+	    printf("%u:%02u (%u%%)\r",
+		   Frame_state.numMinutes, Frame_state.numSeconds, Frame_state.percent);
+	    Frame_state.needOutput = false;
 	}
 
 	// Check for keyboard input.
@@ -410,7 +449,12 @@ void main(int argc, char *argv[]) {
 		}
 		break;
 	    case CH_CTRL_A:
-		// TODO: seek to start
+		// Seek to start of song.
+		snd_stop();
+		snd_flush();
+		frame_zero();
+		fseek(fp, audioFrameOffset, SEEK_SET);
+		state = PST_FILL_BUFFER;
 		break;
 	    default:
 		// TODO: arrow keys to skip backward/forward
@@ -426,7 +470,7 @@ done_playback:
 
     ctc_fini();
 
-    if (nextFrame == Current_header.frames && !check_end(fp)) {
+    if (Frame_state.nextFrame == Current_header.frames && !check_end(fp)) {
 	puts("Warning: YM end marker not reached");
     }
 

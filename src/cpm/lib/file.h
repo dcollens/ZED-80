@@ -36,6 +36,16 @@ extern int feof(FILE *stream);
 extern int fgetc(FILE *stream);
 extern int fputc(int c, FILE *stream);
 extern size_t fread(void * restrict ptr, size_t size, FILE * restrict stream);
-extern size_t fwrite(const void * restrict ptr, size_t size, FILE * restrict stream);
+
+#define SEEK_SET	0
+#define SEEK_CUR	1
+#define SEEK_END	2
+extern int fseek(FILE *stream, long offset, int whence);
+extern long ftell(FILE *stream);
+
+#define rewind(stream)	((void)fseek((stream), 0L, SEEK_SET))
+
+// Not yet implemented:
+//extern size_t fwrite(const void * restrict ptr, size_t size, FILE * restrict stream);
 
 #endif

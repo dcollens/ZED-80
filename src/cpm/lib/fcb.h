@@ -26,6 +26,7 @@ typedef struct FCB {
 #define CPM_DEFAULT_FCB	    ((FCB *)0x005C)
 
 #define CPM_BLOCK_SIZE	    128
+#define CPM_BLOCK_SHIFT	    7
 
 /* IO buffer in system parameters area below TPA */
 #define CPM_DEFAULT_IOBUF   ((uint8_t *)0x0080)
