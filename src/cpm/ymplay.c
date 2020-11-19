@@ -18,6 +18,8 @@
 // For now, we only do 50Hz (hardcoded in the CTC config)
 #define FRAME_HZ    50
 
+#define CH_ESC	    '\x1b'
+
 typedef struct YM_Header {
     char id[4];
     char check[8];
@@ -267,6 +269,16 @@ static void ctc_fini(void) {
     __endasm;
 }
 
+// Returns 0xFF if a character is waiting, and 0x00 otherwise.
+static uint8_t con_status(void) __naked {
+    __asm
+	ld	c, #11
+	jp	0x0005
+	ld	l, a
+	ret
+    __endasm;
+}
+
 void main(int argc, char *argv[]) {
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
@@ -330,6 +342,7 @@ void main(int argc, char *argv[]) {
 	// Write audio data to sound chip.
 	snd_write14(frameData);
 
+	// Count frames and update progress display.
 	++percentFrames;
 	if (percentFrames == onePercentFrames) {
 	    percentFrames = 0;
@@ -346,7 +359,20 @@ void main(int argc, char *argv[]) {
 	    }
 	    printf("%u:%02u (%u%%)\r", numMinutes, numSeconds, percent);
 	}
+
+	// Check for keyboard input.
+	if (con_status()) {
+	    uint8_t ch = getchar();
+	    switch (ch) {
+		case CH_ESC:
+		    goto done_playback;
+		// TODO: space to play/pause, arrow keys to skip backward/forward
+		default:
+		    break;
+	    }
+	}
     }
+done_playback:
 
     // Stop any final sound.
     memset(frameData, 0, sizeof(frameData));

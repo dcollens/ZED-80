@@ -29,5 +29,8 @@ clean:
 %.rel: %.s Makefile
 	sdasz80 -l -o -s -g $<
 
-$(CRT0) $(ZED80LIB): Makefile $(LIBDIR)/Makefile
+$(CRT0): Makefile $(LIBDIR)/Makefile $(LIBDIR)/crt0.s
+	make -C lib
+
+$(ZED80LIB): Makefile $(LIBDIR)/Makefile $(wildcard $(LIBDIR)/*.c $(LIBDIR)/*.h)
 	make -C lib
