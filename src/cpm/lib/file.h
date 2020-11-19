@@ -36,6 +36,6 @@ extern int feof(FILE *stream);
 extern int fgetc(FILE *stream);
 extern int fputc(int c, FILE *stream);
 extern size_t fread(void * restrict ptr, size_t size, FILE * restrict stream);
-extern size_t fwrite(const void * restrict ptr, size_t sizes, FILE * restrict stream);
+extern size_t fwrite(const void * restrict ptr, size_t size, FILE * restrict stream);
 
 #endif

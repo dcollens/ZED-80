@@ -18,6 +18,7 @@
 // For now, we only do 50Hz (hardcoded in the CTC config)
 #define FRAME_HZ    50
 
+#define CH_CTRL_A   '\x01'
 #define CH_ESC	    '\x1b'
 
 typedef struct YM_Header {
@@ -190,35 +191,54 @@ static void ctc_snd_isr(void) __naked {
     __endasm;
 }
 
-static void snd_write14(uint8_t const *data) {
-    for (bool done = false; !done;) {
-	Z80_DI;
-	uint8_t tail = Snd_frame_tail;
-	uint8_t newTail = tail + 16;
-	if (Snd_frame_head == newTail) {
-	    // Ring buffer is full, so start playback.
-	    Snd_running = true;
-	} else {
-	    // Ring buffer has room, so enqueue the next frame.
-	    memcpy(&Snd_frame_buffer[tail], data, 14);
-	    Snd_frame_tail = newTail; 
-	    done = true;
-	}
-	Z80_EI;
+static const uint8_t Null_frame[16];
+
+// Returns true iff there was room in the ring buffer to write the data frame.
+static bool snd_write14(uint8_t const *data) {
+    bool success;
+
+    Z80_DI;
+    uint8_t tail = Snd_frame_tail;
+    uint8_t newTail = tail + 16;
+    if (Snd_frame_head == newTail) {
+	// Ring buffer is full, so start playback.
+	success = false;
+    } else {
+	// Ring buffer has room, so enqueue the next frame.
+	memcpy(&Snd_frame_buffer[tail], data, 14);
+	Snd_frame_tail = newTail; 
+	success = true;
     }
+    Z80_EI;
+
+    return success;
 }
 
-static void snd_fini(void) {
+static void snd_stop(void) {
+    Snd_running = false;
+
+    __asm
+	ld	de, #_Null_frame	; DE := Null_frame
+	ld	hl, (#0x0001)		; address of CBIOS WBOOT entry point
+	ld	bc, #0x33		; offset to CBIOS SNDWRITE entry point
+	add	hl, bc			; HL := address of CBIOS SNDWRITE entry point
+	ld	b, #14			; write 14 bytes
+	ld	c, #0			; starting at register 0
+	ex	de, hl			; HL := data, DE := address of SNDWRITE entry point
+	call	_jp_de			; call *DE
+    __endasm;
+}
+
+static void snd_drain(void) {
     // Wait for ring buffer to drain.
-    for (bool done = false; !done;) {
+    while (Snd_running) {
 	Z80_DI;
 	if (Snd_frame_head == Snd_frame_tail) {
 	    // Ring buffer is empty.
-	    done = true;
+	    Snd_running = false;
 	}
 	Z80_EI;
     }
-    Snd_running = false;
 }
 
 static void jp_hl(void) __naked {
@@ -269,6 +289,14 @@ static void ctc_fini(void) {
     __endasm;
 }
 
+typedef enum Player_state {
+    PST_FILL_BUFFER,	    // filling audio ring buffer
+    PST_PLAYING,
+    PST_PAUSED,
+} Player_state;
+
+static YM_Header Current_header;
+
 void main(int argc, char *argv[]) {
     if (argc < 2) {
 	puts("Usage: YMPLAY <file.ym>");
@@ -282,25 +310,24 @@ void main(int argc, char *argv[]) {
 	return;
     }
     
-    YM_Header header;
-    if (!read_header(fp, &header)) {
+    if (!read_header(fp, &Current_header)) {
 	goto done;
     }
 
-    printf("Number of frames: %lu\n", header.frames);
-    printf("Attributes      : %lu\n", header.attr);
-    printf("Digidrums       : %u\n", header.digidrums);
-    printf("YM Clock        : %lu ", header.ymclock);
-    if (header.ymclock == 2000000) {
+    printf("Number of frames: %lu\n", Current_header.frames);
+    printf("Attributes      : %lu\n", Current_header.attr);
+    printf("Digidrums       : %u\n", Current_header.digidrums);
+    printf("YM Clock        : %lu ", Current_header.ymclock);
+    if (Current_header.ymclock == 2000000) {
 	printf("(Atari ST)\n");
-    } else if (header.ymclock == 1773400) {
+    } else if (Current_header.ymclock == 1773400) {
 	printf("(ZX Spectrum)\n");
     } else {
 	printf("(Unknown)\n");
     }
-    printf("Frame Hz        : %u\n", header.framehz);
-    printf("Loop Frame      : %lu\n", header.loopframe);
-    printf("Future bytes    : %u\n", header.future);
+    printf("Frame Hz        : %u\n", Current_header.framehz);
+    printf("Loop Frame      : %lu\n", Current_header.loopframe);
+    printf("Future bytes    : %u\n", Current_header.future);
 
     char *songname = read_ztstr(fp);
     printf("Song Name       : \"%s\"\n", songname);
@@ -313,7 +340,7 @@ void main(int argc, char *argv[]) {
 
     ctc_init();
 
-    const uint16_t onePercentFrames = header.frames / 100;
+    const uint16_t onePercentFrames = Current_header.frames / 100;
     uint16_t percentFrames = 0;
     uint8_t percent = 0;
 
@@ -321,24 +348,38 @@ void main(int argc, char *argv[]) {
     uint8_t numSeconds = 0;
     uint8_t numMinutes = 0;
     uint8_t frameData[16];
-    for (uint32_t frameNum = 0; frameNum < header.frames; ++frameNum) {
-	int rc = fread(frameData, sizeof(frameData), fp);
-	if (rc != sizeof(frameData)) {
-	    puts("Error: early EOF on frame data");
-	    goto done;
+    Player_state state = PST_FILL_BUFFER;
+    uint32_t nextFrame = 0;
+    for (; nextFrame < Current_header.frames;) {
+	if (state != PST_PAUSED) {
+	    int rc = fread(frameData, sizeof(frameData), fp);
+	    if (rc != sizeof(frameData)) {
+		puts("Error: early EOF on frame data");
+		goto done;
+	    }
+	    // Increment all the frame counters.
+	    ++nextFrame;
+	    ++percentFrames;
+	    ++numFrames;
+
+	    // Write audio data to sound chip.
+	    for (;;) {
+		bool wrote = snd_write14(frameData);
+		if (wrote) break;
+
+		if (state == PST_FILL_BUFFER) {
+		    Snd_running = true;
+		    state = PST_PLAYING;
+		}
+	    }
 	}
 
-	// Write audio data to sound chip.
-	snd_write14(frameData);
-
 	// Count frames and update progress display.
-	++percentFrames;
 	if (percentFrames == onePercentFrames) {
 	    percentFrames = 0;
 	    ++percent;
 	}
 
-	++numFrames;
 	if (numFrames == FRAME_HZ) {
 	    numFrames = 0;
 	    ++numSeconds;
@@ -359,23 +400,33 @@ void main(int argc, char *argv[]) {
 	    case 'q':
 	    case 'Q':
 		goto done_playback;
+	    case ' ':
+		if (state == PST_PLAYING) {
+		    snd_stop();
+		    state = PST_PAUSED;
+		} else if (state == PST_PAUSED) {
+		    Snd_running = true;
+		    state = PST_PLAYING;
+		}
+		break;
+	    case CH_CTRL_A:
+		// TODO: seek to start
+		break;
 	    default:
-		// TODO: space to play/pause, arrow keys to skip backward/forward
+		// TODO: arrow keys to skip backward/forward
 		printf("Input: $%02x\n", ch);
 		break;
 	}
     }
 done_playback:
 
-    // Stop any final sound.
-    memset(frameData, 0, sizeof(frameData));
-    snd_write14(frameData);
-
-    snd_fini();
+    // Play any queued samples, then stop the final sound.
+    snd_drain();
+    snd_stop();
 
     ctc_fini();
 
-    if (!check_end(fp)) {
+    if (nextFrame == Current_header.frames && !check_end(fp)) {
 	puts("Warning: YM end marker not reached");
     }
 
