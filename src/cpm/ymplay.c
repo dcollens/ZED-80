@@ -18,8 +18,13 @@
 // For now, we only do 50Hz (hardcoded in the CTC config)
 #define FRAME_HZ    50
 
-#define CH_CTRL_A   '\x01'
-#define CH_ESC	    '\x1b'
+#define CH_CTRL_A	'\x01'
+#define CH_ESC		'\x1b'
+#define CH_LEFT_ARROW	'\x11'
+#define CH_RIGHT_ARROW	'\x10'
+
+// Skip this many frames backward/forward on user input.
+#define SKIP_FRAMES (5 * FRAME_HZ)
 
 typedef struct YM_Header {
     char id[4];
@@ -302,6 +307,8 @@ typedef enum Player_state {
 } Player_state;
 
 typedef struct Frame_counters {
+    long audioFrameOffset;  // offset into file where frame data begins
+
     uint16_t onePercentFrames;
     uint16_t percentFrameCtr;
     uint8_t percent;
@@ -311,7 +318,7 @@ typedef struct Frame_counters {
     uint8_t numMinutes;
     bool needOutput;
 
-    uint32_t nextFrame;
+    int32_t nextFrame;
 } Frame_counters;
 
 static YM_Header Current_header;
@@ -348,6 +355,27 @@ static void frame_incr(void) {
 	}
 	Frame_state.needOutput = true;
     }
+}
+
+static void frame_seek(int32_t offset) {
+    int32_t newFrame = Frame_state.nextFrame + offset;
+    if (newFrame < 0) {
+	newFrame = 0;
+    } else if (newFrame > Current_header.frames) {
+	newFrame = Current_header.frames;
+    }
+
+    Frame_state.nextFrame = newFrame;
+
+    Frame_state.percent = newFrame / Frame_state.onePercentFrames;
+    Frame_state.percentFrameCtr = newFrame % Frame_state.onePercentFrames;
+
+    uint16_t totalSecs = newFrame / FRAME_HZ;
+    Frame_state.numMinutes = totalSecs / 60;
+    Frame_state.numSeconds = totalSecs % 60;
+    Frame_state.secondFrameCtr = newFrame % FRAME_HZ;
+
+    Frame_state.needOutput = true;
 }
 
 void main(int argc, char *argv[]) {
@@ -391,10 +419,9 @@ void main(int argc, char *argv[]) {
     char *comment = read_ztstr(fp);
     printf("Comment         : \"%s\"\n", comment);
 
-    const long audioFrameOffset = ftell(fp);
-
     ctc_init();
 
+    Frame_state.audioFrameOffset = ftell(fp);
     Frame_state.onePercentFrames = Current_header.frames / 100;
     frame_zero();
 
@@ -424,7 +451,8 @@ void main(int argc, char *argv[]) {
 
 	// Update progress display.
 	if (Frame_state.needOutput) {
-	    printf("%u:%02u (%u%%)\r",
+	    // Print some trailing spaces to overwrite any prior output.
+	    printf("%u:%02u (%u%%)  \r",
 		   Frame_state.numMinutes, Frame_state.numSeconds, Frame_state.percent);
 	    Frame_state.needOutput = false;
 	}
@@ -453,11 +481,30 @@ void main(int argc, char *argv[]) {
 		snd_stop();
 		snd_flush();
 		frame_zero();
-		fseek(fp, audioFrameOffset, SEEK_SET);
+		fseek(fp, Frame_state.audioFrameOffset, SEEK_SET);
+		state = PST_FILL_BUFFER;
+		break;
+	    case 'h':
+	    case 'H':
+	    case CH_LEFT_ARROW:
+		// Seek backwards 5s.
+		snd_stop();
+		snd_flush();
+		frame_seek(-SKIP_FRAMES);
+		fseek(fp, Frame_state.audioFrameOffset + (Frame_state.nextFrame << 4), SEEK_SET);
+		state = PST_FILL_BUFFER;
+		break;
+	    case 'l':
+	    case 'L':
+	    case CH_RIGHT_ARROW:
+		// Seek forwards 5s.
+		snd_stop();
+		snd_flush();
+		frame_seek(SKIP_FRAMES);
+		fseek(fp, Frame_state.audioFrameOffset + (Frame_state.nextFrame << 4), SEEK_SET);
 		state = PST_FILL_BUFFER;
 		break;
 	    default:
-		// TODO: arrow keys to skip backward/forward
 		printf("Input: $%02x\n", ch);
 		break;
 	}
