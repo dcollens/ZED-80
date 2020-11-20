@@ -10,6 +10,8 @@ void fcb_set_filename(FCB *fcb, char const *filename) {
 	char fch = *fp;
 	if (fch == '\0' || fch == '.') {
 	    fch = ' ';
+	} else if (fch == '*') {
+	    fch = '?';
 	} else {
 	    ++fp;
 	}
@@ -33,6 +35,8 @@ void fcb_set_filename(FCB *fcb, char const *filename) {
 	char fch = *fp;
 	if (fch == '\0') {
 	    fch = ' ';
+	} else if (fch == '*') {
+	    fch = '?';
 	} else {
 	    ++fp;
 	}

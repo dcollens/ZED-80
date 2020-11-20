@@ -38,6 +38,8 @@ extern void fcb_set_filename(FCB *fcb, char const *filename);
 /* These are the real CP/M system calls */
 extern uint8_t fcb_open(FCB *fcb);
 extern uint8_t fcb_close(FCB *fcb);
+extern uint8_t fcb_search_first(FCB *fcb);
+extern uint8_t fcb_search_next(void);
 extern uint8_t fcb_delete(FCB *fcb);
 extern uint8_t fcb_read_seq(FCB *fcb);
 extern uint8_t fcb_write_seq(FCB *fcb);
