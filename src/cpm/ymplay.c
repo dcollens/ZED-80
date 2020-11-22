@@ -22,6 +22,8 @@
 #define CH_ESC		'\x1b'
 #define CH_LEFT_ARROW	'\x11'
 #define CH_RIGHT_ARROW	'\x10'
+#define CH_UP_ARROW	'\x1e'
+#define CH_DOWN_ARROW	'\x1f'
 
 // Skip this many frames backward/forward on user input.
 #define SKIP_FRAMES (5 * FRAME_HZ)
@@ -37,6 +39,34 @@ typedef struct YM_Header {
     uint32_t loopframe;
     uint16_t future;
 } YM_Header;
+
+typedef struct YM_File {
+    FILE *fp;
+
+    YM_Header header;
+
+    char const *songname;
+    char const *author;
+    char const *comment;
+
+    long audio_start;  // offset into file where frame data begins
+} YM_File;
+
+static YM_File Current_file;
+
+
+typedef struct Song_node {
+    struct Song_node *prev;
+    struct Song_node *next;
+    char filename[13];
+} Song_node;
+
+struct Song_list {
+    Song_node *head;
+    Song_node *tail;
+    uint16_t count;
+} Songs;
+
 
 static void swap32(uint32_t *num) {
     uint8_t *ptr = (uint8_t *)num;
@@ -55,28 +85,6 @@ static void swap16(uint16_t *num) {
     uint8_t tmp = ptr[0];
     ptr[0] = ptr[1];
     ptr[1] = tmp;
-}
-
-static bool read_header(FILE *fp, YM_Header *header) {
-    int rc = fread(header, sizeof(*header), fp);
-    if (rc != sizeof(*header)) {
-	puts("Error: short read");
-	return false;
-    }
-
-    if (strncmp(header->id, "YM6!", 4) != 0 || strncmp(header->check, "LeOnArD!", 8) != 0) {
-        puts("Error: not a YM6 file");
-	return false;
-    }
-
-    swap32(&header->frames);
-    swap32(&header->attr);
-    swap16(&header->digidrums);
-    swap32(&header->ymclock);
-    swap16(&header->framehz);
-    swap32(&header->loopframe);
-    swap16(&header->future);
-    return true;
 }
 
 static char *read_ztstr(FILE *fp) {
@@ -104,6 +112,80 @@ static char *read_ztstr(FILE *fp) {
     return result;
 }
 
+static void ymfile_close(void) {
+    if (Current_file.fp != NULL) {
+	fclose(Current_file.fp);
+    }
+    free(Current_file.songname);
+    free(Current_file.author);
+    free(Current_file.comment);
+    memset(&Current_file, 0, sizeof(Current_file));
+}
+
+static bool ymfile_open(char const *filename) {
+    ymfile_close();
+
+    Current_file.fp = fopen(filename, "rb");
+    if (Current_file.fp == NULL) {
+	printf("Error: can't open %s\n", filename);
+	goto fail;
+    }
+
+    int rc = fread(&Current_file.header, sizeof(Current_file.header), Current_file.fp);
+    if (rc != sizeof(Current_file.header)) {
+	puts("Error: short read");
+	goto fail;
+    }
+
+    if (strncmp(Current_file.header.id, "YM6!", 4) != 0
+     || strncmp(Current_file.header.check, "LeOnArD!", 8) != 0)
+    {
+        puts("Error: not a YM6 file");
+	goto fail;
+    }
+
+    swap32(&Current_file.header.frames);
+    swap32(&Current_file.header.attr);
+    swap16(&Current_file.header.digidrums);
+    swap32(&Current_file.header.ymclock);
+    swap16(&Current_file.header.framehz);
+    swap32(&Current_file.header.loopframe);
+    swap16(&Current_file.header.future);
+
+    Current_file.songname = read_ztstr(Current_file.fp);
+    Current_file.author = read_ztstr(Current_file.fp);
+    Current_file.comment = read_ztstr(Current_file.fp);
+
+    Current_file.audio_start = ftell(Current_file.fp);
+
+    return true;
+
+fail:
+    ymfile_close();
+    return false;
+}
+
+static void ymfile_print_metadata(void) {
+    printf("# Frames    : %lu\n", Current_file.header.frames);
+    printf("Attrs       : %lu\n", Current_file.header.attr);
+    printf("Digidrums   : %u\n", Current_file.header.digidrums);
+    printf("YM Clock    : %lu ", Current_file.header.ymclock);
+    if (Current_file.header.ymclock == 2000000) {
+	printf("(Atari ST)\n");
+    } else if (Current_file.header.ymclock == 1773400) {
+	printf("(ZX Spectrum)\n");
+    } else {
+	printf("(Unknown)\n");
+    }
+    printf("Frame Hz    : %u\n", Current_file.header.framehz);
+    printf("Loop Frame  : %lu\n", Current_file.header.loopframe);
+    printf("Future bytes: %u\n", Current_file.header.future);
+    printf("Song Name   : \"%s\"\n", Current_file.songname);
+    printf("Author Name : \"%s\"\n", Current_file.author);
+    printf("Comment     : \"%s\"\n", Current_file.comment);
+}
+
+#if 0
 static bool check_end(FILE *fp) {
     char buf[4];
 
@@ -113,6 +195,7 @@ static bool check_end(FILE *fp) {
 
     return memcmp(buf, "End!", sizeof(buf)) == 0;
 }
+#endif
 
 // Size of audio frame ring buffer. The code relies on this value
 // so it can just do 8-bit arithmetic and automatically get results mod 256.
@@ -306,8 +389,8 @@ typedef enum Player_state {
     PST_PAUSED,
 } Player_state;
 
-typedef struct Frame_counters {
-    long audioFrameOffset;  // offset into file where frame data begins
+struct Player {
+    Player_state state;
 
     uint16_t onePercentFrames;
     uint16_t percentFrameCtr;
@@ -319,195 +402,225 @@ typedef struct Frame_counters {
     bool needOutput;
 
     int32_t nextFrame;
-} Frame_counters;
-
-static YM_Header Current_header;
-static Frame_counters Frame_state;
+} Player;
 
 static void frame_zero(void) {
-    Frame_state.percentFrameCtr = 0;
-    Frame_state.percent = 0;
+    Player.percentFrameCtr = 0;
+    Player.percent = 0;
 
-    Frame_state.secondFrameCtr = 0;
-    Frame_state.numSeconds = 0;
-    Frame_state.numMinutes = 0;
-    Frame_state.needOutput = true;
+    Player.secondFrameCtr = 0;
+    Player.numSeconds = 0;
+    Player.numMinutes = 0;
+    Player.needOutput = true;
     
-    Frame_state.nextFrame = 0;
+    Player.nextFrame = 0;
 }
 
 static void frame_incr(void) {
-    ++Frame_state.nextFrame;
-    ++Frame_state.percentFrameCtr;
-    ++Frame_state.secondFrameCtr;
+    ++Player.nextFrame;
+    ++Player.percentFrameCtr;
+    ++Player.secondFrameCtr;
 
-    if (Frame_state.percentFrameCtr == Frame_state.onePercentFrames) {
-	Frame_state.percentFrameCtr = 0;
-	++Frame_state.percent;
+    if (Player.percentFrameCtr == Player.onePercentFrames) {
+	Player.percentFrameCtr = 0;
+	++Player.percent;
     }
 
-    if (Frame_state.secondFrameCtr == FRAME_HZ) {
-	Frame_state.secondFrameCtr = 0;
-	++Frame_state.numSeconds;
-	if (Frame_state.numSeconds == 60) {
-	    Frame_state.numSeconds = 0;
-	    ++Frame_state.numMinutes;
+    if (Player.secondFrameCtr == FRAME_HZ) {
+	Player.secondFrameCtr = 0;
+	++Player.numSeconds;
+	if (Player.numSeconds == 60) {
+	    Player.numSeconds = 0;
+	    ++Player.numMinutes;
 	}
-	Frame_state.needOutput = true;
+	Player.needOutput = true;
     }
 }
 
 static void frame_seek(int32_t offset) {
-    int32_t newFrame = Frame_state.nextFrame + offset;
+    int32_t newFrame = Player.nextFrame + offset;
     if (newFrame < 0) {
 	newFrame = 0;
-    } else if (newFrame > Current_header.frames) {
-	newFrame = Current_header.frames;
+    } else if (newFrame > Current_file.header.frames) {
+	newFrame = Current_file.header.frames;
     }
 
-    Frame_state.nextFrame = newFrame;
+    Player.nextFrame = newFrame;
 
-    Frame_state.percent = newFrame / Frame_state.onePercentFrames;
-    Frame_state.percentFrameCtr = newFrame % Frame_state.onePercentFrames;
+    Player.percent = newFrame / Player.onePercentFrames;
+    Player.percentFrameCtr = newFrame % Player.onePercentFrames;
 
     uint16_t totalSecs = newFrame / FRAME_HZ;
-    Frame_state.numMinutes = totalSecs / 60;
-    Frame_state.numSeconds = totalSecs % 60;
-    Frame_state.secondFrameCtr = newFrame % FRAME_HZ;
+    Player.numMinutes = totalSecs / 60;
+    Player.numSeconds = totalSecs % 60;
+    Player.secondFrameCtr = newFrame % FRAME_HZ;
 
-    Frame_state.needOutput = true;
+    Player.needOutput = true;
+}
+
+void song_add_tail(Song_node *song) {
+    song->prev = Songs.tail;
+    song->next = NULL;
+
+    if (Songs.head == NULL) {
+	Songs.head = song;
+    } else {
+	Songs.tail->next = song;
+    }
+    Songs.tail = song;
+
+    ++Songs.count;
+}
+
+void song_add_all(char const *filename) {
+    FCB fcb;
+
+    fcb_zero(&fcb);
+    fcb_set_filename(&fcb, filename);
+    uint8_t rc = fcb_search_first(&fcb);
+    while (rc != 0xFF) {
+	FCB const *dir_entry = (FCB const *)(CPM_DEFAULT_IOBUF + (rc << 5));
+
+	Song_node *song = malloc(sizeof(Song_node));
+	fcb_get_filename(song->filename, dir_entry);
+	song_add_tail(song);
+
+	rc = fcb_search_next();
+    }
 }
 
 void main(int argc, char *argv[]) {
     if (argc < 2) {
-	puts("Usage: YMPLAY <file.ym>");
+	puts("Usage: YMPLAY files...");
 	return;
     }
 
-    char const *filename = argv[1];
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL) {
-	printf("Error: can't open %s\n", filename);
+    for (uint8_t i = 1; i < argc; ++i) {
+	song_add_all(argv[i]);
+    }
+    if (Songs.count == 0) {
+	puts("No files found");
 	return;
     }
-    
-    if (!read_header(fp, &Current_header)) {
-	goto done;
-    }
-
-    printf("Number of frames: %lu\n", Current_header.frames);
-    printf("Attributes      : %lu\n", Current_header.attr);
-    printf("Digidrums       : %u\n", Current_header.digidrums);
-    printf("YM Clock        : %lu ", Current_header.ymclock);
-    if (Current_header.ymclock == 2000000) {
-	printf("(Atari ST)\n");
-    } else if (Current_header.ymclock == 1773400) {
-	printf("(ZX Spectrum)\n");
-    } else {
-	printf("(Unknown)\n");
-    }
-    printf("Frame Hz        : %u\n", Current_header.framehz);
-    printf("Loop Frame      : %lu\n", Current_header.loopframe);
-    printf("Future bytes    : %u\n", Current_header.future);
-
-    char *songname = read_ztstr(fp);
-    printf("Song Name       : \"%s\"\n", songname);
-
-    char *authorname = read_ztstr(fp);
-    printf("Author Name     : \"%s\"\n", authorname);
-
-    char *comment = read_ztstr(fp);
-    printf("Comment         : \"%s\"\n", comment);
+    printf("%d tracks\n", Songs.count);
 
     ctc_init();
 
-    Frame_state.audioFrameOffset = ftell(fp);
-    Frame_state.onePercentFrames = Current_header.frames / 100;
-    frame_zero();
+    Song_node *song = Songs.head;
+    while (song != NULL) {
+	if (!ymfile_open(song->filename)) {
+	    song = song->next;
+	    continue;
+	}
+	printf("%s - %s (%s)\n", Current_file.songname, Current_file.author, song->filename);
 
-    Player_state state = PST_FILL_BUFFER;
-    for (; Frame_state.nextFrame < Current_header.frames;) {
-	if (state != PST_PAUSED) {
-	    static uint8_t frameData[16];
-	    int rc = fread(frameData, sizeof(frameData), fp);
-	    if (rc != sizeof(frameData)) {
-		puts("Error: early EOF on frame data");
-		goto done;
-	    }
-	    // Increment all the frame counters.
-	    frame_incr();
+	Player.state = PST_FILL_BUFFER;
+	Player.onePercentFrames = Current_file.header.frames / 100;
+	frame_zero();
 
-	    // Write audio data to sound chip.
-	    for (;;) {
-		bool wrote = snd_write14(frameData);
-		if (wrote) break;
+	for (; Player.nextFrame < Current_file.header.frames;) {
+	    if (Player.state != PST_PAUSED) {
+		static uint8_t frameData[16];
+		int rc = fread(frameData, sizeof(frameData), Current_file.fp);
+		if (rc != sizeof(frameData)) {
+		    puts("Error: early EOF on frame data");
+		    goto done;
+		}
+		// Increment all the frame counters.
+		frame_incr();
 
-		if (state == PST_FILL_BUFFER) {
-		    Snd_running = true;
-		    state = PST_PLAYING;
+		// Write audio data to sound chip.
+		for (;;) {
+		    bool wrote = snd_write14(frameData);
+		    if (wrote) break;
+
+		    if (Player.state == PST_FILL_BUFFER) {
+			Snd_running = true;
+			Player.state = PST_PLAYING;
+		    }
 		}
 	    }
-	}
 
-	// Update progress display.
-	if (Frame_state.needOutput) {
-	    // Print some trailing spaces to overwrite any prior output.
-	    printf("%u:%02u (%u%%)  \r",
-		   Frame_state.numMinutes, Frame_state.numSeconds, Frame_state.percent);
-	    Frame_state.needOutput = false;
-	}
+	    // Update progress display.
+	    if (Player.needOutput) {
+		// Print some trailing spaces to overwrite any prior output.
+		printf("%u:%02u (%u%%)  \r",
+		       Player.numMinutes, Player.numSeconds, Player.percent);
+		Player.needOutput = false;
+	    }
 
-	// Check for keyboard input.
-	uint8_t ch = conio_direct_pollchar();
-	switch (ch) {
-	    case '\0':
-		// No input character available.
-		break;
-	    case CH_ESC:
-	    case 'q':
-	    case 'Q':
-		goto done_playback;
-	    case ' ':
-		if (state == PST_PLAYING) {
+	    // Check for keyboard input.
+	    uint8_t ch = conio_direct_pollchar();
+	    switch (ch) {
+		case '\0':
+		    // No input character available.
+		    break;
+		case CH_ESC:
+		case 'q':
+		case 'Q':
+		    goto done_playback;
+		case ' ':
+		    if (Player.state == PST_PLAYING) {
+			snd_stop();
+			Player.state = PST_PAUSED;
+		    } else if (Player.state == PST_PAUSED) {
+			Snd_running = true;
+			Player.state = PST_PLAYING;
+		    }
+		    break;
+		case CH_CTRL_A:
+		    // Seek to start of song.
 		    snd_stop();
-		    state = PST_PAUSED;
-		} else if (state == PST_PAUSED) {
-		    Snd_running = true;
-		    state = PST_PLAYING;
-		}
-		break;
-	    case CH_CTRL_A:
-		// Seek to start of song.
-		snd_stop();
-		snd_flush();
-		frame_zero();
-		fseek(fp, Frame_state.audioFrameOffset, SEEK_SET);
-		state = PST_FILL_BUFFER;
-		break;
-	    case 'h':
-	    case 'H':
-	    case CH_LEFT_ARROW:
-		// Seek backwards 5s.
-		snd_stop();
-		snd_flush();
-		frame_seek(-SKIP_FRAMES);
-		fseek(fp, Frame_state.audioFrameOffset + (Frame_state.nextFrame << 4), SEEK_SET);
-		state = PST_FILL_BUFFER;
-		break;
-	    case 'l':
-	    case 'L':
-	    case CH_RIGHT_ARROW:
-		// Seek forwards 5s.
-		snd_stop();
-		snd_flush();
-		frame_seek(SKIP_FRAMES);
-		fseek(fp, Frame_state.audioFrameOffset + (Frame_state.nextFrame << 4), SEEK_SET);
-		state = PST_FILL_BUFFER;
-		break;
-	    default:
-		printf("Input: $%02x\n", ch);
-		break;
+		    snd_flush();
+		    frame_zero();
+		    fseek(Current_file.fp, Current_file.audio_start, SEEK_SET);
+		    Player.state = PST_FILL_BUFFER;
+		    break;
+		case 'h':
+		case 'H':
+		case CH_LEFT_ARROW:
+		    // Seek backwards 5s.
+		    snd_stop();
+		    snd_flush();
+		    frame_seek(-SKIP_FRAMES);
+		    fseek(Current_file.fp, Current_file.audio_start + (Player.nextFrame << 4), SEEK_SET);
+		    Player.state = PST_FILL_BUFFER;
+		    break;
+		case 'l':
+		case 'L':
+		case CH_RIGHT_ARROW:
+		    // Seek forwards 5s.
+		    snd_stop();
+		    snd_flush();
+		    frame_seek(SKIP_FRAMES);
+		    fseek(Current_file.fp, Current_file.audio_start + (Player.nextFrame << 4), SEEK_SET);
+		    Player.state = PST_FILL_BUFFER;
+		    break;
+		case 'j':
+		case 'J':
+		case CH_DOWN_ARROW:
+		    if (song->next != NULL) {
+			song = song->next;
+			goto new_song;
+		    }
+		    break;
+		case 'k':
+		case 'K':
+		case CH_UP_ARROW:
+		    if (song->prev != NULL) {
+			song = song->prev;
+			goto new_song;
+		    }
+		    break;
+		default:
+		    printf("Input: $%02x\n", ch);
+		    break;
+	    }
 	}
+new_song:
+	snd_stop();
+	snd_flush();
+	ymfile_close();
     }
 done_playback:
 
@@ -517,12 +630,8 @@ done_playback:
 
     ctc_fini();
 
-    if (Frame_state.nextFrame == Current_header.frames && !check_end(fp)) {
-	puts("Warning: YM end marker not reached");
-    }
-
     printf("%u underflows\n", Snd_underflows);
 
 done:
-    fclose(fp);
+    ymfile_close();
 }

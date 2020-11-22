@@ -34,6 +34,7 @@ typedef struct FCB {
 /* These are FCB utility functions */
 extern void fcb_zero(FCB *fcb);
 extern void fcb_set_filename(FCB *fcb, char const *filename);
+extern void fcb_get_filename(char *filename, FCB const *fcb);
 
 /* These are the real CP/M system calls */
 extern uint8_t fcb_open(FCB *fcb);

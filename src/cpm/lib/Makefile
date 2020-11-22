@@ -6,7 +6,7 @@ ZED80LIB := zed80.lib
 ZED80LIB_SRC := putchar.c getchar.c cmdline.c \
     conio_getchar.c conio_putchar.c conio_poll.c \
     conio_direct_pollchar.c conio_direct_putchar.c \
-    fcb_zero.c fcb_set_filename.c fcb_call.c \
+    fcb_zero.c fcb_set_filename.c fcb_get_filename.c fcb_call.c \
     fcb_open.c fcb_close.c fcb_search_first.c fcb_search_next.c fcb_delete.c \
     fcb_read_seq.c fcb_write_seq.c \
     fcb_create.c fcb_rename.c fcb_read_rand.c fcb_write_rand.c \
