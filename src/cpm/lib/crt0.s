@@ -6,6 +6,13 @@
 
 	.module crt0
 	.globl	_main
+	.globl	_exit
+	.globl	___cmdline_init
+	.globl	___Argv
+	.globl	___Argc
+	.globl	l__INITIALIZER
+	.globl	s__INITIALIZED
+	.globl	s__INITIALIZER
 
 	.area	_HEADER (ABS)
 
@@ -26,6 +33,8 @@
 	; Set up the stack pointer to FBASE, which is the base address of the BDOS+CBIOS region
 	; at the top of RAM. Address 0x0006 has the pointer to FBASE.
 	ld	sp, (0x0006)
+	; The heap ranges upwards from _HEAP (__sdcc_heap) up to the bottom of the stack. The
+	; stack size is determined in heap.s
 
 	;; Initialise global variables
 	call	gsinit

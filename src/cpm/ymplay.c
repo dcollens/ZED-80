@@ -482,7 +482,12 @@ void song_add_all(char const *filename) {
 	FCB const *dir_entry = (FCB const *)(CPM_DEFAULT_IOBUF + (rc << 5));
 
 	Song_node *song = malloc(sizeof(Song_node));
+	if (song == NULL) {
+	    puts("Out of memory");
+	    break;
+	}
 	fcb_get_filename(song->filename, dir_entry);
+	puts(song->filename);
 	song_add_tail(song);
 
 	rc = fcb_search_next();
@@ -490,6 +495,12 @@ void song_add_all(char const *filename) {
 }
 
 void main(int argc, char *argv[]) {
+#if 0
+    extern void **__sdcc_heap_free;
+    printf("__sdcc_heap_free=%p __sdcc_heap_free->next=%p\n",
+	    __sdcc_heap_free, *__sdcc_heap_free);
+#endif
+
     if (argc < 2) {
 	puts("Usage: YMPLAY files...");
 	return;
@@ -616,6 +627,12 @@ void main(int argc, char *argv[]) {
 		    printf("Input: $%02x\n", ch);
 		    break;
 	    }
+	}
+	// Song ended; move on to next one.
+	if (song->next != NULL) {
+	    song = song->next;
+	} else {
+	    song = Songs.head;
 	}
 new_song:
 	snd_stop();
