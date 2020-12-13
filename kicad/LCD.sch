@@ -1,6 +1,5 @@
 EESchema Schematic File Version 4
-LIBS:zed-80-cache
-EELAYER 29 0
+EELAYER 30 0
 EELAYER END
 $Descr USLetter 11000 8500
 encoding utf-8
@@ -493,6 +492,8 @@ $Comp
 L 74xx:74HC244 U22
 U 1 1 5B4E489E
 P 6050 3350
+AR Path="/5B4E489E" Ref="U22"  Part="1" 
+AR Path="/5B4CDFE2/5B4E489E" Ref="U22"  Part="1" 
 F 0 "U22" H 6150 4000 50  0000 L CNN
 F 1 "74LVC244A" H 6100 2700 50  0000 L CNN
 F 2 "Housings_SSOP:TSSOP-20_4.4x6.5mm_Pitch0.65mm" H 6050 3350 50  0001 C CNN
