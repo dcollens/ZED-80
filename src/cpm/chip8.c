@@ -610,7 +610,7 @@ void main(int argc, char *argv[]) {
 	uint8_t key = chip8_loop();
 	uint8_t ch = key & ~KEY_RELEASED_MASK;
 	switch (ch) {
-	    case '\x1B':
+	    case KEY_ESC:
 		goto exit_emulator;
 	    default:
 		printf("Input: $%02x\n", ch);

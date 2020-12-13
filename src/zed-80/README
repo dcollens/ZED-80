@@ -100,3 +100,5 @@ Add the following block, e.g. at the end of the file:
 Create a new CP/M disk image:
     make sdcard.img
 
+Write an SD-card image to a physical card:
+    sudo dd if=sdcard.img of=/dev/diskX bs=8192 count=1024
