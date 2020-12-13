@@ -18,8 +18,8 @@
 
 #define CHIP8_ADDR_MASK	    (CHIP8_RAM_SIZE - 1)
 
-#define CHIP8_SCREEN_WIDTH    64
-#define CHIP8_SCREEN_HEIGHT   32
+#define CHIP8_SCREEN_WIDTH  64
+#define CHIP8_SCREEN_HEIGHT 32
 
 #define CHIP8_FONT_OFFSET   0
 #define CHIP8_USER_OFFSET   512
@@ -59,13 +59,16 @@ typedef struct Chip8_t {
     uint16_t PC;		// program counter
     uint8_t SP;			// stack pointer
 
+    Chip8_opcode_t opcode;	// in-progress opcode
+
     uint16_t stack[CHIP8_STACK_SIZE];
 
     uint8_t ram[CHIP8_RAM_SIZE];
 
-    uint8_t display[CHIP8_SCREEN_WIDTH * CHIP8_SCREEN_HEIGHT];
+    uint16_t keyboard;		// 0: key is up, 1: key is down
 
-    Chip8_opcode_t opcode;	// in-progress opcode
+    bool display_dirty;
+    uint8_t display[CHIP8_SCREEN_WIDTH * CHIP8_SCREEN_HEIGHT];
 } Chip8_t;
 
 static Chip8_t Chip8;
@@ -76,6 +79,9 @@ void chip8_init(void) {
     // Copy in font data.
     memcpy(&Chip8.ram[CHIP8_FONT_OFFSET], Font_data, sizeof(Font_data));
 
+    // Mark display for refresh.
+    Chip8.display_dirty = true;
+
     // Start execution at user offset.
     Chip8.PC = CHIP8_USER_OFFSET;
 }
@@ -85,6 +91,7 @@ static void chip8_nibble_0(void) {
 	case 0x00E0: // CLS
 	    // Clear the display.
 	    memset(&Chip8.display, 0, sizeof(Chip8.display));
+	    Chip8.display_dirty = true;
 	    break;
 	case 0x00EE: // RET
 	    // Return from a subroutine.
@@ -247,6 +254,8 @@ static void chip8_nibble_D(void) {
 	if (y >= CHIP8_SCREEN_HEIGHT) break;
 
 	uint8_t sprite = Chip8.ram[(Chip8.I + j) & CHIP8_ADDR_MASK];
+	if (sprite == 0) continue;
+
 	for (uint8_t i = 0, x = sx, mask = 0x80; i < 8; ++i, ++x, mask >>= 1) {
 	    if (x >= CHIP8_SCREEN_WIDTH) break;
 
@@ -256,20 +265,26 @@ static void chip8_nibble_D(void) {
 	    Chip8.display[screen_idx] ^= pixel;
 	}
     }
+    Chip8.display_dirty = true;
 }
 
 static void chip8_nibble_E(void) {
+    uint8_t const key = Chip8.opcode.hi & 0xF;
+    uint16_t const keymask = 1U << key;
     switch (Chip8.opcode.lo) {
 	case 0x9E:
 	    // Ex9E: SKP Vx
 	    // Skip next instruction if key with the value of Vx is pressed.
-	    // TODO: NYI
+	    if ((Chip8.keyboard & keymask) != 0) {
+		Chip8.PC = (Chip8.PC + 2) & CHIP8_ADDR_MASK;
+	    }
 	    break;
 	case 0xA1:
 	    // ExA1: SKNP Vx
 	    // Skip next instruction if key with the value of Vx is not pressed.
-	    // TODO: NYI
-	    Chip8.PC = (Chip8.PC + 2) & CHIP8_ADDR_MASK;
+	    if ((Chip8.keyboard & keymask) == 0) {
+		Chip8.PC = (Chip8.PC + 2) & CHIP8_ADDR_MASK;
+	    }
 	    break;
     }
 }
@@ -285,7 +300,18 @@ static void chip8_nibble_F(void) {
 	case 0x0A:
 	    // Fx0A: LD Vx, K
 	    // Wait for a key press, store the value of the key in Vx.
-	    // TODO: NYI
+	    if (Chip8.keyboard == 0) {
+		// Back up the instruction counter, and re-run this instruction.
+		Chip8.PC = (Chip8.PC - 2) & CHIP8_ADDR_MASK;
+	    } else {
+		uint16_t mask = 1;
+		for (uint8_t key = 0; key < 16; ++key, mask <<= 1) {
+		    if ((Chip8.keyboard & mask) != 0) {
+			Chip8.V[x] = key;
+			break;
+		    }
+		}
+	    }
 	    break;
 	case 0x15:
 	    // Fx15: LD DT, Vx
@@ -362,7 +388,73 @@ static uint8_t min_u8(uint8_t a, uint8_t b) {
     return a < b ? a : b;
 }
 
-uint8_t chip8_loop(void) {
+/*
+ * The CHIP-8 keyboard is laid out as follows:
+ *  ╔═══╦═══╦═══╦═══╗
+ *  ║ 1 ║ 2 ║ 3 ║ C ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ 4 ║ 5 ║ 6 ║ D ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ 7 ║ 8 ║ 9 ║ E ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ A ║ 0 ║ B ║ F ║
+ *  ╚═══╩═══╩═══╩═══╝
+ *
+ * We map these to the PC keyboard as follows:
+ *  ╔═══╦═══╦═══╦═══╗
+ *  ║ 1 ║ 2 ║ 3 ║ 4 ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ Q ║ W ║ E ║ R ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ A ║ S ║ D ║ F ║
+ *  ╠═══╬═══╬═══╬═══╣
+ *  ║ Z ║ X ║ C ║ V ║
+ *  ╚═══╩═══╩═══╩═══╝
+ *
+ */
+static int8_t chip8_keyboard_to_keynum(uint8_t ch) {
+    switch (ch) {
+	case KEY_1: return 0x1;
+	case KEY_2: return 0x2;
+	case KEY_3: return 0x3;
+	case KEY_4: return 0xC;
+
+	case KEY_Q: return 0x4;
+	case KEY_W: return 0x5;
+	case KEY_E: return 0x6;
+	case KEY_R: return 0xD;
+
+	case KEY_A: return 0x7;
+	case KEY_S: return 0x8;
+	case KEY_D: return 0x9;
+	case KEY_F: return 0xE;
+
+	case KEY_Z: return 0xA;
+	case KEY_X: return 0x0;
+	case KEY_C: return 0xB;
+	case KEY_V: return 0xF;
+    }
+    return -1;
+}
+
+static void vt100_home(void) {
+    printf("\x1b[H");
+}
+
+static void chip8_display(void) {
+    vt100_home();
+
+    for (uint8_t y = 0; y < CHIP8_SCREEN_HEIGHT; ++y) {
+	for (uint8_t x = 0; x < CHIP8_SCREEN_WIDTH; ++x) {
+	    putchar(Chip8.display[(y << 6) + x] ? '#' : ' ');
+	}
+	putchar('\n');
+    }
+}
+
+// Returns raw keycode event to process, if any.
+static uint8_t chip8_loop(void) {
+    // TODO: Sound output
     for (;;) {
 	if (Chip8_ticks != 0) {
 	    Z80_DI;
@@ -372,6 +464,12 @@ uint8_t chip8_loop(void) {
 
 	    Chip8.DT -= min_u8(Chip8.DT, ticks);
 	    Chip8.ST -= min_u8(Chip8.ST, ticks);
+
+	    // If the display is dirty, update it.
+	    if (Chip8.display_dirty) {
+		chip8_display();
+		Chip8.display_dirty = false;
+	    }
 	}
 
 	Chip8.opcode.hi = Chip8.ram[Chip8.PC++];
@@ -381,8 +479,21 @@ uint8_t chip8_loop(void) {
 	// Dispatch off high nibble.
 	Chip8_dispatch[Chip8.opcode.hi >> 4]();
 
-	uint8_t ch = conio_direct_pollchar();
-	if (ch != '\0') return ch;
+	uint8_t key = conio_direct_pollchar();
+	if (key == KEY_NONE) continue;
+
+	uint8_t ch = key & ~KEY_RELEASED_MASK;
+	int8_t keynum = chip8_keyboard_to_keynum(ch);
+	if (keynum < 0) {
+	    // Not a CHIP-8 key; let the main loop handle it.
+	    return key;
+	}
+	uint16_t keymask = 1U << keynum;
+	if ((key & KEY_RELEASED_MASK) == 0) {
+	    Chip8.keyboard |= keymask;
+	} else {
+	    Chip8.keyboard &= ~keymask;
+	}
     }
 }
 
@@ -492,21 +603,15 @@ void main(int argc, char *argv[]) {
 
     ctc_init();
 
+    conio_set_input_mode(CONIO_INPUT_MODE_RAW);
+
+    chip8_display();
     for (;;) {
-	uint8_t ch = chip8_loop();
+	uint8_t key = chip8_loop();
+	uint8_t ch = key & ~KEY_RELEASED_MASK;
 	switch (ch) {
 	    case '\x1B':
 		goto exit_emulator;
-	    case ' ':
-		// Repaint the screen.
-		printf("\x1b[H");
-		for (uint8_t y = 0; y < CHIP8_SCREEN_HEIGHT; ++y) {
-		    for (uint8_t x = 0; x < CHIP8_SCREEN_WIDTH; ++x) {
-			putchar(Chip8.display[(y << 6) + x] ? '#' : ' ');
-		    }
-		    putchar('\n');
-		}
-		break;
 	    default:
 		printf("Input: $%02x\n", ch);
 		break;
@@ -520,4 +625,5 @@ done:
     if (fp != NULL) {
 	fclose(fp);
     }
+    conio_set_input_mode(CONIO_INPUT_MODE_COOKED);
 }

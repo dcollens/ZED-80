@@ -79,6 +79,7 @@ wboote:	jp	wboot	;warm start
 ; Jump table entries below this point are non-standard ZED-80 extensions
 	jp	setctcisr   ;set CTC ISR number (0..3) in register C to address in DE
 	jp	sndwrite    ;write B bytes from HL to sound chip starting at register number C (ints must be disabled)
+	jp	setrawmode  ;set keyboard mode from register C (0:cooked, 1:raw)
 
 ;	fixed data tables for one fixed drive
 ;	no sector translations
@@ -136,7 +137,7 @@ DSKPARMS: ;disk parameter block for all disks.
 ALVSIZE equ	256
 ;	end of fixed tables
 
-welcome_msg:	.text CR, LF, "ZED-80 CBIOS v3 ", __date__, CR, LF
+welcome_msg:	.text CR, LF, "ZED-80 CBIOS v4 ", __date__, CR, LF
 null_msg:	.text NUL
 
 ;	individual subroutines to perform each function
@@ -242,8 +243,7 @@ conin::	;console character into register A
 ;
 conout::;console character output from register c
 	ld	l, c
-	call	lcd_putc
-	ret
+	jp	lcd_putc
 ;
 ;	i/o drivers for the disk follow
 ;	for now, we will simply store the parameters away for use
@@ -437,7 +437,7 @@ setctcisr::
 	add	c
 	add	c		;IVT_CTC is 8-byte aligned, so this can't overflow
 	ld	h, hi(IVT_CTC)
-	ld	l, a		;HL := ISR slot address
+	ld	l, a		;HL = ISR slot address
 	di			;disable interrupts
 	ld	(hl), e
 	inc	hl
@@ -448,7 +448,7 @@ setctcisr::
 ;write B bytes from HL to sound chip starting at register number C (ints must be disabled)
 #local
 sndwrite::
-	ld	d, c		;D := regnum
+	ld	d, c		;D = regnum
 loop:
 	ld	a, (hl)		;A = *data
 	ld	e, a
@@ -458,6 +458,20 @@ loop:
 	djnz    loop		;loop while --B > 0
 	ret
 #endlocal
+
+;set keyboard input mode from register C (0:cooked, 1:raw)
+#local
+setrawmode::
+	ld	hl, Kbd_modifiers ;HL = &Kbd_modifiers
+	bit	KMOD_RAW_BIT, c	;test KMOD_RAW_BIT of C
+	jr	z, cooked	;RAW bit off => set cooked mode
+	set	KMOD_RAW_BIT, (hl) ;Kbd_modifiers |= (1 << KMOD_RAW_BIT)
+	ret
+cooked:
+	res	KMOD_RAW_BIT, (hl) ;Kbd_modifiers &= ~(1 << KMOD_RAW_BIT)
+	ret
+#endlocal
+
 
 ; Interrupt Vector Table: must be word-aligned, since peripheral IV registers force bit 0 = 0
 ;

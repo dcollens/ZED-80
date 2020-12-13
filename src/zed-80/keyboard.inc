@@ -95,6 +95,7 @@ KBD_SCNST_RLSBIT equ 7		    ; parsed a $F0 code, indicating a key-up event
 ; NOTE: These are all the same values as the corresponding KEY_xxx keycodes. The idea is that we
 ; can update Kbd_modifiers as follows, to set (or clear) a key:
 ;    Kbd_modifiers |= 1 << keycode
+KMOD_RAW_BIT	equ 0	    ; When set, return KEY_xxx press/release codes, not cooked input
 KMOD_LSHFT_BIT	equ 1	    ; Left shift
 KMOD_RSHFT_BIT	equ 2	    ; Right shift
 KMOD_LCTRL_BIT	equ 3	    ; Left control
@@ -104,6 +105,7 @@ KMOD_RALT_BIT	equ 6	    ; Right alt
 
 KMOD_MAX	equ 6	    ; 6 is the last modifier key
 
+KMOD_RAW_MASK	equ (1 << KMOD_RAW_BIT)
 KMOD_SHIFT_MSK	equ (1 << KMOD_LSHFT_BIT) | (1 << KMOD_RSHFT_BIT)
 KMOD_CTRL_MSK	equ (1 << KMOD_LCTRL_BIT) | (1 << KMOD_RCTRL_BIT)
 KMOD_ALT_MSK	equ (1 << KMOD_LALT_BIT) | (1 << KMOD_RALT_BIT)

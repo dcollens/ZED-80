@@ -15,11 +15,15 @@ ISR_pioA::
     cpl				; A = input_byte
     ld	    l, a		; L = input_byte
     call    pio_srclr		; clear shift register to make it ready for next input byte
-    call    kbd_scanbyte_to_keycode ; process scan byte, yielding a keycode, if any
+    call    kbd_scanbyte_to_keycode ; process scan byte, yielding a keycode, if any, in L
     jr	    z, done		; Z flag set, no keycode available
+    ld	    a, (Kbd_modifiers)	; A = Kbd_modifiers
+    and	    KMOD_RAW_MASK	; test Kbd_modifiers & KMOD_RAW_MASK == 0?
+    jr	    nz, enqueue		; if KMOD_RAW_BIT is set, enqueue directly (do not cook first) 
     ld	    a, l		; pass keycode in A
     call    kbd_keycode_to_char	; convert keycode to input char, if any
     jr	    z, done		; Z flag set => no character
+enqueue:
     ; At this point L has a cooked char that we need to enqueue in a kbd buffer
     ld	    a, (Kbd_input_head)	; A = head
     ld	    h, a		; H = head
