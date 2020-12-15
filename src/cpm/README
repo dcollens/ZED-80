@@ -2,9 +2,12 @@ Getting Started
 ===============
 
 You need sdcc v4.0.0 or newer to build the CP/M C library and .COM programs in this directory.
-To get sdcc from MacPorts:
     sudo port install sdcc
-It is also available from Homebrew.
+    brew install sdcc
+
+You also need the srecord package for the srec_cat tool.
+    sudo port install srecord
+    brew install srecord
 
 To build the latest library and .COM programs:
     make
