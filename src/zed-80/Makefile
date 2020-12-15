@@ -1,5 +1,3 @@
-.PHONY: all clean flashrom
-
 PRODUCTS := rom_monitor.rom rom_only_test.rom rom_ram_test.rom rom_for_emulator.rom \
 	lcd_test.bin lcd_rdloop.bin lcd_wrloop.bin kbd_test.bin \
 	ram_test.bin sdcard_test.bin cbios.bin cpm22.sys sio_basic.bin \
@@ -7,8 +5,10 @@ PRODUCTS := rom_monitor.rom rom_only_test.rom rom_ram_test.rom rom_for_emulator.
 	lcd_basic.bin lcd_basic_low.bin \
 	sdcard.img
 
+.PHONY: all
 all: $(PRODUCTS)
 
+.PHONY: clean
 clean:
 	rm -f $(PRODUCTS)
 
@@ -42,9 +42,11 @@ sdcard.img: Makefile cpm22.sys
 	done
 	cpmls -f zed-80 -l sdcard.img
 
+.PHONY: flashrom
 flashrom: rom_monitor.rom
 	minipro -p SST39SF010A -w $<
 
+.PHONY: updatesdcard
 updatesdcard: ../cpm/*.com
 	cp ../cpm/*.com cpm/3
 	rm -f sdcard.img
