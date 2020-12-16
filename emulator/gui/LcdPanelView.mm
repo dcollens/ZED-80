@@ -3,13 +3,31 @@
 //  zed-80-emulator
 //
 //  Created by Daniel Collens on 2019-05-16.
-//Copyright © 2019 The Head. All rights reserved.
+//  Copyright © 2019 The Head. All rights reserved.
 //
 
-#import "LcdPanelView.h"
+#include <algorithm>
 
-static constexpr size_t PANEL_WIDTH = 1024;
-static constexpr size_t PANEL_HEIGHT = 600;
+#import "LcdPanelView.h"
+#import "StencilFont.h"
+
+using std::clamp;
+
+namespace {
+
+constexpr size_t PANEL_WIDTH = 1024;
+constexpr size_t PANEL_HEIGHT = 600;
+
+uint32_t nscolor_to_u32(NSColor *c) {
+    CGFloat rf, gf, bf;
+    [c getRed:&rf green:&gf blue:&bf alpha:nullptr];
+    uint32_t r = clamp(int(rf * 255), 0, 255);
+    uint32_t g = clamp(int(gf * 255), 0, 255);
+    uint32_t b = clamp(int(bf * 255), 0, 255);
+    return (b << 16) | (g << 8) | r;
+}
+
+} // namespace
 
 @implementation LcdPanelView {
     NSView *                _cursorView;
@@ -19,6 +37,7 @@ static constexpr size_t PANEL_HEIGHT = 600;
     NSBitmapImageRep *      _imageRep;
     NSImage *               _panelImage;
     NSFont *                _font;
+    StencilFont *           _stencilFont;
 }
 
 - (instancetype)init {
@@ -41,11 +60,14 @@ static constexpr size_t PANEL_HEIGHT = 600;
                                           bitmapFormat:NSBitmapFormatThirtyTwoBitLittleEndian
                                            bytesPerRow:4 * PANEL_WIDTH
                                           bitsPerPixel:32];
-    
+
+    _imageRep = [_imageRep bitmapImageRepByRetaggingWithColorSpace:NSColorSpace.sRGBColorSpace];
+
     _panelImage = [NSImage new];
     [_panelImage addRepresentation:_imageRep];
 
-    _font = [NSFont fontWithName:@"Modern DOS 8x16" size:16.0];
+    _font = [NSFont fontWithName:@"Modern DOS 8x16" size:16];
+    _stencilFont = [[StencilFont alloc] initWithFont:_font];
 
     CGContextRef gfx = self.gfxContext.CGContext;
     
@@ -208,6 +230,7 @@ static constexpr size_t PANEL_HEIGHT = 600;
 withForegroundColor:(NSColor *)fg
   backgroundColor:(NSColor *)bg
 {
+#if 0
     NSString *text = [NSString stringWithFormat:@"%c", ch];
     NSDictionary<NSAttributedStringKey, id> *attr = @{
         NSForegroundColorAttributeName: fg,
@@ -219,6 +242,26 @@ withForegroundColor:(NSColor *)fg
     [NSGraphicsContext setCurrentContext:self.gfxContext];
     [text drawAtPoint:p withAttributes:attr];
     [NSGraphicsContext restoreGraphicsState];
+#else
+    uint32_t fgColor = nscolor_to_u32(fg);
+    uint32_t bgColor = nscolor_to_u32(bg);
+    
+    auto glyphData = [_stencilFont bitmapDataForGlyph:ch];
+    auto glyphWidth = _stencilFont.glyphWidth;
+    auto glyphHeight = _stencilFont.glyphHeight;
+    auto glyphStride = _stencilFont.stride;
+    
+    uint32_t *imageData = reinterpret_cast<uint32_t *>(_imageRep.bitmapData);
+    imageData += ((PANEL_HEIGHT - 1) - static_cast<int>(p.y)) * PANEL_WIDTH;
+    for (int y = 0; y < glyphHeight; ++y) {
+        size_t dstx = p.x;
+        for (int srcx = 0; srcx < glyphWidth; ++srcx, ++dstx) {
+            imageData[dstx] = glyphData[srcx] == 0 ? bgColor : fgColor;
+        }
+        glyphData += glyphStride;
+        imageData -= PANEL_WIDTH;
+    }
+#endif
     
     [self setNeedsDisplay:YES];
 }
