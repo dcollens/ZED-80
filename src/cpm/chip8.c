@@ -466,12 +466,6 @@ static uint8_t chip8_loop(void) {
 	    Chip8.DT -= min_u8(Chip8.DT, ticks);
 	    Chip8.ST -= min_u8(Chip8.ST, ticks);
 
-	    // If the display is dirty, update it.
-	    if (Chip8.display_dirty) {
-		chip8_display();
-		Chip8.display_dirty = false;
-	    }
-
 	    // Process any waiting keyboard input.
 	    for (;;) {
 		uint8_t key = conio_direct_pollchar();
@@ -489,6 +483,12 @@ static uint8_t chip8_loop(void) {
 		} else {
 		    Chip8.keyboard &= ~keymask;
 		}
+	    }
+
+	    // If the display is dirty, update it.
+	    if (Chip8.display_dirty) {
+		chip8_display();
+		Chip8.display_dirty = false;
 	    }
 	}
 
