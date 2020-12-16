@@ -2,7 +2,7 @@
 ; - write the single character in "ch" to LCD
 #local
 ; For debugging:
-VT100_DUMP_TO_SERIAL    equ 1
+VT100_DUMP_TO_SERIAL    equ 0
 
 ; For state machine:
 VT100_STATE_NORMAL      equ 0 ; not parsing VT100 sequence
