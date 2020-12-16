@@ -269,7 +269,7 @@ static void chip8_nibble_D(void) {
 }
 
 static void chip8_nibble_E(void) {
-    uint8_t const key = Chip8.opcode.hi & 0xF;
+    uint8_t const key = Chip8.V[Chip8.opcode.hi & 0xF];
     uint16_t const keymask = 1U << key;
     switch (Chip8.opcode.lo) {
 	case 0x9E:
@@ -444,9 +444,10 @@ static void vt100_home(void) {
 static void chip8_display(void) {
     vt100_home();
 
+    uint8_t const *display = Chip8.display;
     for (uint8_t y = 0; y < CHIP8_SCREEN_HEIGHT; ++y) {
 	for (uint8_t x = 0; x < CHIP8_SCREEN_WIDTH; ++x) {
-	    putchar(Chip8.display[(y << 6) + x] ? '#' : ' ');
+	    putchar(*display++ ? '#' : ' ');
 	}
 	putchar('\n');
     }
@@ -470,6 +471,25 @@ static uint8_t chip8_loop(void) {
 		chip8_display();
 		Chip8.display_dirty = false;
 	    }
+
+	    // Process any waiting keyboard input.
+	    for (;;) {
+		uint8_t key = conio_direct_pollchar();
+		if (key == KEY_NONE) break;
+
+		uint8_t ch = key & ~KEY_RELEASED_MASK;
+		int8_t keynum = chip8_keyboard_to_keynum(ch);
+		if (keynum < 0) {
+		    // Not a CHIP-8 key; let the main loop handle it.
+		    return key;
+		}
+		uint16_t keymask = 1U << keynum;
+		if ((key & KEY_RELEASED_MASK) == 0) {
+		    Chip8.keyboard |= keymask;
+		} else {
+		    Chip8.keyboard &= ~keymask;
+		}
+	    }
 	}
 
 	Chip8.opcode.hi = Chip8.ram[Chip8.PC++];
@@ -478,22 +498,6 @@ static uint8_t chip8_loop(void) {
 
 	// Dispatch off high nibble.
 	Chip8_dispatch[Chip8.opcode.hi >> 4]();
-
-	uint8_t key = conio_direct_pollchar();
-	if (key == KEY_NONE) continue;
-
-	uint8_t ch = key & ~KEY_RELEASED_MASK;
-	int8_t keynum = chip8_keyboard_to_keynum(ch);
-	if (keynum < 0) {
-	    // Not a CHIP-8 key; let the main loop handle it.
-	    return key;
-	}
-	uint16_t keymask = 1U << keynum;
-	if ((key & KEY_RELEASED_MASK) == 0) {
-	    Chip8.keyboard |= keymask;
-	} else {
-	    Chip8.keyboard &= ~keymask;
-	}
     }
 }
 
@@ -613,7 +617,7 @@ void main(int argc, char *argv[]) {
 	    case KEY_ESC:
 		goto exit_emulator;
 	    default:
-		printf("Input: $%02x\n", ch);
+		//printf("\nInput: $%02x\n", ch);
 		break;
 	}
     }
