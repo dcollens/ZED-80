@@ -207,6 +207,7 @@ public:
         self->_nanosToEmulate += now - self->_emulatorTimestamp;
         self->_emulatorTimestamp = now;
         
+        // NSLog(@"smallRun: %.1f", self->_nanosToEmulate/10000000.);
         uint64_t nanosEmulated = self->_zed80.smallRun(self->_nanosToEmulate);
         self->_nanosToEmulate -= nanosEmulated;
     };

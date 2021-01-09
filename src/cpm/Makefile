@@ -6,6 +6,9 @@ CRT0 := $(LIBDIR)/crt0.rel
 ZED80LIBNAME := zed80.lib
 ZED80LIB := $(LIBDIR)/$(ZED80LIBNAME)
 
+SDCC_OPT_DIR := /opt/local/share/sdcc
+SDCC_USR_DIR := /usr/local/share/sdcc
+
 PRODUCTS := hello.com echo.com cat.com ymplay.com chip8.com keytest.com coniotst.com
 
 all: $(PRODUCTS)
@@ -19,7 +22,9 @@ clean:
 
 %.ihx: %.rel $(CRT0) $(ZED80LIB) Makefile
 	sdldz80 -n -mjwx -i $@ -b _CODE=0x100 \
-	    -k /opt/local/share/sdcc/lib/z80 -k $(LIBDIR) \
+	    -k $(SDCC_OPT_DIR)/lib/z80 \
+	    -k $(SDCC_USR_DIR)/lib/z80 \
+	    -k $(LIBDIR) \
 	    -l $(ZED80LIBNAME) -l z80 \
 	    $(CRT0) $< -e
 
