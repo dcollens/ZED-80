@@ -6,6 +6,7 @@
 
 #include "file.h"
 #include "ioports.h"
+#include "sio.h"
 #include "ctc.h"
 #include "conio.h"
 
@@ -437,8 +438,17 @@ static int8_t chip8_keyboard_to_keynum(uint8_t ch) {
     return -1;
 }
 
+static void conio_direct_puts(char const *str) {
+    for (;;) {
+	uint8_t ch = *str++;
+	if (ch == '\0') return;
+
+	conio_direct_putchar(ch);
+    }
+}
+
 static void vt100_home(void) {
-    printf("\x1b[H");
+    conio_direct_puts("\x1b[H");
 }
 
 static void chip8_display(void) {
@@ -447,11 +457,33 @@ static void chip8_display(void) {
     uint8_t const *display = Chip8.display;
     for (uint8_t y = 0; y < CHIP8_SCREEN_HEIGHT; ++y) {
 	for (uint8_t x = 0; x < CHIP8_SCREEN_WIDTH; ++x) {
-	    putchar(*display++ ? '#' : ' ');
+	    conio_direct_putchar(*display++ ? '#' : ' ');
 	}
-	putchar('\n');
+	conio_direct_putchar('\r');
+	conio_direct_putchar('\n');
     }
 }
+
+#if 0
+static void sioA_putc(uint8_t ch) __z88dk_fastcall {
+    ch;	// unreferenced
+    __asm
+    001$:	; wait loop
+	in	a, (PORT_SIOACTL)
+	and	#SIORR0_TBE
+	jr	z, 001$
+	ld	a, l
+	out	(PORT_SIOADAT), a
+    __endasm;
+}
+
+static void sioA_writehex(uint8_t val) {
+    static uint8_t HEX_MAP[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+				   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    sioA_putc(HEX_MAP[val >> 4]);
+    sioA_putc(HEX_MAP[val & 0xF]);
+}
+#endif
 
 // Returns raw keycode event to process, if any.
 static uint8_t chip8_loop(void) {
