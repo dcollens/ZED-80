@@ -210,4 +210,7 @@ void lcd_out32(uint8_t regbase, uint16_t v1, uint16_t v2);
 
 void lcd_wait_idle(void);
 
+void lcd_cursor_on(void);
+void lcd_cursor_off(void);
+
 #endif

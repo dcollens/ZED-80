@@ -690,6 +690,7 @@ void main(int argc, char *argv[]) {
     ctc_init();
 
     conio_set_input_mode(CONIO_INPUT_MODE_RAW);
+    lcd_cursor_off();
 
     chip8_display();
     for (;;) {
@@ -704,6 +705,7 @@ void main(int argc, char *argv[]) {
 	}
     }
 exit_emulator:
+    lcd_cursor_on();
 
     ctc_fini();
 
