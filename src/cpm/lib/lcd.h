@@ -201,7 +201,7 @@ typedef uint32_t lcd_color_t;
 #define COLOR_BLACK		0x000000UL
 #define COLOR_WHITE		0xFFFFFFUL
 
-void lcd_set_fgcolor(lcd_color_t color) __z88dk_fastcall;
+void lcd_set_fgcolor(lcd_color_t color);
 
 void lcd_out32(uint8_t regbase, uint16_t v1, uint16_t v2);
 

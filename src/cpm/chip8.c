@@ -11,10 +11,6 @@
 #include "conio.h"
 #include "lcd.h"
 
-// Choose one of these two display modes:
-//#define TEXT_DISPLAY
-#define GFX_DISPLAY
-
 #define Z80_DI	    __asm__("di")
 #define Z80_EI	    __asm__("ei")
 
@@ -28,6 +24,9 @@
 
 #define CHIP8_SCREEN_WIDTH  64
 #define CHIP8_SCREEN_HEIGHT 32
+
+// 64 * 16 = 1024 across, and 32 * 16 = 512 high
+#define CHIP8_PIXEL_SIZE    16
 
 #define CHIP8_FONT_OFFSET   0
 #define CHIP8_USER_OFFSET   512
@@ -80,6 +79,15 @@ typedef struct Chip8_t {
 } Chip8_t;
 
 static Chip8_t Chip8;
+
+// TODO: move this into CPM lib
+static void fill_rect(void) {
+    __asm
+	ld	bc, #((LCDREG_DCR1 << 8) | LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN)
+	call	lcd_write
+    __endasm;
+    lcd_wait_idle();
+}
 
 void chip8_init(void) {
     memset(&Chip8, 0, sizeof(Chip8));
@@ -256,24 +264,36 @@ static void chip8_nibble_D(void) {
     uint8_t const sx = Chip8.V[Chip8.opcode.hi & 0xF] & (CHIP8_SCREEN_WIDTH - 1);
     uint8_t const sy = Chip8.V[Chip8.opcode.lo >> 4] & (CHIP8_SCREEN_HEIGHT - 1);
     uint8_t const n = Chip8.opcode.lo & 0xF;
+    uint16_t const slcdx = (uint16_t)sx * CHIP8_PIXEL_SIZE;
 
     Chip8.V[0xF] = 0;
-    for (uint8_t j = 0, y = sy; j < n; ++j, ++y) {
+    uint16_t lcdy = (uint16_t)sy * CHIP8_PIXEL_SIZE;
+    for (uint8_t j = 0, y = sy; j < n; ++j, ++y, lcdy += CHIP8_PIXEL_SIZE) {
 	if (y >= CHIP8_SCREEN_HEIGHT) break;
 
 	uint8_t sprite = Chip8.ram[(Chip8.I + j) & CHIP8_ADDR_MASK];
 	if (sprite == 0) continue;
 
-	for (uint8_t i = 0, x = sx, mask = 0x80; i < 8; ++i, ++x, mask >>= 1) {
+	uint16_t lcdx = slcdx;
+	for (uint8_t i = 0, x = sx, mask = 0x80; i < 8; ++i, ++x, mask >>= 1, lcdx += CHIP8_PIXEL_SIZE) {
 	    if (x >= CHIP8_SCREEN_WIDTH) break;
 
 	    uint16_t screen_idx = ((uint16_t)y << 6) + x;
-	    bool pixel = (sprite & mask) != 0;
-	    Chip8.V[0xF] |= Chip8.display[screen_idx] & pixel;
-	    Chip8.display[screen_idx] ^= pixel;
+	    if ((sprite & mask) == 0) continue;
+
+	    uint8_t pixel = Chip8.display[screen_idx];
+	    Chip8.V[0xF] |= pixel;
+
+	    // Flip the pixel because the sprite bit is on.
+	    pixel = !pixel;
+	    Chip8.display[screen_idx] = pixel;
+
+	    lcd_set_fgcolor(pixel ? COLOR_WHITE : COLOR_BLACK);
+	    lcd_line_start_xy(lcdx, lcdy);
+	    lcd_line_end_xy(lcdx + CHIP8_PIXEL_SIZE - 1, lcdy + CHIP8_PIXEL_SIZE - 1);
+	    fill_rect();
 	}
     }
-    Chip8.display_dirty = true;
 }
 
 static void chip8_nibble_E(void) {
@@ -504,18 +524,6 @@ static void chip8_display(void) {
 }
 #endif
 
-#ifdef GFX_DISPLAY
-// 64 * 16 = 1024 across, and 32 * 16 = 512 high
-#define CHIP8_PIXEL_SIZE	16
-
-static void fill_rect(void) {
-    __asm
-	ld	bc, #((LCDREG_DCR1 << 8) | LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN)
-	call	lcd_write
-    __endasm;
-    lcd_wait_idle();
-}
-
 static void chip8_display(void) {
     lcd_set_fgcolor(COLOR_BLACK);
     lcd_line_start_xy(0, 0);
@@ -536,7 +544,6 @@ static void chip8_display(void) {
 	}
     }
 }
-#endif
 
 // Returns raw keycode event to process, if any.
 static uint8_t chip8_loop(void) {
