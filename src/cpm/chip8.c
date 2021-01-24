@@ -9,6 +9,11 @@
 #include "sio.h"
 #include "ctc.h"
 #include "conio.h"
+#include "lcd.h"
+
+// Choose one of these two display modes:
+//#define TEXT_DISPLAY
+#define GFX_DISPLAY
 
 #define Z80_DI	    __asm__("di")
 #define Z80_EI	    __asm__("ei")
@@ -438,6 +443,37 @@ static int8_t chip8_keyboard_to_keynum(uint8_t ch) {
     return -1;
 }
 
+#if 0
+static void sioA_putc(uint8_t ch) __z88dk_fastcall {
+    ch;	// unreferenced
+    __asm
+    001$:	; wait loop
+	in	a, (PORT_SIOACTL)
+	and	#SIORR0_TBE
+	jr	z, 001$
+	ld	a, l
+	out	(PORT_SIOADAT), a
+    __endasm;
+}
+
+static void sioA_puts(char const *str) {
+    for (;;) {
+	uint8_t ch = *str++;
+	if (ch == '\0') return;
+
+	sioA_putc(ch);
+    }
+}
+
+static void sioA_writehex(uint8_t val) {
+    static uint8_t HEX_MAP[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+				   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    sioA_putc(HEX_MAP[val >> 4]);
+    sioA_putc(HEX_MAP[val & 0xF]);
+}
+#endif
+
+#ifdef TEXT_DISPLAY
 static void conio_direct_puts(char const *str) {
     for (;;) {
 	uint8_t ch = *str++;
@@ -463,25 +499,39 @@ static void chip8_display(void) {
 	conio_direct_putchar('\n');
     }
 }
+#endif
 
-#if 0
-static void sioA_putc(uint8_t ch) __z88dk_fastcall {
-    ch;	// unreferenced
+#ifdef GFX_DISPLAY
+// 64 * 16 = 1024 across, and 32 * 16 = 512 high
+#define CHIP8_PIXEL_SIZE	16
+
+static void fill_rect(void) {
     __asm
-    001$:	; wait loop
-	in	a, (PORT_SIOACTL)
-	and	#SIORR0_TBE
-	jr	z, 001$
-	ld	a, l
-	out	(PORT_SIOADAT), a
+	ld	bc, #((LCDREG_DCR1 << 8) | LCDDCR1_DRWRCT | LCDDCR1_FILL | LCDDCR1_RUN)
+	call	lcd_write
     __endasm;
+    lcd_wait_idle();
 }
 
-static void sioA_writehex(uint8_t val) {
-    static uint8_t HEX_MAP[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-				   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-    sioA_putc(HEX_MAP[val >> 4]);
-    sioA_putc(HEX_MAP[val & 0xF]);
+static void chip8_display(void) {
+    lcd_set_fgcolor(COLOR_BLACK);
+    lcd_line_start_xy(0, 0);
+    lcd_line_end_xy(LCD_WIDTH - 1, LCD_HEIGHT - 1);
+    fill_rect();
+
+    lcd_set_fgcolor(COLOR_WHITE);
+    uint8_t const *display = Chip8.display;
+    uint16_t sy = 0;
+    for (uint8_t y = 0; y < CHIP8_SCREEN_HEIGHT; ++y, sy += CHIP8_PIXEL_SIZE) {
+	uint16_t sx = 0;
+	for (uint8_t x = 0; x < CHIP8_SCREEN_WIDTH; ++x, sx += CHIP8_PIXEL_SIZE) {
+	    if (!*display++) continue;
+
+	    lcd_line_start_xy(sx, sy);
+	    lcd_line_end_xy(sx + CHIP8_PIXEL_SIZE - 1, sy + CHIP8_PIXEL_SIZE - 1);
+	    fill_rect();
+	}
+    }
 }
 #endif
 

@@ -27,6 +27,11 @@
 #define PORT_CTC2	(PORT_CTCBASE + 2)
 #define PORT_CTC3	(PORT_CTCBASE + 3)
 
+// LCD ports
+#define PORT_LCDBASE	0x50		    // base port address for RA8876 chip
+#define PORT_LCDCMD	PORT_LCDBASE	    // port address for RA8876 command/status register
+#define PORT_LCDDAT	(PORT_LCDBASE + 1)  // port address for RA8876 data register
+
 // System control register
 #define PORT_SYSREG	0x70
 
