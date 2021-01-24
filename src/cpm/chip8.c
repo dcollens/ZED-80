@@ -80,6 +80,9 @@ typedef struct Chip8_t {
 
 static Chip8_t Chip8;
 
+// Incremented by 60Hz timer tick.
+static volatile uint8_t Chip8_ticks = 0;
+
 // TODO: move this into CPM lib
 static void fill_rect(void) {
     __asm
@@ -261,6 +264,12 @@ static void chip8_nibble_C(void) {
 static void chip8_nibble_D(void) {
     // Dxyn: DRW Vx, Vy, nibble
     // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+
+    // First, make sure we are ready to draw. The original CHIP-8 emulator waited for a vblank
+    // before every DRW instruction was emulated, so we do that too, in order to keep the speed
+    // manageable.
+    while (Chip8_ticks == 0);
+
     uint8_t const sx = Chip8.V[Chip8.opcode.hi & 0xF] & (CHIP8_SCREEN_WIDTH - 1);
     uint8_t const sy = Chip8.V[Chip8.opcode.lo >> 4] & (CHIP8_SCREEN_HEIGHT - 1);
     uint8_t const n = Chip8.opcode.lo & 0xF;
@@ -409,9 +418,6 @@ static const Chip8_dispatch_t Chip8_dispatch[16] = {
     chip8_nibble_E,
     chip8_nibble_F,
 };
-
-// Incremented by 60Hz timer tick.
-static volatile uint8_t Chip8_ticks = 0;
 
 static uint8_t min_u8(uint8_t a, uint8_t b) {
     return a < b ? a : b;
