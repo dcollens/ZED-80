@@ -24,6 +24,8 @@
 
 #define CHIP8_ADDR_MASK	    (CHIP8_RAM_SIZE - 1)
 
+#define CHIP8_N_KEYS	    16
+
 #define CHIP8_SCREEN_WIDTH  64
 #define CHIP8_SCREEN_HEIGHT 32
 
@@ -71,7 +73,7 @@ typedef struct Chip8_t {
 
     uint8_t ram[CHIP8_RAM_SIZE];
 
-    uint16_t keyboard;		// 0: key is up, 1: key is down
+    bool keyboard[CHIP8_N_KEYS];// true iff key is down
 
     bool display_dirty;
     uint8_t display[CHIP8_SCREEN_WIDTH * CHIP8_SCREEN_HEIGHT];
@@ -275,20 +277,19 @@ static void chip8_nibble_D(void) {
 }
 
 static void chip8_nibble_E(void) {
-    uint8_t const key = Chip8.V[Chip8.opcode.hi & 0xF];
-    uint16_t const keymask = 1U << key;
+    uint8_t const key = Chip8.V[Chip8.opcode.hi & 0xF] & 0xF;
     switch (Chip8.opcode.lo) {
 	case 0x9E:
 	    // Ex9E: SKP Vx
 	    // Skip next instruction if key with the value of Vx is pressed.
-	    if ((Chip8.keyboard & keymask) != 0) {
+	    if (Chip8.keyboard[key]) {
 		Chip8.PC = (Chip8.PC + 2) & CHIP8_ADDR_MASK;
 	    }
 	    break;
 	case 0xA1:
 	    // ExA1: SKNP Vx
 	    // Skip next instruction if key with the value of Vx is not pressed.
-	    if ((Chip8.keyboard & keymask) == 0) {
+	    if (!Chip8.keyboard[key]) {
 		Chip8.PC = (Chip8.PC + 2) & CHIP8_ADDR_MASK;
 	    }
 	    break;
@@ -303,22 +304,24 @@ static void chip8_nibble_F(void) {
 	    // Set Vx = delay timer value.
 	    Chip8.V[x] = Chip8.DT;
 	    break;
-	case 0x0A:
+	case 0x0A: {
 	    // Fx0A: LD Vx, K
 	    // Wait for a key press, store the value of the key in Vx.
-	    if (Chip8.keyboard == 0) {
-		// Back up the instruction counter, and re-run this instruction.
-		Chip8.PC = (Chip8.PC - 2) & CHIP8_ADDR_MASK;
-	    } else {
-		uint16_t mask = 1;
-		for (uint8_t key = 0; key < 16; ++key, mask <<= 1) {
-		    if ((Chip8.keyboard & mask) != 0) {
-			Chip8.V[x] = key;
-			break;
-		    }
+	    uint8_t key = 0;
+	    for (;;) {
+		if (Chip8.keyboard[key]) {
+		    Chip8.V[x] = key;
+		    break;
+		}
+		++key;
+		if (key == CHIP8_N_KEYS) {
+		    // Back up the instruction counter, and re-run this instruction.
+		    Chip8.PC = (Chip8.PC - 2) & CHIP8_ADDR_MASK;
+		    break;
 		}
 	    }
 	    break;
+	}
 	case 0x15:
 	    // Fx15: LD DT, Vx
 	    // Set delay timer = Vx.
@@ -418,7 +421,7 @@ static uint8_t min_u8(uint8_t a, uint8_t b) {
  *  ╚═══╩═══╩═══╩═══╝
  *
  */
-static int8_t chip8_keyboard_to_keynum(uint8_t ch) {
+static uint8_t chip8_keyboard_to_keynum(uint8_t ch) {
     switch (ch) {
 	case KEY_1: return 0x1;
 	case KEY_2: return 0x2;
@@ -440,7 +443,7 @@ static int8_t chip8_keyboard_to_keynum(uint8_t ch) {
 	case KEY_C: return 0xB;
 	case KEY_V: return 0xF;
     }
-    return -1;
+    return CHIP8_N_KEYS;
 }
 
 #if 0
@@ -554,17 +557,12 @@ static uint8_t chip8_loop(void) {
 		if (key == KEY_NONE) break;
 
 		uint8_t ch = key & ~KEY_RELEASED_MASK;
-		int8_t keynum = chip8_keyboard_to_keynum(ch);
-		if (keynum < 0) {
+		uint8_t keynum = chip8_keyboard_to_keynum(ch);
+		if (keynum >= CHIP8_N_KEYS) {
 		    // Not a CHIP-8 key; let the main loop handle it.
 		    return key;
 		}
-		uint16_t keymask = 1U << keynum;
-		if ((key & KEY_RELEASED_MASK) == 0) {
-		    Chip8.keyboard |= keymask;
-		} else {
-		    Chip8.keyboard &= ~keymask;
-		}
+		Chip8.keyboard[keynum] = ((key & KEY_RELEASED_MASK) == 0);
 	    }
 
 	    // If the display is dirty, update it.
